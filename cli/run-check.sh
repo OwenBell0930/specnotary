@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Auto-detect python3 or node and run the matching checker.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 TARGET="${1:-}"
+OUT="${2:-}"
 
 if [[ -z "$TARGET" ]]; then
   echo "Usage: ./cli/run-check.sh <machine-spec.yaml|json>"
@@ -17,21 +17,14 @@ if [[ -z "$runtime" ]]; then
     runtime=node
   else
     echo "ERROR: Neither python3 nor node found."
-    echo "Install one runtime for hard gate, or use skills/ in degraded mode (see docs/gate-modes.md)."
+    echo "Install a runtime for hard gate, or use skills/ (degraded). See docs/gate-modes.md"
     exit 3
   fi
 fi
 
 echo "spec-kit: using runtime=$runtime"
 case "$runtime" in
-  python)
-    exec python3 "$ROOT/cli/python/check.py" "$TARGET"
-    ;;
-  node)
-    exec node "$ROOT/cli/node/check.js" "$TARGET"
-    ;;
-  *)
-    echo "ERROR: SPEC_KIT_RUNTIME must be python or node"
-    exit 2
-    ;;
+  python) exec python3 "$ROOT/cli/python/check.py" "$TARGET" ;;
+  node) exec node "$ROOT/cli/node/check.js" "$TARGET" ;;
+  *) echo "ERROR: SPEC_KIT_RUNTIME must be python or node"; exit 2 ;;
 esac

@@ -1,70 +1,87 @@
 spec_version: "0.1"
-id: SPEC-INVOICE-001
+id: SPEC-EXPENSE-001
 title:
-  zh: 发票夹 · 上传与确认入账
-  en: Invoice Pocket · Upload & confirm posting
+  zh: 报销助手 · 发票识别与审批
+  en: Expense assist · Invoice OCR & approval
 status: ready
 in_scope:
-  - zh: 上传 PDF/图片发票；确认入账
-    en: Upload PDF/image invoices; confirm posting
+  - zh: 发票图片识别金额与日期并生成草稿
+    en: OCR amount/date from invoice image into draft
+  - zh: 经理审批通过/驳回（驳回必填原因）
+    en: Manager approve/reject with mandatory reject reason
 out_of_scope:
-  - zh: OCR 字段的自动纠错训练
-    en: Training OCR auto-correction models
+  - zh: 自动打款与税务申报
+    en: Auto payout and tax filing
 open_questions: []
 actors:
-  - id: staff
-    zh: 普通员工
-    en: Staff
-  - id: finance
-    zh: 财务
-    en: Finance
+  - id: employee
+    zh: 员工
+    en: Employee
+  - id: manager
+    zh: 经理
+    en: Manager
 permissions:
-  - actor: staff
-    can: [upload, view_own]
-  - actor: finance
-    can: [upload, view_own, confirm_posting]
+  - actor: employee
+    can: [upload, edit_draft_amount_date, submit]
+  - actor: manager
+    can: [approve, reject]
 object_ai:
-  enabled: false
+  enabled: true
+  tools_boundary:
+    - zh: 仅允许调用发票 OCR；不得调用外部支付
+      en: Invoice OCR only; no external payment tools
+  failure_fallback:
+    zh: OCR 失败则进入全手工录入金额与日期
+    en: On OCR failure, fall back to full manual amount/date entry
+  human_takeover_when:
+    - zh: 模型置信度 < 0.7
+      en: Model confidence < 0.7
+  unacceptable_outputs:
+    - zh: 编造不存在的发票号或供应商
+      en: Invented invoice numbers or vendors
+  confidence_threshold: 0.7
 defaults:
-  max_upload_mb: 10
-  allowed_types: [pdf, png, jpg, jpeg]
-empty_states:
-  upload_failed:
-    zh: 上传失败，请重试
-    en: Upload failed. Please retry.
+  currency: CNY
+  currency_editable: false
+  reject_reason_min_chars: 5
 behaviors:
   - id: B1
     name:
-      zh: 上传发票
-      en: Upload invoice
+      zh: 上传并生成草稿
+      en: Upload and create draft
     given:
-      zh: 用户已登录
-      en: User signed in
+      zh: 员工已登录
+      en: Employee signed in
     when:
-      zh: 选择允许类型的文件并上传
-      en: Selects an allowed file and uploads
+      zh: 上传发票图片
+      en: Uploads invoice image
     then:
-      zh: 成功则进入待确认；失败展示 upload_failed；超过 10MB 拒绝并说明大小限制
-      en: On success go to pending-confirm; on failure show upload_failed; over 10MB reject with size limit message
+      zh: 生成含金额、日期、币种=CNY 的草稿；置信度<0.7 时标黄并阻止提交直至人工确认
+      en: Create draft with amount, date, currency=CNY; if confidence<0.7 mark amber and block submit until human confirm
   - id: B2
     name:
-      zh: 确认入账
-      en: Confirm posting
+      zh: 经理驳回
+      en: Manager reject
     given:
-      zh: 用户为 finance，发票状态为待确认
-      en: User is finance and invoice is pending-confirm
+      zh: 草稿处于待审批
+      en: Draft pending approval
     when:
-      zh: 点击确认入账
-      en: Clicks confirm posting
+      zh: 经理驳回
+      en: Manager rejects
     then:
-      zh: 状态变为已入账；金额字段只读
-      en: Status becomes posted; amount becomes read-only
+      zh: 必须填写不少于 5 字原因，否则无法提交驳回
+      en: Require reject reason ≥5 chars or reject action fails
 acceptance:
   - id: A1
     behavior: B1
-    zh: Given 员工 When 上传 11MB PDF Then 被拒绝且提示大小限制
-    en: Given staff When uploading 11MB PDF Then reject with size-limit message
+    zh: Given 置信度 0.65 When 员工点提交 Then 被阻断并提示需人工核对
+    en: Given confidence 0.65 When employee submits Then block with human-check prompt
   - id: A2
     behavior: B2
-    zh: Given 员工 When 点击确认入账 Then 无权限不改变状态
-    en: Given staff When clicking confirm posting Then deny and keep status unchanged
+    zh: Given 待审批 When 经理驳回原因为 3 个字 Then 无法完成驳回
+    en: Given pending When reject reason has 3 chars Then reject cannot complete
+project_hint:
+  object_ai_weight: high
+  object_ai_notes:
+    zh: 发票 OCR 与置信度门禁是主路径
+    en: Invoice OCR and confidence gate are on the primary path

@@ -7,38 +7,47 @@ status: ready
 in_scope:
   - zh: 按工单标题、工单号模糊搜索
     en: Fuzzy search by ticket title and ticket id
-  - zh: 管理员与座席不同可见范围
-    en: Different visibility for admin vs agent
+  - zh: 管理员与处理人可搜全量；只读访客仅搜自己可见工单
+    en: Admin/assignee search all visible; readonly guest only own-visible tickets
 out_of_scope:
-  - zh: 语义推荐下一句话术
-    en: Semantic next-reply suggestions
+  - zh: 用大模型改写查询或自动结单
+    en: LLM query rewrite or auto-close
 open_questions: []
 actors:
-  - id: agent
-    zh: 座席
-    en: Agent
   - id: admin
     zh: 管理员
     en: Admin
+  - id: agent
+    zh: 处理人
+    en: Agent
+  - id: guest
+    zh: 只读访客
+    en: Readonly guest
 permissions:
-  - actor: agent
-    can: [search_own_queue]
   - actor: admin
     can: [search_all]
+  - actor: agent
+    can: [search_all]
+  - actor: guest
+    can: [search_own_visible]
 object_ai:
   enabled: false
+  tools_boundary: []
+  failure_fallback: ""
+  human_takeover_when: []
+  unacceptable_outputs: []
 defaults:
   page_size: 20
   search_match: fuzzy
   search_fields: [title, ticket_id]
-  timeout_ms: 2000
+  debounce_ms: 300
 empty_states:
   no_match:
-    zh: 没有符合条件的工单。
-    en: No tickets match your filters.
+    zh: 没有符合条件的工单
+    en: No tickets match your filters
   forbidden:
-    zh: 你无权查看该工单。
-    en: You are not allowed to view this ticket.
+    zh: 无权查看该工单
+    en: Not allowed to view this ticket
 behaviors:
   - id: B1
     name:
@@ -48,17 +57,17 @@ behaviors:
       zh: 用户已登录
       en: User signed in
     when:
-      zh: 提交关键词搜索
-      en: Submits keyword search
+      zh: 在搜索框输入至少 1 个字符并等待 debounce
+      en: Types at least 1 character and waits for debounce
     then:
-      zh: 仅返回有权查看的工单；默认 fuzzy 匹配 title 与 ticket_id；分页 20；超时返回明确错误码 SEARCH_TIMEOUT
-      en: Return only permitted tickets; fuzzy match title & ticket_id; page size 20; on timeout return SEARCH_TIMEOUT
+      zh: 按权限返回列表；默认 20 条；无匹配展示 no_match；越权展示 forbidden
+      en: Return list by permission; default 20; no_match / forbidden copy as applicable
 acceptance:
   - id: A1
     behavior: B1
-    zh: Given 座席 When 搜索他人队列工单号 Then 不返回该单并展示 forbidden 或相当于无权限的空态
-    en: Given agent When searching another queue's ticket id Then do not return it; show forbidden or equivalent
+    zh: Given guest When 搜索他人私有工单号 Then 不返回该工单正文并展示 forbidden 或相当于未命中的安全空态（二选一须在实现前锁定，本例锁定为 forbidden）
+    en: Given guest When searching another user's private ticket id Then do not return body and show forbidden
   - id: A2
     behavior: B1
-    zh: Given 管理员 When 关键词无匹配 Then 2s 内展示 no_match
-    en: Given admin When no keyword match Then show no_match within 2s
+    zh: Given agent When 搜索无匹配词 Then 2 秒内展示 no_match（P95）
+    en: Given agent When searching with no hits Then show no_match within 2s P95

@@ -1,17 +1,17 @@
 spec_version: "0.1"
 id: SPEC-TICKET-BAD
 title:
-  zh: 智能工单搜索（不合格机读稿 · 演示用）
-  en: Smart ticket search (intentionally incomplete)
-status: draft
+  zh: 智能工单搜索（未修好）
+  en: Smart ticket search (broken draft)
+status: ready
 in_scope:
   - zh: 搜索工单
     en: Search tickets
 out_of_scope: []
 open_questions:
   - id: Q1
-    zh: 搜索字段与匹配方式未定
-    en: Search fields and match mode undecided
+    zh: 搜哪些字段？精确还是模糊？
+    en: Which fields? Exact or fuzzy?
 actors: []
 permissions: []
 object_ai:
@@ -22,16 +22,16 @@ behaviors:
       zh: 搜索
       en: Search
     given:
-      zh: 用户打开列表
+      zh: 用户进入列表页
       en: User opens list
     when:
-      zh: 输入关键词
+      zh: 输入关键字
       en: Types keyword
     then:
-      zh: 返回结果
-      en: Returns results
+      zh: 尽快返回结果，体验好
+      en: Return results quickly with good UX
 acceptance:
   - id: A1
     behavior: B1
-    zh: 能搜到
-    en: Can search
+    zh: 体验好即可
+    en: UX should be good
