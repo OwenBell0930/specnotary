@@ -1,42 +1,43 @@
-# Human-readable spec — GENERATED VIEW
-# 人读规格 —— 由机读主源生成，勿长期手改后不同步回机读。
+# 可开发的需求规格说明书 — 人读体例（由机读生成；勿长期手改）
 
-<!-- generated_from: <path-to-machine-yaml> -->
+<!-- generated_from: templates/machine/... -->
 <!-- gate_mode: hard|degraded -->
 
-# {title}
+# {标题}
 
-## Scope / 范围
+> **文档类型**：可开发的需求规格说明书（人读视图）  
+> **规格 ID** · **状态** · **版本**
 
-### In scope / 范围内
+## 1. 范围
+### 1.1 本期做
+### 1.2 本期不做
+**对照基线：** …
 
-- …
+## 2. 角色与权限
+| 角色 | 说明 | 可执行动作 |
 
-### Out of scope / 范围外
+## 3. 状态与可操作性矩阵
+| 状态 | 是否允许某动作 | 说明 |
 
-- …
+## 4. 页面与交互
+### 4.1 线框（ASCII）
+### 4.2 控件规格
+| 控件 | 文案/占位 | 显示条件 | 交互 | 失败反馈 |
 
-### Open questions / 待决
+## 5. 主路径（编号步骤）
+### 步骤 n · 名称
+- Given / When / Then
+- 连带结果
 
-- …
+## 6. 默认值与提示文案
+| 项 | 值 |
+| 场景 | 文案原文 |
 
-## Actors & permissions / 角色与权限
+## 7. 验收标准（AC）
+- **AC-xx**：可观察结果（禁止「体验好」）
 
-…
+## 8. 信息待闭合项（Pending）
+| ID | 缺失信息 | 影响范围 | 责任人 | 状态 |
 
-## Object AI / 对象 AI（若启用）
-
-…
-
-## Behaviors / 行为
-
-### {behavior name}
-
-- **Given:** …
-- **When:** …
-- **Then:** …
-- **Defaults:** …
-
-## Acceptance / 验收
-
-- …
+## 9. 对象 AI（若启用）
+工具边界 / 失败兜底 / 人工接管

@@ -25,18 +25,17 @@ def main() -> int:
     if not isinstance(data, dict):
         print("FAIL: root must be object")
         return 1
-    # generation allowed even if FAIL; warn
-    errors = validate(data, {})
+    result = validate(data, {})
     md = render_human(data, source=str(src), gate_mode="hard")
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(md, encoding="utf-8")
     print(f"wrote: {out}")
-    if errors:
-        print("WARN: machine spec currently FAIL hard-gate; human view still generated")
-        for e in errors:
-            print(f"- {e}")
-        return 0
-    print("human view generated from PASS-ready or draft machine source")
+    if result["fail"]:
+        print("NOTE: source has FAIL items; human view still generated")
+        for e in result["fail"]:
+            print(f"FAIL: {e}")
+    for w in result["warn"]:
+        print(f"WARN: {w}")
     return 0
 
 

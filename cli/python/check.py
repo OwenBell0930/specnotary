@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
-import json
 import sys
 from pathlib import Path
 
@@ -25,22 +24,30 @@ def main() -> int:
         return 4 if "PyYAML" in str(exc) else 2
 
     project = load_project(ROOT)
-    # allow per-spec hint
     if isinstance(data, dict) and isinstance(data.get("project_hint"), dict):
         project = {**project, **data["project_hint"]}
 
-    errors = validate(data, project)
+    result = validate(data, project)
+    fails = result["fail"]
+    warns = result["warn"]
+
     print("gate_mode: hard")
     print("runtime: python")
     print(f"file: {path}")
     if project.get("object_ai_weight"):
         print(f"object_ai_weight: {project.get('object_ai_weight')}")
-    if errors:
+    print(f"FAIL_COUNT: {len(fails)}")
+    print(f"WARN_COUNT: {len(warns)}")
+    for e in fails:
+        print(f"FAIL: {e}")
+    for w in warns:
+        print(f"WARN: {w}")
+    if fails:
         print("RESULT: FAIL")
-        for e in errors:
-            print(f"- {e}")
         return 1
     print("RESULT: PASS")
+    if warns:
+        print("NOTE: PASS with WARN — resolve or accept explicitly before treating as入库级完成")
     return 0
 
 
