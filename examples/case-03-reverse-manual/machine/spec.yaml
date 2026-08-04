@@ -1,0 +1,70 @@
+spec_version: "0.1"
+id: SPEC-INVOICE-001
+title:
+  zh: 发票夹 · 上传与确认入账
+  en: Invoice Pocket · Upload & confirm posting
+status: ready
+in_scope:
+  - zh: 上传 PDF/图片发票；确认入账
+    en: Upload PDF/image invoices; confirm posting
+out_of_scope:
+  - zh: OCR 字段的自动纠错训练
+    en: Training OCR auto-correction models
+open_questions: []
+actors:
+  - id: staff
+    zh: 普通员工
+    en: Staff
+  - id: finance
+    zh: 财务
+    en: Finance
+permissions:
+  - actor: staff
+    can: [upload, view_own]
+  - actor: finance
+    can: [upload, view_own, confirm_posting]
+object_ai:
+  enabled: false
+defaults:
+  max_upload_mb: 10
+  allowed_types: [pdf, png, jpg, jpeg]
+empty_states:
+  upload_failed:
+    zh: 上传失败，请重试
+    en: Upload failed. Please retry.
+behaviors:
+  - id: B1
+    name:
+      zh: 上传发票
+      en: Upload invoice
+    given:
+      zh: 用户已登录
+      en: User signed in
+    when:
+      zh: 选择允许类型的文件并上传
+      en: Selects an allowed file and uploads
+    then:
+      zh: 成功则进入待确认；失败展示 upload_failed；超过 10MB 拒绝并说明大小限制
+      en: On success go to pending-confirm; on failure show upload_failed; over 10MB reject with size limit message
+  - id: B2
+    name:
+      zh: 确认入账
+      en: Confirm posting
+    given:
+      zh: 用户为 finance，发票状态为待确认
+      en: User is finance and invoice is pending-confirm
+    when:
+      zh: 点击确认入账
+      en: Clicks confirm posting
+    then:
+      zh: 状态变为已入账；金额字段只读
+      en: Status becomes posted; amount becomes read-only
+acceptance:
+  - id: A1
+    behavior: B1
+    zh: Given 员工 When 上传 11MB PDF Then 被拒绝且提示大小限制
+    en: Given staff When uploading 11MB PDF Then reject with size-limit message
+  - id: A2
+    behavior: B2
+    zh: Given 员工 When 点击确认入账 Then 无权限不改变状态
+    en: Given staff When clicking confirm posting Then deny and keep status unchanged

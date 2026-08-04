@@ -1,0 +1,64 @@
+spec_version: "0.1"
+id: SPEC-TICKET-001
+title:
+  zh: 工单列表搜索
+  en: Ticket list search
+status: ready
+in_scope:
+  - zh: 按工单标题、工单号模糊搜索
+    en: Fuzzy search by ticket title and ticket id
+  - zh: 管理员与座席不同可见范围
+    en: Different visibility for admin vs agent
+out_of_scope:
+  - zh: 语义推荐下一句话术
+    en: Semantic next-reply suggestions
+open_questions: []
+actors:
+  - id: agent
+    zh: 座席
+    en: Agent
+  - id: admin
+    zh: 管理员
+    en: Admin
+permissions:
+  - actor: agent
+    can: [search_own_queue]
+  - actor: admin
+    can: [search_all]
+object_ai:
+  enabled: false
+defaults:
+  page_size: 20
+  search_match: fuzzy
+  search_fields: [title, ticket_id]
+  timeout_ms: 2000
+empty_states:
+  no_match:
+    zh: 没有符合条件的工单。
+    en: No tickets match your filters.
+  forbidden:
+    zh: 你无权查看该工单。
+    en: You are not allowed to view this ticket.
+behaviors:
+  - id: B1
+    name:
+      zh: 搜索工单
+      en: Search tickets
+    given:
+      zh: 用户已登录
+      en: User signed in
+    when:
+      zh: 提交关键词搜索
+      en: Submits keyword search
+    then:
+      zh: 仅返回有权查看的工单；默认 fuzzy 匹配 title 与 ticket_id；分页 20；超时返回明确错误码 SEARCH_TIMEOUT
+      en: Return only permitted tickets; fuzzy match title & ticket_id; page size 20; on timeout return SEARCH_TIMEOUT
+acceptance:
+  - id: A1
+    behavior: B1
+    zh: Given 座席 When 搜索他人队列工单号 Then 不返回该单并展示 forbidden 或相当于无权限的空态
+    en: Given agent When searching another queue's ticket id Then do not return it; show forbidden or equivalent
+  - id: A2
+    behavior: B1
+    zh: Given 管理员 When 关键词无匹配 Then 2s 内展示 no_match
+    en: Given admin When no keyword match Then show no_match within 2s

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 420" width="1280" height="420">
+<defs>
+  <filter id="shadow" x="-2%" y="-2%" width="104%" height="104%">
+    <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.10"/>
+  </filter>
+  <marker id="arrow" markerWidth="9" markerHeight="7" refX="9" refY="3.5" orient="auto">
+    <polygon points="0 0, 9 3.5, 0 7" fill="#0B6BCB"/>
+  </marker>
+  <marker id="arrow-green" markerWidth="9" markerHeight="7" refX="9" refY="3.5" orient="auto">
+    <polygon points="0 0, 9 3.5, 0 7" fill="#159947"/>
+  </marker>
+  <marker id="arrow-red" markerWidth="9" markerHeight="7" refX="9" refY="3.5" orient="auto">
+    <polygon points="0 0, 9 3.5, 0 7" fill="#DC2626"/>
+  </marker>
+</defs>
+<rect width="1280" height="420" fill="#0B1220"/>
+<text x="640" y="36" text-anchor="middle" fill="#FFFFFF" font-family="Helvetica Neue,Arial,sans-serif" font-size="22" font-weight="700">CLI preview / 命令行预览</text><rect x="80" y="70" width="1120" height="300" rx="14" fill="#020617" stroke="#334155" stroke-width="2"/><text x="110" y="110" fill="#93C5FD" font-family="Menlo,Consolas,monospace" font-size="16">$ ./cli/run-check.sh examples/case-02-bad-prd/machine/spec.yaml</text><text x="110" y="142" fill="#94A3B8" font-family="Menlo,Consolas,monospace" font-size="16">spec-kit: using runtime=python</text><text x="110" y="174" fill="#FBBF24" font-family="Menlo,Consolas,monospace" font-size="16">gate_mode: hard</text><text x="110" y="206" fill="#F87171" font-family="Menlo,Consolas,monospace" font-size="16">RESULT: FAIL</text><text x="110" y="238" fill="#FCA5A5" font-family="Menlo,Consolas,monospace" font-size="16">- missing defaults for behavior B1</text><text x="110" y="270" fill="#FCA5A5" font-family="Menlo,Consolas,monospace" font-size="16">- empty_state not defined</text><text x="110" y="302" fill="#93C5FD" font-family="Menlo,Consolas,monospace" font-size="16">$ ./cli/run-check.sh examples/case-02-bad-prd/machine/spec.fixed.yaml</text><text x="110" y="334" fill="#4ADE80" font-family="Menlo,Consolas,monospace" font-size="16">RESULT: PASS</text></svg>

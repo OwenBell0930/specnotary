@@ -1,0 +1,37 @@
+spec_version: "0.1"
+id: SPEC-TICKET-BAD
+title:
+  zh: 智能工单搜索（不合格机读稿 · 演示用）
+  en: Smart ticket search (intentionally incomplete)
+status: draft
+in_scope:
+  - zh: 搜索工单
+    en: Search tickets
+out_of_scope: []
+open_questions:
+  - id: Q1
+    zh: 搜索字段与匹配方式未定
+    en: Search fields and match mode undecided
+actors: []
+permissions: []
+object_ai:
+  enabled: false
+behaviors:
+  - id: B1
+    name:
+      zh: 搜索
+      en: Search
+    given:
+      zh: 用户打开列表
+      en: User opens list
+    when:
+      zh: 输入关键词
+      en: Types keyword
+    then:
+      zh: 返回结果
+      en: Returns results
+acceptance:
+  - id: A1
+    behavior: B1
+    zh: 能搜到
+    en: Can search
