@@ -1,9 +1,11 @@
-# Examples index / 案例索引
+# Examples / 案例索引
 
-| Case | Story | Hard gate |
-|------|-------|-----------|
-| [case-01-raw-material](case-01-raw-material/) | 立项原料 → 可开发规格 | PASS |
-| [case-02-bad-prd](case-02-bad-prd/) | 假详细 PRD → FAIL → 修好 PASS | FAIL then PASS |
-| [case-03-reverse-manual](case-03-reverse-manual/) | 手册反推 + 对象 AI 高权重 | PASS |
+主题：**电商订单 · 未发货自助取消**（虚构脱敏）
 
-All examples are fictional and desensitized.
+| Case | Story | Gate |
+|------|-------|------|
+| [case-order-cancel-raw](case-order-cancel-raw/) | 运营诉求原料 → 可开发规格 | PASS |
+| [case-order-cancel-bad](case-order-cancel-bad/) | 假详细 PRD → FAIL → 修好 | FAIL → PASS |
+| [case-order-cancel-ops-faq](case-order-cancel-ops-faq/) | 客服 FAQ 反推 | PASS |
+
+正式产出名称：**可开发的需求规格说明书**（机读主源 + 人读视图）。

@@ -1,161 +1,137 @@
 # Spec Kit
 
-**Machine-first specs that humans can still read.**  
-**机读为主源的可开发规格脚手架** — by OwenBell
+**可开发的需求规格说明书** 工具包 — machine-first · human-readable · CLI-gated  
+by **OwenBell**
 
-[![gate](https://img.shields.io/badge/gate-hard%20CLI-0B6BCB)](#)
-[![runtime](https://img.shields.io/badge/runtime-python3%20%7C%20node-159947)](#)
-[![lang](https://img.shields.io/badge/docs-zh%20%2B%20en-D97706)](#)
-
-> Turn messy product inputs into **dev-ready** specs: YAML/JSON source of truth → generated Markdown → CLI hard gate.  
-> 把立项书、假详细 PRD、用户手册等，收成**可开发**规格：机读主源 → 生成人读 → CLI 硬门禁。
-
----
-
-## Why you might stay / 为什么值得看下去
-
-大多数「PRD 模板」只有文档。Spec Kit 多了三样真东西：
-
-1. **机读主源**（优先 YAML）——自动化与 Agent 的唯一真相  
-2. **人读投影**——给评审用，由机读生成，禁止长期只改人读  
-3. **CLI 硬门禁**——本地一条命令 PASS/FAIL（Python 或 Node 都行）
+[![dev-ready](https://img.shields.io/badge/output-%E5%8F%AF%E5%BC%80%E5%8F%91%E9%9C%80%E6%B1%82%E8%A7%84%E6%A0%BC-0B6BCB)](#)
+[![ecommerce](https://img.shields.io/badge/showcase-%E7%94%B5%E5%95%86%E8%AE%A2%E5%8D%95%E5%8F%96%E6%B6%88-159947)](#)
+[![runtime](https://img.shields.io/badge/CLI-python3%20%7C%20node-64748B)](#)
 
 <p align="center">
-  <img src="docs/assets/flow.svg" alt="Spec Kit main flow" width="100%" />
+  <img src="docs/assets/hero-order-spec.png" alt="Spec Kit hero — from vague order notes to structured cancel specs" width="100%" />
 </p>
+
+### 一句话卖点
+
+> 别再让研发靠猜。把「取消订单要智能一点」这种假详细，变成**状态、权限、退款 SLA、库存回库**都写死的  
+> **可开发的需求规格说明书**（机读主源 + 人读说明书 + 本地硬门禁）。
+
+英文同义：**Dev-ready Requirements Specification** — not another fluffy PRD template pack.
 
 ---
 
-## 30-second tour / 30 秒看懂仓库
+## 这是给谁的 / Who it's for
+
+| 你是… | 你会得到… |
+|--------|-----------|
+| ToB / 电商 / 交易域产品 | 能直接丢给研发开干的取消/履约类规格骨架 |
+| 用 Cursor / Agent 写需求的人 | 机读 YAML 当唯一真相，减少模型瞎补业务规则 |
+| 讨厌返工的人 | `PASS/FAIL` 门禁：缺角色、缺默认值、空话 then → 直接红灯 |
+
+**不是什么：** 完整商业 PRD 百科（背景故事、GTM、融资叙事这里不主攻）。上游 PRD/工单/FAQ 当**原料**；本仓库产出的是**规格层**。
+
+---
+
+## 先看效果：电商「未发货取消」
+
+真实团队天天吵的模块。我们用**虚构自营商城**跑通三条路径：原料 → 假详细被拦 → FAQ 反推。
 
 <p align="center">
-  <img src="docs/assets/architecture.svg" alt="Repo architecture" width="100%" />
+  <img src="docs/assets/before-after-order-cancel.png" alt="Before vs after order-cancel specification quality" width="100%" />
 </p>
 
-| Path | What |
-|------|------|
-| `templates/` | 机读 / 人读模板 |
-| `examples/case-*` | **三个可点开的案例**（原料 / 坏稿 / 反推） |
-| `cli/` | `run-check.sh` · `run-generate-human.sh` |
-| `skills/` | Cursor Skill（辅：起草与降级） |
-| `docs/` | 可开发定义、门禁模式、评分表 |
+### 假详细 vs 可开发（同一功能）
+
+| | 假详细（会 FAIL） | 可开发规格（会 PASS） |
+|--|------------------|----------------------|
+| 状态 | 「能取消就取消」 | `unpaid` / `paid_unshipped` 可自助；`fulfilling`/`shipped` 禁止 |
+| 退款 | 「尽快退款」 | 原路退回；**2 小时内**进度可查 |
+| 库存 | 「要正确」 | 取消成功 **立即回库** |
+| 券 | 没写 | 待支付取消释放锁券；已支付取消**不自动回券** |
+| 风控 | 没写 | 命中风控 → 禁止自助 + 固定文案 |
+| 验收 | 「体验好」 | Given/When/Then 对到状态与退款单 |
+
+<p align="center">
+  <img src="docs/assets/machine-to-human.png" alt="Machine YAML becomes human specification document" width="100%" />
+</p>
+
+**机读是合同，人读是说明书。** 改规则只改 YAML，再生成 Markdown——禁止两套长期分叉。
 
 ---
 
-## Quick start / 快速开始
+## 30 秒上手
 
 ```bash
-# 1) clone or open this folder
 cd spec-kit
 
-# 2) hard gate（自动检测 python3 或 node）
-./cli/run-check.sh examples/case-01-raw-material/machine/spec.yaml
+# 硬门禁：修好的订单取消规格
+./cli/run-check.sh examples/case-order-cancel-raw/machine/spec.yaml
+# → RESULT: PASS
 
-# 3) 从机读生成人读
-./cli/run-generate-human.sh examples/case-01-raw-material/machine/spec.yaml \
-  examples/case-01-raw-material/human/spec.md
+# 假详细：看门禁怎么红灯
+./cli/run-check.sh examples/case-order-cancel-bad/machine/spec.yaml
+# → RESULT: FAIL
 
-# 4) 跑全部示例测试
+# 生成人读《可开发的需求规格说明书》视图
+./cli/run-generate-human.sh examples/case-order-cancel-raw/machine/spec.yaml \
+  examples/case-order-cancel-raw/human/spec.md
+
 python3 tests/test_cli.py
 ```
 
-Node 用户若检查 YAML：`cd cli/node && npm i`
-
-没有 Python/Node？用 `skills/SKILL.md` **降级**检查，结果必须标 `gate_mode: degraded`（不能冒充硬门禁）。
-
-<p align="center">
-  <img src="docs/assets/cli-preview.svg" alt="CLI preview" width="100%" />
-</p>
+Node 跑 YAML：`cd cli/node && npm i`  
+没有运行时：用 `skills/` **降级**（必须标 `degraded`，不能冒充硬门禁）。
 
 ---
 
-## Showcase cases / 案例展示
+## 案例库（电商订单取消）
 
-### Case 01 — 需求原料 → 可开发规格
+### Case A — 运营诉求原料 → PASS
 
-**输入：** 虚构立项摘录（找合同 PDF 太慢）  
-**输出：** 搜索字段、权限、空态文案、并发重建上限都写死  
+从「客服被取消工单淹没」的约束清单，落到状态机与退款 SLA。
 
-| | |
-|-|-|
-| 原料 | [`examples/case-01-raw-material/input/charter.zh.txt`](examples/case-01-raw-material/input/charter.zh.txt) |
-| 机读 | [`examples/case-01-raw-material/machine/spec.yaml`](examples/case-01-raw-material/machine/spec.yaml) |
-| 人读 | 运行 `run-generate-human.sh` 生成到 `human/spec.md` |
+- 原料：[`examples/case-order-cancel-raw/input/ops-request.zh.txt`](examples/case-order-cancel-raw/input/ops-request.zh.txt)
+- 机读：[`examples/case-order-cancel-raw/machine/spec.yaml`](examples/case-order-cancel-raw/machine/spec.yaml)
 
-```bash
-./cli/run-check.sh examples/case-01-raw-material/machine/spec.yaml
-# → RESULT: PASS
-```
+### Case B — 假详细 PRD → FAIL → 修好 PASS
 
----
+- 坏稿：[`examples/case-order-cancel-bad/input/bad-prd.zh.md`](examples/case-order-cancel-bad/input/bad-prd.zh.md)
+- FAIL 机读：[`.../machine/spec.yaml`](examples/case-order-cancel-bad/machine/spec.yaml)
+- PASS 机读：[`.../machine/spec.fixed.yaml`](examples/case-order-cancel-bad/machine/spec.fixed.yaml)
 
-### Case 02 — 假详细 PRD → 拦住 → 修好
+### Case C — 客服 FAQ 事后反推
 
-**输入：**「支持智能搜索，体验要好」——像规格，其实不可开发  
+把「为什么点不了取消 / 钱何时回来」收成同一套规格字段（含已支付取消不回券）。
 
-<p align="center">
-  <img src="docs/assets/before-after.svg" alt="Before after fake detailed PRD" width="100%" />
-</p>
-
-| 版本 | 文件 | 硬门禁 |
-|------|------|--------|
-| 坏稿机读 | [`machine/spec.yaml`](examples/case-02-bad-prd/machine/spec.yaml) | **FAIL**（缺 actors/defaults，then 过空） |
-| 修好机读 | [`machine/spec.fixed.yaml`](examples/case-02-bad-prd/machine/spec.fixed.yaml) | **PASS** |
-| 原文 | [`input/bad-prd.zh.md`](examples/case-02-bad-prd/input/bad-prd.zh.md) | — |
-
-```bash
-./cli/run-check.sh examples/case-02-bad-prd/machine/spec.yaml
-# → RESULT: FAIL
-./cli/run-check.sh examples/case-02-bad-prd/machine/spec.fixed.yaml
-# → RESULT: PASS
-```
-
-这就是「门禁」：不是口号，是命令行红绿。
+- FAQ：[`examples/case-order-cancel-ops-faq/input/cs-faq.zh.txt`](examples/case-order-cancel-ops-faq/input/cs-faq.zh.txt)
+- 机读：[`examples/case-order-cancel-ops-faq/machine/spec.yaml`](examples/case-order-cancel-ops-faq/machine/spec.yaml)
 
 ---
 
-### Case 03 — 用户手册反推（对象 AI 权重高）
+## 你带走的能力
 
-**输入：** 报销助手手册（OCR + 置信度 + 审批）  
-**机读：** `object_ai.enabled=true`，置信度 &lt; 0.7 强制人工；币种锁定 CNY  
+1. **可开发的需求规格说明书**双语骨架（机读 YAML 优先，人读 MD 生成）  
+2. **硬门禁 CLI**（Python / Node 自适应）  
+3. **电商级示例**而不是玩具待办 / 书架 demo  
+4. **Skill 辅线**：起草与无运行时降级  
 
-| | |
-|-|-|
-| 手册摘录 | [`input/manual.zh.txt`](examples/case-03-reverse-manual/input/manual.zh.txt) |
-| 机读 | [`machine/spec.yaml`](examples/case-03-reverse-manual/machine/spec.yaml) |
-
-```bash
-./cli/run-check.sh examples/case-03-reverse-manual/machine/spec.yaml
-# → RESULT: PASS（project_hint.object_ai_weight=high）
-```
+原则速查：[`docs/what-is-dev-ready.md`](docs/what-is-dev-ready.md) · [`docs/gate-modes.md`](docs/gate-modes.md) · [`docs/skill-boundary.md`](docs/skill-boundary.md)
 
 ---
 
-## Core rules / 核心规则（短）
+## 定位一句话（避免误会）
 
-| 规则 | 说明 |
+| 产物 | 定位 |
 |------|------|
-| 机读为准 | 人读由机读生成；禁止长期只改人读 |
-| 优先 YAML | 亦支持 JSON |
-| 双运行时 | 有 `python3` 或 `node` 用硬门禁；都没有 → Skill 降级 |
-| 对象 AI | 产品里的 AI 章节；权重由声明/LLM 判断；与「写作助手」不是一回事 |
-| 上传公开 | 若发 GitHub：走九步复核；上传即公开 |
-
-详解：[`docs/what-is-dev-ready.md`](docs/what-is-dev-ready.md) · [`docs/gate-modes.md`](docs/gate-modes.md) · [`docs/skill-boundary.md`](docs/skill-boundary.md)
+| 机读 YAML/JSON | 可开发需求规格的**主源 / 合同** |
+| 人读 Markdown | 同一规格的**说明书视图**（给评审与研发阅读） |
+| 上游 PRD / 工单 / FAQ | **输入原料**，不是本工具的主产出名 |
 
 ---
 
-## Project declaration / 项目声明
+## 状态
 
-```bash
-cp project.example.yaml project.yaml
-# edit object_ai_weight: low | medium | high
-```
+本地建设中。示例为虚构电商，已脱敏。  
+HiDream 内网文生图服务若不可用，主页配图使用备用高质量生成图。  
 
----
-
-## Status / 状态
-
-本地建设中的工程资产。示例均为**虚构脱敏**业务，不涉及真实客户与未授权材料。
-
-MIT-spirited personal toolkit — attribution: **OwenBell**.
+**OwenBell** · Spec Kit · 上传 GitHub 前仍须九步复核（上传即公开）。

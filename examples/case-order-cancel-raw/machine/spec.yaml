@@ -1,0 +1,120 @@
+spec_version: "0.1"
+id: SPEC-ORDER-CANCEL-001
+title:
+  zh: 电商订单 · 未发货自助取消
+  en: Commerce order · Buyer self-cancel before shipment
+status: ready
+in_scope:
+  - zh: 待支付订单买家自助取消
+    en: Buyer self-cancel for unpaid orders
+  - zh: 已支付未发货订单买家自助取消并原路退款、库存回库
+    en: Buyer self-cancel for paid-unshipped orders with original-path refund and inventory release
+  - zh: 履约中/已发货不可自助取消（引导售后或客服）
+    en: Fulfilling/shipped orders cannot self-cancel (route to after-sales/CS)
+out_of_scope:
+  - zh: 部分取消、改收货地址、跨境税费、订阅购
+    en: Partial cancel, address change, cross-border tax, subscriptions
+open_questions: []
+actors:
+  - id: buyer
+    zh: 买家
+    en: Buyer
+  - id: seller_ops
+    zh: 商家运营
+    en: Seller ops
+  - id: cs_agent
+    zh: 客服
+    en: Customer service
+  - id: risk_engine
+    zh: 风控引擎
+    en: Risk engine
+permissions:
+  - actor: buyer
+    can: [cancel_unpaid, cancel_paid_unshipped]
+  - actor: cs_agent
+    can: [force_cancel_with_reason]
+  - actor: seller_ops
+    can: [view_cancel_logs]
+defaults:
+  refund_path: original
+  refund_visible_sla_hours: 2
+  inventory_release: immediate_on_cancel_success
+  coupon_release_on_unpaid_cancel: true
+  risk_block_self_cancel: true
+order_states:
+  allowed_self_cancel: [unpaid, paid_unshipped]
+  blocked_self_cancel: [fulfilling, shipped, completed, cancelled]
+empty_states:
+  not_allowed:
+    zh: 当前订单状态不支持自助取消，请联系客服或去售后中心
+    en: This order cannot be self-cancelled. Contact CS or use after-sales.
+  risk_blocked:
+    zh: 订单存在风险控制，暂不可自助取消
+    en: Risk controls block self-cancel for this order.
+  refund_pending:
+    zh: 取消成功，退款处理中，预计可在 2 小时内查询到账进度
+    en: Cancelled. Refund in progress; status visible within 2 hours.
+object_ai:
+  enabled: false
+  tools_boundary: []
+  failure_fallback: ""
+  human_takeover_when: []
+  unacceptable_outputs: []
+behaviors:
+  - id: B1
+    name:
+      zh: 取消待支付订单
+      en: Cancel unpaid order
+    given:
+      zh: 买家登录且订单状态=unpaid，风控未拦截
+      en: Buyer signed in, order=unpaid, not risk-blocked
+    when:
+      zh: 买家确认取消
+      en: Buyer confirms cancel
+    then:
+      zh: 订单→cancelled；释放已锁优惠券；不产生退款单；库存若预占则释放
+      en: Order→cancelled; release locked coupon; no refund slip; release held inventory if any
+  - id: B2
+    name:
+      zh: 取消已支付未发货订单
+      en: Cancel paid unshipped order
+    given:
+      zh: 订单状态=paid_unshipped，风控未拦截，买家为下单人
+      en: Order=paid_unshipped, not risk-blocked, actor is order owner
+    when:
+      zh: 买家确认取消
+      en: Buyer confirms cancel
+    then:
+      zh: 订单→cancelled；创建原路退款单；库存立即回库；页面展示 refund_pending 文案；2 小时内退款进度可查
+      en: Order→cancelled; original-path refund created; inventory released now; show refund_pending; refund progress visible within 2h
+  - id: B3
+    name:
+      zh: 履约中拦截自助取消
+      en: Block self-cancel when fulfilling
+    given:
+      zh: 订单状态=fulfilling 或 shipped
+      en: Order is fulfilling or shipped
+    when:
+      zh: 买家点击取消
+      en: Buyer taps cancel
+    then:
+      zh: 不改变订单状态；展示 not_allowed；提供客服/售后入口
+      en: No state change; show not_allowed; offer CS/after-sales entry
+acceptance:
+  - id: A1
+    behavior: B1
+    zh: Given unpaid 订单 When 取消成功 Then 状态为 cancelled 且无退款单且优惠券可再次使用
+    en: Given unpaid order When cancel succeeds Then status cancelled, no refund slip, coupon reusable
+  - id: A2
+    behavior: B2
+    zh: Given paid_unshipped When 取消成功 Then 库存 SKU 可用量 +1（单件单）且退款单存在且路径=original
+    en: Given paid_unshipped When cancel succeeds Then inventory +1 for single-qty order and refund slip exists with path=original
+  - id: A3
+    behavior: B3
+    zh: Given fulfilling When 点击取消 Then 仍为 fulfilling 且看到 not_allowed
+    en: Given fulfilling When tapping cancel Then still fulfilling and see not_allowed
+project_hint:
+  object_ai_weight: low
+  object_ai_notes:
+    zh: 本期无模型决策，纯状态机与支付/库存联动
+    en: No model decisions this release; state machine + payment/inventory

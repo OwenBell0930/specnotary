@@ -1,0 +1,37 @@
+spec_version: "0.1"
+id: SPEC-ORDER-CANCEL-BAD
+title:
+  zh: 订单取消（假详细）
+  en: Order cancel (fake-detailed)
+status: ready
+in_scope:
+  - zh: 用户取消订单
+    en: User cancels order
+out_of_scope: []
+open_questions:
+  - id: Q1
+    zh: 哪些状态能取消？退款多久到？
+    en: Which states? Refund SLA?
+actors: []
+permissions: []
+object_ai:
+  enabled: false
+behaviors:
+  - id: B1
+    name:
+      zh: 取消订单
+      en: Cancel order
+    given:
+      zh: 用户进入订单详情
+      en: User opens order detail
+    when:
+      zh: 点击取消
+      en: Taps cancel
+    then:
+      zh: 智能判断并尽快退款，体验好，库存正确
+      en: Smartly decide, refund quickly, good UX, correct inventory
+acceptance:
+  - id: A1
+    behavior: B1
+    zh: 体验好且尽量快
+    en: Good UX and as fast as possible
