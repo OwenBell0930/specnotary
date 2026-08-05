@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 280" width="960" height="280" role="img" aria-label="Input Process Output">
+  <defs>
+    <style>
+      .label { font-family: "Hiragino Maru Gothic ProN", "Yu Gothic", "PingFang SC", "Helvetica Neue", Arial, sans-serif; }
+    </style>
+  </defs>
+
+  <!-- soft paper bg -->
+  <rect width="960" height="280" rx="20" fill="#FFFCF7"/>
+  <rect x="8" y="8" width="944" height="264" rx="16" fill="none" stroke="#E8E0D5" stroke-width="1.5" stroke-dasharray="4 6"/>
+
+  <!-- title -->
+  <text x="480" y="36" text-anchor="middle" class="label" fill="#8B7355" font-size="13">输入 · 处理 · 输出</text>
+
+  <!-- INPUT card -->
+  <rect x="40" y="60" width="220" height="170" rx="18" fill="#FFF5F0" stroke="#E8A598" stroke-width="2"/>
+  <!-- doodle: messy notes -->
+  <rect x="70" y="88" width="70" height="52" rx="4" fill="#FFE8C8" stroke="#D4A574" stroke-width="1.5" transform="rotate(-6 105 114)"/>
+  <rect x="115" y="95" width="70" height="52" rx="4" fill="#FFD6E0" stroke="#D4899A" stroke-width="1.5" transform="rotate(5 150 121)"/>
+  <line x1="80" y1="108" x2="125" y2="105" stroke="#C4A484" stroke-width="1.2"/>
+  <line x1="82" y1="118" x2="120" y2="116" stroke="#C4A484" stroke-width="1.2"/>
+  <line x1="125" y1="115" x2="170" y2="118" stroke="#C4899A" stroke-width="1.2"/>
+  <line x1="128" y1="125" x2="165" y2="128" stroke="#C4899A" stroke-width="1.2"/>
+  <!-- question mark doodle -->
+  <circle cx="210" cy="100" r="14" fill="none" stroke="#E8A598" stroke-width="1.8"/>
+  <text x="210" y="106" text-anchor="middle" class="label" fill="#E8A598" font-size="16" font-weight="700">?</text>
+  <text x="150" y="175" text-anchor="middle" class="label" fill="#B07A6A" font-size="15" font-weight="700">INPUT</text>
+  <text x="150" y="198" text-anchor="middle" class="label" fill="#9A7B6F" font-size="12">PRD / 工单 / FAQ</text>
+  <text x="150" y="216" text-anchor="middle" class="label" fill="#B9A090" font-size="11">含糊 · 假详细</text>
+
+  <!-- arrow 1 -->
+  <path d="M275 145 H330" stroke="#C4B5A5" stroke-width="2.2" stroke-linecap="round"/>
+  <polygon points="328,139 342,145 328,151" fill="#C4B5A5"/>
+
+  <!-- PROCESS card -->
+  <rect x="355" y="60" width="250" height="170" rx="18" fill="#F0F7F4" stroke="#7BAF9E" stroke-width="2"/>
+  <!-- doodle: gear-ish circle + checklist -->
+  <circle cx="420" cy="115" r="28" fill="none" stroke="#7BAF9E" stroke-width="2"/>
+  <circle cx="420" cy="115" r="12" fill="none" stroke="#7BAF9E" stroke-width="1.6"/>
+  <line x1="420" y1="87" x2="420" y2="95" stroke="#7BAF9E" stroke-width="2" stroke-linecap="round"/>
+  <line x1="420" y1="135" x2="420" y2="143" stroke="#7BAF9E" stroke-width="2" stroke-linecap="round"/>
+  <line x1="392" y1="115" x2="400" y2="115" stroke="#7BAF9E" stroke-width="2" stroke-linecap="round"/>
+  <line x1="440" y1="115" x2="448" y2="115" stroke="#7BAF9E" stroke-width="2" stroke-linecap="round"/>
+  <!-- tiny checklist -->
+  <rect x="465" y="92" width="100" height="14" rx="3" fill="#D8EDE4" stroke="#7BAF9E" stroke-width="1"/>
+  <rect x="465" y="112" width="100" height="14" rx="3" fill="#D8EDE4" stroke="#7BAF9E" stroke-width="1"/>
+  <rect x="465" y="132" width="80" height="14" rx="3" fill="#D8EDE4" stroke="#7BAF9E" stroke-width="1"/>
+  <path d="M470 98 L474 102 L482 94" fill="none" stroke="#5A9A86" stroke-width="1.6" stroke-linecap="round"/>
+  <path d="M470 118 L474 122 L482 114" fill="none" stroke="#5A9A86" stroke-width="1.6" stroke-linecap="round"/>
+  <text x="480" y="175" text-anchor="middle" class="label" fill="#5A8A7A" font-size="15" font-weight="700">PROCESS</text>
+  <text x="480" y="198" text-anchor="middle" class="label" fill="#6B9080" font-size="12">Spec Kit CLI + 模板</text>
+  <text x="480" y="216" text-anchor="middle" class="label" fill="#8AADA0" font-size="11">机读准据 · 门禁 · 生成</text>
+
+  <!-- arrow 2 -->
+  <path d="M620 145 H675" stroke="#C4B5A5" stroke-width="2.2" stroke-linecap="round"/>
+  <polygon points="673,139 687,145 673,151" fill="#C4B5A5"/>
+
+  <!-- OUTPUT card -->
+  <rect x="700" y="60" width="220" height="170" rx="18" fill="#F3F6FF" stroke="#8FA3D4" stroke-width="2"/>
+  <!-- doodle: neat blueprint sheet -->
+  <rect x="745" y="85" width="90" height="70" rx="5" fill="#FFFFFF" stroke="#8FA3D4" stroke-width="1.8"/>
+  <line x1="760" y1="102" x2="820" y2="102" stroke="#A8B8DC" stroke-width="1.5"/>
+  <line x1="760" y1="114" x2="815" y2="114" stroke="#A8B8DC" stroke-width="1.5"/>
+  <line x1="760" y1="126" x2="800" y2="126" stroke="#A8B8DC" stroke-width="1.5"/>
+  <rect x="760" y="136" width="40" height="10" rx="2" fill="#D6E0F5" stroke="#8FA3D4" stroke-width="1"/>
+  <!-- check badge -->
+  <circle cx="875" cy="100" r="16" fill="#E8F5E9" stroke="#7BAF9E" stroke-width="1.8"/>
+  <path d="M867 100 L873 106 L885 92" fill="none" stroke="#5A9A86" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="810" y="175" text-anchor="middle" class="label" fill="#6B7FA8" font-size="15" font-weight="700">OUTPUT</text>
+  <text x="810" y="198" text-anchor="middle" class="label" fill="#7A8BB0" font-size="12">可开发规格说明书</text>
+  <text x="810" y="216" text-anchor="middle" class="label" fill="#9AABC8" font-size="11">机读 + 人读施工图</text>
+</svg>
