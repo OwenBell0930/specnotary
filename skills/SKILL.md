@@ -10,12 +10,12 @@ description: >
 
 ## Rules
 
-1. **Machine source is authoritative.** Edit YAML/JSON machine specs first; generate human markdown from them.
-2. Prefer **YAML**. Use JSON only if the user requires it or YAML tooling is unavailable.
-3. Before claiming PASS: run `./cli/run-check.sh <file>` when `python3` or `node` exists.
-4. If neither runtime exists: say so, offer install guidance, then optional **degraded** check. Every degraded report must include `gate_mode: degraded` and must not be described as a hard gate.
-5. `object_ai_weight`: infer from inputs when clear; otherwise ask the user; write into `project.yaml`.
-6. Never long-term edit only the human doc.
+1. **Machine source is authoritative.** Edit YAML first; generate human 可开发的需求规格说明书 from it.
+2. Prefer **YAML**. Human view must include wireframe, controls table, state matrix, numbered steps, AC, Pending four-fields.
+3. Before claiming PASS: run `./cli/run-check.sh` — **FAIL must be 0**; WARN should be cleared or explicitly accepted.
+4. If no runtime: degraded Skill check with `gate_mode: degraded` only.
+5. Never long-term edit only the human doc.
+6. Do not copy proprietary scaffold/business PRDs into this repo; fictional examples only.
 
 ## Inputs you may accept
 
