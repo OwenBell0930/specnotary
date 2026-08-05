@@ -1,73 +1,99 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 280" width="960" height="280" role="img" aria-label="Input Process Output">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1040 420" width="1040" height="420" role="img" aria-label="Input Process Output bilingual">
   <defs>
     <style>
-      .label { font-family: "Hiragino Maru Gothic ProN", "Yu Gothic", "PingFang SC", "Helvetica Neue", Arial, sans-serif; }
+      .t { font-family: "Hiragino Maru Gothic ProN", "Yu Gothic", "PingFang SC", "Helvetica Neue", Arial, sans-serif; }
     </style>
+    <marker id="arr" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#C4B5A5"/>
+    </marker>
   </defs>
 
-  <!-- soft paper bg -->
-  <rect width="960" height="280" rx="20" fill="#FFFCF7"/>
-  <rect x="8" y="8" width="944" height="264" rx="16" fill="none" stroke="#E8E0D5" stroke-width="1.5" stroke-dasharray="4 6"/>
+  <!-- paper -->
+  <rect width="1040" height="420" rx="22" fill="#FFFCF7"/>
+  <rect x="10" y="10" width="1020" height="400" rx="18" fill="none" stroke="#E8E0D5" stroke-width="1.5" stroke-dasharray="4 6"/>
 
-  <!-- title -->
-  <text x="480" y="36" text-anchor="middle" class="label" fill="#8B7355" font-size="13">输入 · 处理 · 输出</text>
+  <text x="520" y="38" text-anchor="middle" class="t" fill="#8B7355" font-size="14" font-weight="700">输入 → 处理 → 输出  /  Input → Process → Output</text>
 
-  <!-- INPUT card -->
-  <rect x="40" y="60" width="220" height="170" rx="18" fill="#FFF5F0" stroke="#E8A598" stroke-width="2"/>
-  <!-- doodle: messy notes -->
-  <rect x="70" y="88" width="70" height="52" rx="4" fill="#FFE8C8" stroke="#D4A574" stroke-width="1.5" transform="rotate(-6 105 114)"/>
-  <rect x="115" y="95" width="70" height="52" rx="4" fill="#FFD6E0" stroke="#D4899A" stroke-width="1.5" transform="rotate(5 150 121)"/>
-  <line x1="80" y1="108" x2="125" y2="105" stroke="#C4A484" stroke-width="1.2"/>
-  <line x1="82" y1="118" x2="120" y2="116" stroke="#C4A484" stroke-width="1.2"/>
-  <line x1="125" y1="115" x2="170" y2="118" stroke="#C4899A" stroke-width="1.2"/>
-  <line x1="128" y1="125" x2="165" y2="128" stroke="#C4899A" stroke-width="1.2"/>
-  <!-- question mark doodle -->
-  <circle cx="210" cy="100" r="14" fill="none" stroke="#E8A598" stroke-width="1.8"/>
-  <text x="210" y="106" text-anchor="middle" class="label" fill="#E8A598" font-size="16" font-weight="700">?</text>
-  <text x="150" y="175" text-anchor="middle" class="label" fill="#B07A6A" font-size="15" font-weight="700">INPUT</text>
-  <text x="150" y="198" text-anchor="middle" class="label" fill="#9A7B6F" font-size="12">PRD / 工单 / FAQ</text>
-  <text x="150" y="216" text-anchor="middle" class="label" fill="#B9A090" font-size="11">含糊 · 假详细</text>
+  <!-- ===== INPUT column ===== -->
+  <text x="150" y="68" text-anchor="middle" class="t" fill="#B07A6A" font-size="13" font-weight="700">输入 Input</text>
 
-  <!-- arrow 1 -->
-  <path d="M275 145 H330" stroke="#C4B5A5" stroke-width="2.2" stroke-linecap="round"/>
-  <polygon points="328,139 342,145 328,151" fill="#C4B5A5"/>
+  <!-- PRD -->
+  <rect x="40" y="84" width="220" height="72" rx="14" fill="#FFF5F0" stroke="#E8A598" stroke-width="1.8"/>
+  <rect x="58" y="98" width="28" height="36" rx="3" fill="#FFE8C8" stroke="#D4A574" stroke-width="1.2" transform="rotate(-4 72 116)"/>
+  <text x="175" y="116" text-anchor="middle" class="t" fill="#9A5C4E" font-size="14" font-weight="700">PRD</text>
+  <text x="175" y="136" text-anchor="middle" class="t" fill="#B9A090" font-size="11">产品需求文档 · Product req.</text>
 
-  <!-- PROCESS card -->
-  <rect x="355" y="60" width="250" height="170" rx="18" fill="#F0F7F4" stroke="#7BAF9E" stroke-width="2"/>
-  <!-- doodle: gear-ish circle + checklist -->
-  <circle cx="420" cy="115" r="28" fill="none" stroke="#7BAF9E" stroke-width="2"/>
-  <circle cx="420" cy="115" r="12" fill="none" stroke="#7BAF9E" stroke-width="1.6"/>
-  <line x1="420" y1="87" x2="420" y2="95" stroke="#7BAF9E" stroke-width="2" stroke-linecap="round"/>
-  <line x1="420" y1="135" x2="420" y2="143" stroke="#7BAF9E" stroke-width="2" stroke-linecap="round"/>
-  <line x1="392" y1="115" x2="400" y2="115" stroke="#7BAF9E" stroke-width="2" stroke-linecap="round"/>
-  <line x1="440" y1="115" x2="448" y2="115" stroke="#7BAF9E" stroke-width="2" stroke-linecap="round"/>
-  <!-- tiny checklist -->
-  <rect x="465" y="92" width="100" height="14" rx="3" fill="#D8EDE4" stroke="#7BAF9E" stroke-width="1"/>
-  <rect x="465" y="112" width="100" height="14" rx="3" fill="#D8EDE4" stroke="#7BAF9E" stroke-width="1"/>
-  <rect x="465" y="132" width="80" height="14" rx="3" fill="#D8EDE4" stroke="#7BAF9E" stroke-width="1"/>
-  <path d="M470 98 L474 102 L482 94" fill="none" stroke="#5A9A86" stroke-width="1.6" stroke-linecap="round"/>
-  <path d="M470 118 L474 122 L482 114" fill="none" stroke="#5A9A86" stroke-width="1.6" stroke-linecap="round"/>
-  <text x="480" y="175" text-anchor="middle" class="label" fill="#5A8A7A" font-size="15" font-weight="700">PROCESS</text>
-  <text x="480" y="198" text-anchor="middle" class="label" fill="#6B9080" font-size="12">Spec Kit CLI + 模板</text>
-  <text x="480" y="216" text-anchor="middle" class="label" fill="#8AADA0" font-size="11">机读准据 · 门禁 · 生成</text>
+  <!-- Ticket -->
+  <rect x="40" y="172" width="220" height="72" rx="14" fill="#FFF5F0" stroke="#E8A598" stroke-width="1.8"/>
+  <rect x="58" y="188" width="34" height="28" rx="3" fill="#FFD6E0" stroke="#D4899A" stroke-width="1.2"/>
+  <line x1="64" y1="198" x2="86" y2="198" stroke="#D4899A" stroke-width="1.2"/>
+  <line x1="64" y1="206" x2="82" y2="206" stroke="#D4899A" stroke-width="1.2"/>
+  <text x="175" y="204" text-anchor="middle" class="t" fill="#9A5C4E" font-size="14" font-weight="700">工单 Ticket</text>
+  <text x="175" y="224" text-anchor="middle" class="t" fill="#B9A090" font-size="11">任务 / 缺陷单 · Work item</text>
 
-  <!-- arrow 2 -->
-  <path d="M620 145 H675" stroke="#C4B5A5" stroke-width="2.2" stroke-linecap="round"/>
-  <polygon points="673,139 687,145 673,151" fill="#C4B5A5"/>
+  <!-- FAQ -->
+  <rect x="40" y="260" width="220" height="72" rx="14" fill="#FFF5F0" stroke="#E8A598" stroke-width="1.8"/>
+  <circle cx="72" cy="296" r="14" fill="none" stroke="#E8A598" stroke-width="1.6"/>
+  <text x="72" y="301" text-anchor="middle" class="t" fill="#E8A598" font-size="14" font-weight="700">?</text>
+  <text x="175" y="292" text-anchor="middle" class="t" fill="#9A5C4E" font-size="14" font-weight="700">FAQ</text>
+  <text x="175" y="312" text-anchor="middle" class="t" fill="#B9A090" font-size="11">客服问答 · Support FAQ</text>
 
-  <!-- OUTPUT card -->
-  <rect x="700" y="60" width="220" height="170" rx="18" fill="#F3F6FF" stroke="#8FA3D4" stroke-width="2"/>
-  <!-- doodle: neat blueprint sheet -->
-  <rect x="745" y="85" width="90" height="70" rx="5" fill="#FFFFFF" stroke="#8FA3D4" stroke-width="1.8"/>
-  <line x1="760" y1="102" x2="820" y2="102" stroke="#A8B8DC" stroke-width="1.5"/>
-  <line x1="760" y1="114" x2="815" y2="114" stroke="#A8B8DC" stroke-width="1.5"/>
-  <line x1="760" y1="126" x2="800" y2="126" stroke="#A8B8DC" stroke-width="1.5"/>
-  <rect x="760" y="136" width="40" height="10" rx="2" fill="#D6E0F5" stroke="#8FA3D4" stroke-width="1"/>
-  <!-- check badge -->
-  <circle cx="875" cy="100" r="16" fill="#E8F5E9" stroke="#7BAF9E" stroke-width="1.8"/>
-  <path d="M867 100 L873 106 L885 92" fill="none" stroke="#5A9A86" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-  <text x="810" y="175" text-anchor="middle" class="label" fill="#6B7FA8" font-size="15" font-weight="700">OUTPUT</text>
-  <text x="810" y="198" text-anchor="middle" class="label" fill="#7A8BB0" font-size="12">可开发规格说明书</text>
-  <text x="810" y="216" text-anchor="middle" class="label" fill="#9AABC8" font-size="11">机读 + 人读施工图</text>
+  <text x="150" y="358" text-anchor="middle" class="t" fill="#C4A894" font-size="11">含糊 / 假详细 · Vague / fake-detailed</text>
+
+  <!-- fan-in lines to process -->
+  <path d="M260 120 H310 V210 H340" fill="none" stroke="#C4B5A5" stroke-width="1.8" marker-end="url(#arr)"/>
+  <path d="M260 208 H340" fill="none" stroke="#C4B5A5" stroke-width="1.8" marker-end="url(#arr)"/>
+  <path d="M260 296 H310 V210 H340" fill="none" stroke="#C4B5A5" stroke-width="1.8" marker-end="url(#arr)"/>
+
+  <!-- ===== PROCESS ===== -->
+  <text x="480" y="68" text-anchor="middle" class="t" fill="#5A8A7A" font-size="13" font-weight="700">处理 Process</text>
+  <rect x="350" y="100" width="260" height="200" rx="18" fill="#F0F7F4" stroke="#7BAF9E" stroke-width="2"/>
+
+  <!-- gear -->
+  <circle cx="480" cy="155" r="26" fill="none" stroke="#7BAF9E" stroke-width="2"/>
+  <circle cx="480" cy="155" r="10" fill="none" stroke="#7BAF9E" stroke-width="1.5"/>
+  <line x1="480" y1="129" x2="480" y2="136" stroke="#7BAF9E" stroke-width="2" stroke-linecap="round"/>
+  <line x1="480" y1="174" x2="480" y2="181" stroke="#7BAF9E" stroke-width="2" stroke-linecap="round"/>
+  <line x1="454" y1="155" x2="461" y2="155" stroke="#7BAF9E" stroke-width="2" stroke-linecap="round"/>
+  <line x1="499" y1="155" x2="506" y2="155" stroke="#7BAF9E" stroke-width="2" stroke-linecap="round"/>
+
+  <text x="480" y="210" text-anchor="middle" class="t" fill="#5A8A7A" font-size="15" font-weight="700">Spec Kit</text>
+  <text x="480" y="232" text-anchor="middle" class="t" fill="#6B9080" font-size="12">CLI · 模板 Scaffold · Skill</text>
+  <text x="480" y="256" text-anchor="middle" class="t" fill="#8AADA0" font-size="11">机读准据 · Gate · Generate</text>
+  <text x="480" y="276" text-anchor="middle" class="t" fill="#8AADA0" font-size="11">SSOT · FAIL/WARN · 人读生成</text>
+
+  <!-- fan-out -->
+  <path d="M610 160 H650 V120 H700" fill="none" stroke="#C4B5A5" stroke-width="1.8" marker-end="url(#arr)"/>
+  <path d="M610 200 H700" fill="none" stroke="#C4B5A5" stroke-width="1.8" marker-end="url(#arr)"/>
+  <path d="M610 240 H650 V280 H700" fill="none" stroke="#C4B5A5" stroke-width="1.8" marker-end="url(#arr)"/>
+
+  <!-- ===== OUTPUT column ===== -->
+  <text x="860" y="68" text-anchor="middle" class="t" fill="#6B7FA8" font-size="13" font-weight="700">输出 Output</text>
+
+  <!-- Machine YAML -->
+  <rect x="710" y="84" width="280" height="72" rx="14" fill="#F3F6FF" stroke="#8FA3D4" stroke-width="1.8"/>
+  <rect x="728" y="100" width="36" height="40" rx="3" fill="#FFFFFF" stroke="#8FA3D4" stroke-width="1.3"/>
+  <line x1="736" y1="112" x2="756" y2="112" stroke="#A8B8DC" stroke-width="1.2"/>
+  <line x1="736" y1="122" x2="752" y2="122" stroke="#A8B8DC" stroke-width="1.2"/>
+  <text x="880" y="116" text-anchor="middle" class="t" fill="#5A6F9A" font-size="14" font-weight="700">机读规格 Machine</text>
+  <text x="880" y="136" text-anchor="middle" class="t" fill="#9AABC8" font-size="11">YAML / JSON · 唯一准据 SSOT</text>
+
+  <!-- Human -->
+  <rect x="710" y="172" width="280" height="72" rx="14" fill="#F3F6FF" stroke="#8FA3D4" stroke-width="1.8"/>
+  <rect x="728" y="188" width="36" height="40" rx="3" fill="#FFFFFF" stroke="#8FA3D4" stroke-width="1.3"/>
+  <line x1="736" y1="200" x2="756" y2="200" stroke="#A8B8DC" stroke-width="1.2"/>
+  <line x1="736" y1="210" x2="750" y2="210" stroke="#A8B8DC" stroke-width="1.2"/>
+  <rect x="736" y="218" width="16" height="6" rx="1" fill="#D6E0F5"/>
+  <text x="880" y="204" text-anchor="middle" class="t" fill="#5A6F9A" font-size="14" font-weight="700">人读施工图 Human</text>
+  <text x="880" y="224" text-anchor="middle" class="t" fill="#9AABC8" font-size="11">线框·控件·AC · Construction view</text>
+
+  <!-- Gate report -->
+  <rect x="710" y="260" width="280" height="72" rx="14" fill="#F3F6FF" stroke="#8FA3D4" stroke-width="1.8"/>
+  <circle cx="746" cy="296" r="14" fill="#E8F5E9" stroke="#7BAF9E" stroke-width="1.5"/>
+  <path d="M739 296 L744 301 L755 288" fill="none" stroke="#5A9A86" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="880" y="292" text-anchor="middle" class="t" fill="#5A6F9A" font-size="14" font-weight="700">门禁结果 Gate</text>
+  <text x="880" y="312" text-anchor="middle" class="t" fill="#9AABC8" font-size="11">PASS / FAIL · WARN · Pending</text>
+
+  <text x="860" y="358" text-anchor="middle" class="t" fill="#A8B0C4" font-size="11">可开发的需求规格说明书 · Dev-ready spec</text>
 </svg>
