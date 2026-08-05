@@ -1,18 +1,52 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 560" width="1280" height="560">
-<defs>
-  <filter id="shadow" x="-2%" y="-2%" width="104%" height="104%">
-    <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.10"/>
-  </filter>
-  <marker id="arrow" markerWidth="9" markerHeight="7" refX="9" refY="3.5" orient="auto">
-    <polygon points="0 0, 9 3.5, 0 7" fill="#0B6BCB"/>
-  </marker>
-  <marker id="arrow-green" markerWidth="9" markerHeight="7" refX="9" refY="3.5" orient="auto">
-    <polygon points="0 0, 9 3.5, 0 7" fill="#159947"/>
-  </marker>
-  <marker id="arrow-red" markerWidth="9" markerHeight="7" refX="9" refY="3.5" orient="auto">
-    <polygon points="0 0, 9 3.5, 0 7" fill="#DC2626"/>
-  </marker>
-</defs>
-<rect width="1280" height="560" fill="#F8FAFC"/>
-<text x="640" y="42" text-anchor="middle" fill="#0F172A" font-family="Helvetica Neue,Arial,sans-serif" font-size="26" font-weight="700">Spec Kit Flow / 规格工程主流程</text><text x="640" y="72" text-anchor="middle" fill="#475569" font-family="Helvetica Neue,Arial,sans-serif" font-size="14" font-weight="400">Machine-first · Generate human view · Hard gate (CLI) or degraded Skill</text><rect x="40" y="130" width="200" height="100" rx="12" fill="#FFFFFF" stroke="#0B6BCB" stroke-width="2" filter="url(#shadow)"/><text x="140.0" y="172.0" text-anchor="middle" fill="#0F172A" font-family="Helvetica Neue,Arial,sans-serif" font-size="15" font-weight="700">1. Inputs</text><text x="140.0" y="194.0" text-anchor="middle" fill="#475569" font-family="Helvetica Neue,Arial,sans-serif" font-size="13">原料 / 坏稿 / 反推</text><rect x="300" y="130" width="200" height="100" rx="12" fill="#E8F3FF" stroke="#074A8C" stroke-width="2" filter="url(#shadow)"/><text x="400.0" y="172.0" text-anchor="middle" fill="#0F172A" font-family="Helvetica Neue,Arial,sans-serif" font-size="15" font-weight="700">2. Machine YAML</text><text x="400.0" y="194.0" text-anchor="middle" fill="#475569" font-family="Helvetica Neue,Arial,sans-serif" font-size="13">机读主源 · Source of truth</text><rect x="560" y="130" width="200" height="100" rx="12" fill="#FFFFFF" stroke="#0B6BCB" stroke-width="2" filter="url(#shadow)"/><text x="660.0" y="172.0" text-anchor="middle" fill="#0F172A" font-family="Helvetica Neue,Arial,sans-serif" font-size="15" font-weight="700">3. Human MD</text><text x="660.0" y="194.0" text-anchor="middle" fill="#475569" font-family="Helvetica Neue,Arial,sans-serif" font-size="13">人读投影 · Generated</text><rect x="820" y="130" width="200" height="100" rx="12" fill="#FFFFFF" stroke="#0B6BCB" stroke-width="2" filter="url(#shadow)"/><text x="920.0" y="172.0" text-anchor="middle" fill="#0F172A" font-family="Helvetica Neue,Arial,sans-serif" font-size="15" font-weight="700">4. CLI Gate</text><text x="920.0" y="194.0" text-anchor="middle" fill="#475569" font-family="Helvetica Neue,Arial,sans-serif" font-size="13">hard PASS/FAIL</text><rect x="1040" y="130" width="200" height="100" rx="12" fill="#FFFFFF" stroke="#0B6BCB" stroke-width="2" filter="url(#shadow)"/><text x="1140.0" y="172.0" text-anchor="middle" fill="#0F172A" font-family="Helvetica Neue,Arial,sans-serif" font-size="15" font-weight="700">5. Ready</text><text x="1140.0" y="194.0" text-anchor="middle" fill="#475569" font-family="Helvetica Neue,Arial,sans-serif" font-size="13">可开发 · Dev-ready</text><line x1="240" y1="180" x2="300" y2="180" stroke="#0B6BCB" stroke-width="2.5" marker-end="url(#arrow)"/><line x1="500" y1="180" x2="560" y2="180" stroke="#0B6BCB" stroke-width="2.5" marker-end="url(#arrow)"/><line x1="760" y1="180" x2="820" y2="180" stroke="#0B6BCB" stroke-width="2.5" marker-end="url(#arrow)"/><line x1="1020" y1="180" x2="1080" y2="180" stroke="#0B6BCB" stroke-width="2.5" marker-end="url(#arrow)"/><rect x="300" y="320" width="280" height="90" rx="12" fill="#FFF7ED" stroke="#D97706" stroke-width="2" filter="url(#shadow)"/><text x="440.0" y="357.0" text-anchor="middle" fill="#0F172A" font-family="Helvetica Neue,Arial,sans-serif" font-size="16" font-weight="700">Skill (optional)</text><text x="440.0" y="379.0" text-anchor="middle" fill="#475569" font-family="Helvetica Neue,Arial,sans-serif" font-size="13">起草机读 / 无运行时降级检查</text><rect x="700" y="320" width="280" height="90" rx="12" fill="#FFFFFF" stroke="#64748B" stroke-width="2" filter="url(#shadow)"/><text x="840.0" y="357.0" text-anchor="middle" fill="#0F172A" font-family="Helvetica Neue,Arial,sans-serif" font-size="16" font-weight="700">Runtime detect</text><text x="840.0" y="379.0" text-anchor="middle" fill="#475569" font-family="Helvetica Neue,Arial,sans-serif" font-size="13">python3 或 node；都没有→降级</text><line x1="440" y1="230" x2="440" y2="320" stroke="#D97706" stroke-width="2.5" marker-end="url(#arrow)"/><line x1="840" y1="230" x2="840" y2="320" stroke="#64748B" stroke-width="2.5" marker-end="url(#arrow)"/><text x="640" y="470" text-anchor="middle" fill="#475569" font-family="Helvetica Neue,Arial,sans-serif" font-size="15" font-weight="400">核心：自动化以机读为准；人读由机读生成，禁止长期只改人读</text></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 560" width="1280" height="560" role="img" aria-label="Spec Kit flow">
+  <defs>
+    <filter id="shadow" x="-2%" y="-2%" width="104%" height="104%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.10"/>
+    </filter>
+    <marker id="arrow" markerWidth="9" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 9 3.5, 0 7" fill="#0B6BCB"/>
+    </marker>
+  </defs>
+  <rect width="1280" height="560" fill="#F8FAFC"/>
+  <text x="640" y="42" text-anchor="middle" fill="#0F172A" font-family="Helvetica Neue,Arial,sans-serif" font-size="26" font-weight="700">Spec Kit Flow · 规格工程主流程</text>
+  <text x="640" y="72" text-anchor="middle" fill="#64748B" font-family="Helvetica Neue,Arial,sans-serif" font-size="14">原料 → 机读主源 → 人读施工图 → 门禁 → 可开发</text>
+
+  <rect x="36" y="130" width="220" height="110" rx="14" fill="#FFFFFF" stroke="#0B6BCB" stroke-width="2" filter="url(#shadow)"/>
+  <text x="146" y="178" text-anchor="middle" fill="#0F172A" font-family="Helvetica Neue,Arial,sans-serif" font-size="16" font-weight="700">1. Inputs</text>
+  <text x="146" y="206" text-anchor="middle" fill="#64748B" font-family="Helvetica Neue,Arial,sans-serif" font-size="13">原料 / 坏稿 / FAQ</text>
+
+  <rect x="286" y="130" width="220" height="110" rx="14" fill="#E8F3FF" stroke="#074A8C" stroke-width="2" filter="url(#shadow)"/>
+  <text x="396" y="178" text-anchor="middle" fill="#0F172A" font-family="Helvetica Neue,Arial,sans-serif" font-size="16" font-weight="700">2. Machine</text>
+  <text x="396" y="206" text-anchor="middle" fill="#64748B" font-family="Helvetica Neue,Arial,sans-serif" font-size="13">YAML 真相源</text>
+
+  <rect x="536" y="130" width="220" height="110" rx="14" fill="#FFFFFF" stroke="#0B6BCB" stroke-width="2" filter="url(#shadow)"/>
+  <text x="646" y="178" text-anchor="middle" fill="#0F172A" font-family="Helvetica Neue,Arial,sans-serif" font-size="16" font-weight="700">3. Human</text>
+  <text x="646" y="206" text-anchor="middle" fill="#64748B" font-family="Helvetica Neue,Arial,sans-serif" font-size="13">生成施工图视图</text>
+
+  <rect x="786" y="130" width="220" height="110" rx="14" fill="#FFFFFF" stroke="#0B6BCB" stroke-width="2" filter="url(#shadow)"/>
+  <text x="896" y="178" text-anchor="middle" fill="#0F172A" font-family="Helvetica Neue,Arial,sans-serif" font-size="16" font-weight="700">4. Gate</text>
+  <text x="896" y="206" text-anchor="middle" fill="#64748B" font-family="Helvetica Neue,Arial,sans-serif" font-size="13">FAIL / WARN</text>
+
+  <rect x="1036" y="130" width="208" height="110" rx="14" fill="#ECFDF5" stroke="#159947" stroke-width="2" filter="url(#shadow)"/>
+  <text x="1140" y="178" text-anchor="middle" fill="#0F172A" font-family="Helvetica Neue,Arial,sans-serif" font-size="16" font-weight="700">5. Ready</text>
+  <text x="1140" y="206" text-anchor="middle" fill="#64748B" font-family="Helvetica Neue,Arial,sans-serif" font-size="13">可开发交付</text>
+
+  <line x1="256" y1="185" x2="286" y2="185" stroke="#0B6BCB" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <line x1="506" y1="185" x2="536" y2="185" stroke="#0B6BCB" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <line x1="756" y1="185" x2="786" y2="185" stroke="#0B6BCB" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <line x1="1006" y1="185" x2="1036" y2="185" stroke="#0B6BCB" stroke-width="2.5" marker-end="url(#arrow)"/>
+
+  <rect x="200" y="310" width="360" height="100" rx="14" fill="#FFF7ED" stroke="#D97706" stroke-width="2" filter="url(#shadow)"/>
+  <text x="380" y="352" text-anchor="middle" fill="#0F172A" font-family="Helvetica Neue,Arial,sans-serif" font-size="16" font-weight="700">Skill（辅）</text>
+  <text x="380" y="380" text-anchor="middle" fill="#64748B" font-family="Helvetica Neue,Arial,sans-serif" font-size="13">起草机读 · 无运行时降级（须标 degraded）</text>
+
+  <rect x="720" y="310" width="360" height="100" rx="14" fill="#FFFFFF" stroke="#64748B" stroke-width="2" filter="url(#shadow)"/>
+  <text x="900" y="352" text-anchor="middle" fill="#0F172A" font-family="Helvetica Neue,Arial,sans-serif" font-size="16" font-weight="700">Runtime</text>
+  <text x="900" y="380" text-anchor="middle" fill="#64748B" font-family="Helvetica Neue,Arial,sans-serif" font-size="13">python3 或 node · 双运行时</text>
+
+  <line x1="396" y1="240" x2="380" y2="310" stroke="#D97706" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <line x1="896" y1="240" x2="900" y2="310" stroke="#64748B" stroke-width="2.5" marker-end="url(#arrow)"/>
+
+  <text x="640" y="480" text-anchor="middle" fill="#475569" font-family="Helvetica Neue,Arial,sans-serif" font-size="15">纪律：长期只改机读；人读由生成器产出，禁止手改漂移</text>
+</svg>
