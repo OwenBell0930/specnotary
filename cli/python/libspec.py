@@ -145,7 +145,7 @@ def render_human(data: dict, source: str, gate_mode: str = "hard") -> str:
     lines: list[str] = [
         f"<!-- generated_from: {source} -->",
         f"<!-- gate_mode: {gate_mode} -->",
-        "<!-- 机读为主源；禁止长期只改本文件 -->",
+        "<!-- 以机读 YAML 为唯一准据；禁止长期只改本文件 -->",
         "",
         f"# {title_zh}",
         "",

@@ -1,6 +1,6 @@
 <!-- generated_from: /Users/zhaosi./Documents/Cursor Projects/spec-kit/examples/case-order-cancel-raw/machine/spec.yaml -->
 <!-- gate_mode: hard -->
-<!-- 机读为主源；禁止长期只改本文件 -->
+<!-- 以机读 YAML 为唯一准据；禁止长期只改本文件 -->
 
 # 电商订单 · 未发货自助取消
 

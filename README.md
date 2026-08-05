@@ -5,13 +5,15 @@
 <h1 align="center">Spec Kit</h1>
 
 <p align="center">
-  <strong>可开发的需求规格说明书</strong><br/>
-  机读主源 · 人读施工图 · CLI 门禁（FAIL / WARN / Pending）
+  <strong>CLI 工具包 + 模板脚手架</strong>（辅：Cursor Skill）<br/>
+  产出：<strong>可开发的需求规格说明书</strong><br/>
+  机读 YAML 为准据 · 人读施工图 · CLI 门禁（FAIL / WARN / Pending）
 </p>
 
 <p align="center">
+  <a href="#value">Value</a> ·
   <a href="#overview">Overview</a> ·
-  <a href="#why">Why</a> ·
+  <a href="#demo">Demo</a> ·
   <a href="#quick-start">Quick Start</a> ·
   <a href="#gates">Gates</a> ·
   <a href="#examples">Examples</a> ·
@@ -20,47 +22,80 @@
 </p>
 
 <p align="center">
-  <img alt="gate" src="https://img.shields.io/badge/gate-FAIL%20%7C%20WARN%20%7C%20Pending-0B6BCB"/>
+  <img alt="carrier" src="https://img.shields.io/badge/carrier-CLI%20%2B%20Scaffold%20%2B%20Skill-0B6BCB"/>
+  <img alt="gate" src="https://img.shields.io/badge/gate-FAIL%20%7C%20WARN%20%7C%20Pending-DC2626"/>
   <img alt="runtime" src="https://img.shields.io/badge/runtime-Python%20%7C%20Node-159947"/>
-  <img alt="source" src="https://img.shields.io/badge/source-machine--first-D97706"/>
   <img alt="author" src="https://img.shields.io/badge/by-OwenBell-0F172A"/>
 </p>
 
 ---
 
+<a id="value"></a>
+
+## Value · 解决什么问题
+
+**一句话：** 把含糊的 PRD / 工单 / FAQ，压成研发能按表开工、测试能按验收标准（AC）验收的规格；口号式「假详细」会被 CLI 拦下。
+
+| 痛点 | Spec Kit 怎么处理 |
+|------|-------------------|
+| 需求写了很长，研发仍要猜显隐、文案、默认值 | 人读视图强制线框 · 控件表 · 状态矩阵 · 编号主路径 |
+| 「智能 / 尽快 / 体验好」冒充可开发 | 硬门禁 `FAIL`：空话 then / 不可观察 AC 直接否决 |
+| 人读与机读各改各的，越改越漂 | **以机读 YAML 为唯一准据**（行业常说 single source of truth）；人读只由生成器产出 |
+| 未决事项假装已就绪 | `Pending` 须齐四要素；挂在 `ready` 上 → `FAIL` |
+| 没装 Python/Node 就没法干活 | 可用 Skill 降级检查，但必须标 `gate_mode: degraded`，不得冒充硬门禁 |
+
+### 谁用 · 什么时候用
+
+| 场景 | 做什么 |
+|------|--------|
+| 产品 / BA 收口需求 | 从原料起草机读 YAML，跑门禁，再生成人读施工图给研发 |
+| 研发开工前 | 用控件表与状态矩阵对齐「能不能做、做到哪」 |
+| 测试写用例前 | 用 AC 与空态文案当验收输入 |
+| Agent / Skill 协作 | 让 Agent 改机读而不是空改 Markdown；CLI 当机器验收 |
+| 复盘假详细稿 | 对照 `case-order-cancel-bad`：看哪些规则会打死坏稿 |
+
+**不是什么：** 不是又一份口号式 PRD 模板，也不是完整商业 PRD 替代品。上游 PRD 仍是**原料**；Spec Kit 的正式产出名是**可开发的需求规格说明书**。
+
+---
+
 <a id="overview"></a>
 
-## Overview
+## Overview · 工具长什么样
 
-上游 PRD / 工单 / FAQ 是**原料**。  
-本仓库把它们压成研发能按表开工、测试能按 AC 验收的**规格层**——不是又一份口号式 PRD 模板。
+**载体（最终态）：**
+
+| 层 | 是什么 | 职责 |
+|----|--------|------|
+| **CLI**（主） | `./cli/run-check.sh` · `./cli/run-generate-human.sh` | 硬门禁；机读 → 人读 |
+| **Scaffold**（主） | `templates/` · `examples/` | 字段体例与施工图级样例 |
+| **Skill**（辅） | `skills/` | 起草机读；无运行时的降级检查 |
 
 <p align="center">
   <img src="docs/assets/flow.svg" alt="Spec Kit 主流程" width="100%"/>
 </p>
 
-**Key capabilities**
+**能力一览**
 
 | Capability | 白话 |
 |------------|------|
-| **Machine-first** | YAML（优先）/ JSON 是唯一真相源；人读由机读生成 |
-| **Construction-grade human** | 线框 · 控件表 · 状态矩阵 · 编号主路径 · AC · Pending |
-| **Hard CLI gate** | `FAIL` 必须为 0 才 PASS；`WARN` 暴露质量债 |
-| **Degraded Skill path** | 无 Python/Node 时可降级，但必须标 `gate_mode: degraded` |
-| **Dual runtime** | `python3` 或 `node`（`cli/node` 需先 `npm i`） |
+| Machine-first | 改 YAML/JSON；人读 Markdown 由 CLI 生成，禁止长期手改漂移 |
+| Construction-grade human | 线框 · 控件表 · 状态矩阵 · 编号主路径 · AC · Pending |
+| Hard CLI gate | `FAIL_COUNT` 必须为 0 才 PASS；`WARN` 暴露质量债 |
+| Dual runtime | `python3` 或 `node`（`cli/node` 需先 `npm i`） |
+| Degraded Skill | 无运行时可用，但结果必须标 `degraded` |
 
 ---
 
-<a id="why"></a>
+<a id="demo"></a>
 
-## Why it sticks（用真规格说话）
+## Demo · 用真规格说话
 
 <p align="center">
   <img src="docs/assets/before-after.svg" alt="假详细 vs 施工图密度" width="100%"/>
 </p>
 
 打开「电商未发货取消」人读视图的一截——有线框、控件显隐、失败文案原文。  
-主页留人不靠空口号，靠**你能否按这张表开发**。
+留人不靠空口号，靠**你能否按这张表开发**。
 
 ### 摘录 · 控件规格
 
@@ -89,7 +124,7 @@
 
 ## Quick Start
 
-**Prerequisites:** `python3`（推荐）或 `node`（`cd cli/node && npm i`）
+**前置：** `python3`（推荐）或 `node`（`cd cli/node && npm i`）
 
 ```bash
 cd spec-kit
@@ -159,26 +194,26 @@ python3 tests/test_cli.py
 ## Structure
 
 <p align="center">
-  <img src="docs/assets/architecture.svg" alt="仓库构成" width="100%"/>
+  <img src="docs/assets/architecture.svg" alt="CLI / Scaffold / Skill 构成" width="100%"/>
 </p>
 
 | 路径 | 作用 |
 |------|------|
-| [`templates/machine`](templates/machine) · [`templates/human`](templates/human) | 机读主源模板 · 人读体例 |
+| [`cli/`](cli/) | 硬门禁与人读生成（主入口） |
+| [`templates/machine`](templates/machine) · [`templates/human`](templates/human) | 机读字段体例 · 人读体例 |
 | [`examples/`](examples/) | 施工图级样例 |
-| [`cli/`](cli/) | `run-check.sh` · `run-generate-human.sh` |
 | [`skills/`](skills/) | 辅：起草与降级 |
 | [`docs/what-is-dev-ready.md`](docs/what-is-dev-ready.md) | 「可开发」定义 |
 
-**定位**
+**产物分工**
 
 | 产物 | 定位 |
 |------|------|
-| 机读 YAML/JSON | 可开发需求规格的**主源** |
-| 人读 Markdown | 同一规格的**说明书 / 施工图视图** |
-| 上游 PRD | **原料**，不是本工具的主产出名 |
+| 机读 YAML/JSON | **唯一准据**（改这里） |
+| 人读 Markdown | 同一规格的说明书 / 施工图视图（由 CLI 生成） |
+| 上游 PRD / 工单 / FAQ | **原料**，不是 Spec Kit 的正式产出名 |
 
-**纪律：** 外部 PRD 脚手架仅作只读灵感；业务母版不写入本仓。
+**纪律：** 外部 PRD 脚手架仅作只读灵感；业务母版不写入本工具目录。
 
 ---
 
@@ -190,6 +225,7 @@ python3 tests/test_cli.py
 |-----|------|
 | [`docs/what-is-dev-ready.md`](docs/what-is-dev-ready.md) | 什么叫「可开发」 |
 | [`docs/gate-modes.md`](docs/gate-modes.md) | hard / degraded 门禁模式 |
+| [`docs/skill-boundary.md`](docs/skill-boundary.md) | CLI 与 Skill 边界 |
 | [`examples/README.md`](examples/README.md) | 案例索引 |
 | [`skills/SKILL.md`](skills/SKILL.md) | Skill 规则 |
 
@@ -197,4 +233,4 @@ python3 tests/test_cli.py
 
 ## Status
 
-OwenBell · 本地建设中 · 上传 GitHub 前走九步复核（**上传即公开**）
+OwenBell · Spec Kit 本地建设中 · 上传 GitHub 前走九步复核（**上传即公开**）
