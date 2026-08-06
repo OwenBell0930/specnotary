@@ -45,7 +45,7 @@
 | 没装 Python/Node 就没法干活 | 可用 Skill 降级检查，但必须标 `gate_mode: degraded`，不得冒充硬门禁 |
 
 <p align="center">
-  <img src="docs/assets/ipo-flow.svg" alt="输入 → 处理 → 输出" width="860"/>
+  <img src="docs/assets/ipo-flow.svg" alt="输入 → 处理 → 输出 / Input → Process → Output" width="920"/>
 </p>
 
 ### 谁用 · 什么时候用
