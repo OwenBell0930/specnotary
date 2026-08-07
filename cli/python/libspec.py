@@ -11,8 +11,14 @@ try:
 except ImportError:  # pragma: no cover
     yaml = None
 
+try:
+    import jsonschema
+except ImportError:  # pragma: no cover
+    jsonschema = None
+
 REQUIRED_TOP = ["spec_version", "id", "title", "status", "behaviors", "acceptance"]
 VAGUE = ("体验好", "尽量快", "智能", "方便地", "good ux", "quickly", "尽快", "尽量")
+SCHEMA_PATH = Path(__file__).resolve().parents[2] / "schemas" / "machine-spec.schema.json"
 
 
 def load_spec(path: Path) -> Any:
@@ -27,6 +33,10 @@ def load_spec(path: Path) -> Any:
     if suffix == ".json":
         return json.loads(text)
     raise RuntimeError(f"unsupported suffix {suffix} (use .yaml/.yml/.json)")
+
+
+def load_schema() -> dict:
+    return json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
 
 
 def _lang(node: Any, lang: str = "zh") -> str:
@@ -47,6 +57,57 @@ def _pending_ok(item: Any) -> bool:
     return all(item.get(k) not in (None, "") for k in ("id", "missing", "impact", "owner", "status"))
 
 
+def _allowed_label(row: dict) -> str:
+    if "allowed" in row:
+        val = row.get("allowed")
+        if isinstance(val, bool):
+            return "允许" if val else "禁止"
+        return str(val)
+    if "buyer_self_cancel" in row:  # legacy cancel_matrix
+        return str(row.get("buyer_self_cancel"))
+    return "—"
+
+
+def action_matrix_rows(states: dict) -> list[dict]:
+    """Prefer action_matrix; fall back to legacy cancel_matrix."""
+    if not isinstance(states, dict):
+        return []
+    rows = states.get("action_matrix")
+    if isinstance(rows, list) and rows:
+        return [r for r in rows if isinstance(r, dict)]
+    legacy = states.get("cancel_matrix")
+    if isinstance(legacy, list) and legacy:
+        out = []
+        for r in legacy:
+            if not isinstance(r, dict):
+                continue
+            out.append(
+                {
+                    **r,
+                    "action": r.get("action") or "buyer_self_cancel",
+                    "allowed": r.get("allowed", r.get("buyer_self_cancel")),
+                }
+            )
+        return out
+    return []
+
+
+def _collect_ids(fail: list[str], items: list, kind: str) -> set[str]:
+    seen: set[str] = set()
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        iid = item.get("id")
+        if not iid:
+            fail.append(f"{kind} item missing id")
+            continue
+        sid = str(iid)
+        if sid in seen:
+            fail.append(f"duplicate {kind} id: {sid}")
+        seen.add(sid)
+    return seen
+
+
 def validate(data: Any, project: dict | None = None) -> dict[str, list[str]]:
     """Return {fail, warn} lists. Pending rules apply when status=ready."""
     fail: list[str] = []
@@ -54,9 +115,23 @@ def validate(data: Any, project: dict | None = None) -> dict[str, list[str]]:
     if not isinstance(data, dict):
         return {"fail": ["root must be an object"], "warn": []}
 
-    for key in REQUIRED_TOP:
-        if key not in data:
-            fail.append(f"missing required field: {key}")
+    # Layer 1: JSON Schema
+    if jsonschema is None:
+        warn.append("jsonschema not installed — schema layer skipped (pip install jsonschema)")
+        for key in REQUIRED_TOP:
+            if key not in data:
+                fail.append(f"missing required field: {key}")
+        status = data.get("status")
+        if status is not None and status not in {"draft", "ready", "deprecated"}:
+            fail.append(f"status invalid (schema): {status!r} — allowed: draft|ready|deprecated")
+    else:
+        try:
+            jsonschema.validate(instance=data, schema=load_schema())
+        except jsonschema.ValidationError as exc:
+            path = ".".join(str(p) for p in exc.absolute_path) or "(root)"
+            fail.append(f"schema: {exc.message} at {path}")
+        except Exception as exc:  # noqa: BLE001
+            fail.append(f"schema validation error: {exc}")
 
     behaviors = data.get("behaviors") or []
     acceptance = data.get("acceptance") or []
@@ -65,14 +140,38 @@ def validate(data: Any, project: dict | None = None) -> dict[str, list[str]]:
     if not isinstance(acceptance, list) or len(acceptance) < 1:
         fail.append("acceptance must have at least 1 item")
 
-    # AC ids unique
-    ac_ids = []
+    actor_ids = _collect_ids(fail, data.get("actors") or [], "actor")
+    behavior_ids = _collect_ids(fail, behaviors if isinstance(behaviors, list) else [], "behavior")
+    _collect_ids(fail, acceptance if isinstance(acceptance, list) else [], "acceptance")
+    _collect_ids(fail, (data.get("ui") or {}).get("controls") or [], "control")
+    _collect_ids(fail, data.get("pending") or [], "pending")
+
+    # Cross-refs
+    for p in data.get("permissions") or []:
+        if not isinstance(p, dict):
+            continue
+        actor = p.get("actor")
+        if actor and str(actor) not in actor_ids:
+            fail.append(f"permission references missing actor: {actor}")
+
     for a in acceptance if isinstance(acceptance, list) else []:
-        aid = (a or {}).get("id")
-        if aid:
-            if aid in ac_ids:
-                fail.append(f"duplicate acceptance id: {aid}")
-            ac_ids.append(aid)
+        if not isinstance(a, dict):
+            continue
+        bid = a.get("behavior")
+        if bid and str(bid) not in behavior_ids:
+            fail.append(f"acceptance {a.get('id')}: behavior ref missing: {bid}")
+
+    states = data.get("states") or {}
+    lifecycle = set(states.get("lifecycle") or []) if isinstance(states, dict) else set()
+    matrix = action_matrix_rows(states if isinstance(states, dict) else {})
+    if isinstance(states, dict) and states.get("cancel_matrix") and not states.get("action_matrix"):
+        warn.append("states.cancel_matrix is legacy — prefer states.action_matrix (state/action/allowed)")
+    for row in matrix:
+        st = row.get("state")
+        if lifecycle and st and str(st) not in lifecycle:
+            fail.append(f"action_matrix state not in lifecycle: {st}")
+        if not row.get("action"):
+            fail.append(f"action_matrix row for state={st} missing action")
 
     status = data.get("status")
     pending = data.get("pending") or []
@@ -107,7 +206,7 @@ def validate(data: Any, project: dict | None = None) -> dict[str, list[str]]:
                     f"pending {(p or {}).get('id')} still open — cannot mark status=ready"
                 )
 
-    # WARN tier (always useful)
+    # WARN tier
     if not data.get("ui"):
         warn.append("ui block missing — human spec will lack wireframe/controls")
     if not data.get("states"):
@@ -156,7 +255,6 @@ def render_human(data: dict, source: str, gate_mode: str = "hard") -> str:
     if title_en and title_en != title_zh:
         lines += [f"**EN title:** {title_en}", ""]
 
-    # 1 范围
     lines += ["## 1. 范围", "", "### 1.1 本期做", ""]
     for item in data.get("in_scope") or []:
         lines.append(f"- {_lang(item, 'zh')}")
@@ -166,7 +264,6 @@ def render_human(data: dict, source: str, gate_mode: str = "hard") -> str:
     if data.get("baseline"):
         lines += ["", f"**对照基线：** {_lang(data.get('baseline'), 'zh')}", ""]
 
-    # 2 角色权限
     lines += ["## 2. 角色与权限", "", "| 角色 | 说明 | 可执行动作 |", "|------|------|------------|"]
     perm_map = {(p or {}).get("actor"): (p or {}).get("can") or [] for p in (data.get("permissions") or [])}
     for a in data.get("actors") or []:
@@ -175,26 +272,25 @@ def render_human(data: dict, source: str, gate_mode: str = "hard") -> str:
         lines.append(f"| `{aid}` | {_lang(a, 'zh')} | {cans or '—'} |")
     lines.append("")
 
-    # 3 状态
-    lines += ["## 3. 订单状态与可取消性", ""]
+    lines += ["## 3. 状态与允许动作", ""]
     if states.get("lifecycle"):
         lines.append("**生命周期（编号供流程对照）：**")
         for i, s in enumerate(states.get("lifecycle") or [], 1):
             lines.append(f"{i}. `{s}`")
         lines.append("")
     lines += [
-        "| 状态 | 买家自助取消 | 说明 |",
-        "|------|--------------|------|",
+        "| 状态 | 动作 | 是否允许 | 说明 |",
+        "|------|------|----------|------|",
     ]
-    for row in states.get("cancel_matrix") or []:
+    matrix = action_matrix_rows(states)
+    for row in matrix:
         lines.append(
-            f"| `{(row or {}).get('state')}` | {(row or {}).get('buyer_self_cancel')} | {_lang(row, 'zh')} |"
+            f"| `{(row or {}).get('state')}` | `{(row or {}).get('action')}` | {_allowed_label(row)} | {_lang(row, 'zh')} |"
         )
-    if not states.get("cancel_matrix"):
-        lines.append("| （机读未提供 cancel_matrix） | — | — |")
+    if not matrix:
+        lines.append("| （机读未提供 action_matrix） | — | — | — |")
     lines.append("")
 
-    # 4 UI
     lines += ["## 4. 页面与交互", ""]
     if ui.get("entry"):
         lines.append(f"**入口：** {_lang(ui.get('entry'), 'zh')}")
@@ -224,7 +320,6 @@ def render_human(data: dict, source: str, gate_mode: str = "hard") -> str:
             )
         lines.append("")
 
-    # 5 主路径
     lines += ["## 5. 主路径（编号）", ""]
     for b in data.get("behaviors") or []:
         step = (b or {}).get("step_id") or (b or {}).get("id")
@@ -239,7 +334,6 @@ def render_human(data: dict, source: str, gate_mode: str = "hard") -> str:
                 lines.append(f"  - {_lang(s, 'zh')}")
         lines.append("")
 
-    # 6 默认与空态
     lines += ["## 6. 默认值与提示文案", "", "### 6.1 默认值", ""]
     defaults = data.get("defaults") or {}
     if defaults:
@@ -260,7 +354,6 @@ def render_human(data: dict, source: str, gate_mode: str = "hard") -> str:
         lines.append("（无）")
     lines.append("")
 
-    # 7 AC
     lines += ["## 7. 验收标准（AC）", ""]
     for a in data.get("acceptance") or []:
         lines.append(
@@ -268,7 +361,6 @@ def render_human(data: dict, source: str, gate_mode: str = "hard") -> str:
         )
     lines.append("")
 
-    # 8 Pending
     lines += ["## 8. 信息待闭合项（Pending）", ""]
     pending = data.get("pending") or []
     if not pending:
@@ -282,7 +374,6 @@ def render_human(data: dict, source: str, gate_mode: str = "hard") -> str:
             )
     lines.append("")
 
-    # 9 object AI
     obj = data.get("object_ai") or {}
     lines += ["## 9. 对象 AI", "", f"- enabled: `{obj.get('enabled', False)}`"]
     if obj.get("enabled"):
@@ -298,10 +389,10 @@ def render_human(data: dict, source: str, gate_mode: str = "hard") -> str:
 
 
 def load_project(root: Path) -> dict:
-    for name in ("project.yaml", "project.example.yaml"):
-        p = root / name
-        if p.exists() and yaml is not None:
-            data = yaml.safe_load(p.read_text(encoding="utf-8")) or {}
-            if isinstance(data, dict):
-                return data
+    """Load only project.yaml. Never auto-load project.example.yaml."""
+    p = root / "project.yaml"
+    if p.exists() and yaml is not None:
+        data = yaml.safe_load(p.read_text(encoding="utf-8")) or {}
+        if isinstance(data, dict):
+            return data
     return {}

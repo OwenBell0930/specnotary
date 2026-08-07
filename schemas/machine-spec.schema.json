@@ -4,30 +4,150 @@
   "title": "Spec Kit machine spec",
   "type": "object",
   "required": ["spec_version", "id", "title", "status", "behaviors", "acceptance"],
+  "additionalProperties": true,
   "properties": {
-    "spec_version": { "type": "string" },
-    "id": { "type": "string" },
+    "spec_version": { "type": "string", "minLength": 1 },
+    "id": { "type": "string", "minLength": 1 },
     "title": {
       "type": "object",
       "properties": {
         "zh": { "type": "string" },
         "en": { "type": "string" }
-      }
+      },
+      "additionalProperties": true
     },
-    "status": { "enum": ["draft", "ready", "deprecated"] },
+    "status": { "type": "string", "enum": ["draft", "ready", "deprecated"] },
+    "baseline": { "type": ["object", "string"] },
     "in_scope": { "type": "array" },
     "out_of_scope": { "type": "array" },
     "open_questions": { "type": "array" },
-    "actors": { "type": "array" },
-    "permissions": { "type": "array" },
+    "actors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "zh": { "type": "string" },
+          "en": { "type": "string" }
+        },
+        "additionalProperties": true
+      }
+    },
+    "permissions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["actor"],
+        "properties": {
+          "actor": { "type": "string", "minLength": 1 },
+          "can": { "type": "array", "items": { "type": "string" } }
+        },
+        "additionalProperties": true
+      }
+    },
+    "defaults": { "type": "object" },
+    "states": {
+      "type": "object",
+      "properties": {
+        "lifecycle": { "type": "array", "items": { "type": "string" } },
+        "action_matrix": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["state", "action"],
+            "properties": {
+              "state": { "type": "string" },
+              "action": { "type": "string" },
+              "allowed": { "type": ["boolean", "string"] },
+              "zh": { "type": "string" },
+              "en": { "type": "string" }
+            },
+            "additionalProperties": true
+          }
+        },
+        "cancel_matrix": {
+          "type": "array",
+          "description": "Legacy alias for action_matrix with implied action buyer_self_cancel"
+        }
+      },
+      "additionalProperties": true
+    },
+    "ui": {
+      "type": "object",
+      "properties": {
+        "entry": { "type": ["object", "string"] },
+        "wireframe": { "type": "string" },
+        "controls": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id"],
+            "properties": {
+              "id": { "type": "string", "minLength": 1 },
+              "zh": { "type": "string" },
+              "en": { "type": "string" },
+              "visible_when": { "type": ["object", "string"] },
+              "action": { "type": ["object", "string"] },
+              "fail_feedback": { "type": ["object", "string"] }
+            },
+            "additionalProperties": true
+          }
+        },
+        "empty_states": { "type": "object" }
+      },
+      "additionalProperties": true
+    },
+    "empty_states": { "type": "object" },
     "object_ai": { "type": "object" },
     "behaviors": {
       "type": "array",
-      "minItems": 1
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "step_id": { "type": ["string", "integer"] },
+          "name": { "type": ["object", "string"] },
+          "given": { "type": ["object", "string"] },
+          "when": { "type": ["object", "string"] },
+          "then": { "type": ["object", "string"] },
+          "side_effects": { "type": "array" }
+        },
+        "additionalProperties": true
+      }
     },
     "acceptance": {
       "type": "array",
-      "minItems": 1
-    }
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "behavior": { "type": "string" },
+          "zh": { "type": "string" },
+          "en": { "type": "string" }
+        },
+        "additionalProperties": true
+      }
+    },
+    "pending": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "missing": { "type": "string" },
+          "impact": { "type": "string" },
+          "owner": { "type": "string" },
+          "status": { "type": "string" }
+        },
+        "additionalProperties": true
+      }
+    },
+    "project_hint": { "type": "object" },
+    "source_claims": { "type": "array" }
   }
 }

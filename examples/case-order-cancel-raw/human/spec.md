@@ -32,7 +32,7 @@
 | `seller_ops` | 商家运营 | view_cancel_logs |
 | `risk_engine` | 风控引擎（系统） | flag_block_self_cancel |
 
-## 3. 订单状态与可取消性
+## 3. 状态与允许动作
 
 **生命周期（编号供流程对照）：**
 1. `unpaid`
@@ -42,14 +42,14 @@
 5. `completed`
 6. `cancelled`
 
-| 状态 | 买家自助取消 | 说明 |
-|------|--------------|------|
-| `unpaid` | 允许 | 取消后关单，释放锁券，无退款单 |
-| `paid_unshipped` | 允许 | 取消后原路退款+回库；不自动回券 |
-| `fulfilling` | 禁止 | 按钮隐藏或置灰，文案 not_allowed |
-| `shipped` | 禁止 | 引导售后 |
-| `completed` | 禁止 | 无取消入口 |
-| `cancelled` | 禁止 | 已取消，展示退款进度入口（若有退款单） |
+| 状态 | 动作 | 是否允许 | 说明 |
+|------|------|----------|------|
+| `unpaid` | `buyer_self_cancel` | 允许 | 取消后关单，释放锁券，无退款单 |
+| `paid_unshipped` | `buyer_self_cancel` | 允许 | 取消后原路退款+回库；不自动回券 |
+| `fulfilling` | `buyer_self_cancel` | 禁止 | 按钮隐藏或置灰，文案 not_allowed |
+| `shipped` | `buyer_self_cancel` | 禁止 | 引导售后 |
+| `completed` | `buyer_self_cancel` | 禁止 | 无取消入口 |
+| `cancelled` | `buyer_self_cancel` | 禁止 | 已取消，展示退款进度入口（若有退款单） |
 
 ## 4. 页面与交互
 

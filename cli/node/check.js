@@ -56,13 +56,12 @@ function validate(data, project) {
 }
 
 function loadProject(root) {
+  // Only project.yaml — never auto-load project.example.yaml
   const yamlPath = path.join(root, "project.yaml");
-  const example = path.join(root, "project.example.yaml");
-  const file = fs.existsSync(yamlPath) ? yamlPath : fs.existsSync(example) ? example : null;
-  if (!file) return {};
+  if (!fs.existsSync(yamlPath)) return {};
   try {
     const yaml = require("yaml");
-    return yaml.parse(fs.readFileSync(file, "utf8")) || {};
+    return yaml.parse(fs.readFileSync(yamlPath, "utf8")) || {};
   } catch (e) {
     return {};
   }

@@ -6,8 +6,8 @@
 
 <p align="center">
   <strong>CLI 工具包 + 模板脚手架</strong>（辅：Cursor Skill）<br/>
-  产出：<strong>可开发的需求规格说明书</strong><br/>
-  机读 YAML 为准据 · 人读施工图 · CLI 门禁（FAIL / WARN / Pending）
+  产出：<strong>可开发的需求规格说明书</strong> · 兼做<strong>需求评审就绪</strong>收口<br/>
+  机读 YAML 为准据 · 人读施工图 · Python CLI 门禁（FAIL / WARN / Pending）
 </p>
 
 <p align="center">
@@ -24,7 +24,8 @@
 <p align="center">
   <img alt="carrier" src="https://img.shields.io/badge/carrier-CLI%20%2B%20Scaffold%20%2B%20Skill-0B6BCB"/>
   <img alt="gate" src="https://img.shields.io/badge/gate-FAIL%20%7C%20WARN%20%7C%20Pending-DC2626"/>
-  <img alt="runtime" src="https://img.shields.io/badge/runtime-Python%20%7C%20Node-159947"/>
+  <img alt="runtime" src="https://img.shields.io/badge/hard%20gate-Python-159947"/>
+  <img alt="node" src="https://img.shields.io/badge/Node-Deferred-94A3B8"/>
   <img alt="author" src="https://img.shields.io/badge/by-OwenBell-0F172A"/>
 </p>
 
@@ -34,31 +35,53 @@
 
 ## Value · 解决什么问题
 
-**一句话：** 把含糊的 PRD / 工单 / FAQ，压成研发能按表开工、测试能按验收标准（AC）验收的规格；口号式「假详细」会被 CLI 拦下。
+**并集目标（都要满足）：**
+
+1. **可开发** — 研发能按表开工，测试能按 AC 验收  
+2. **评审就绪** — 评审前证明：原料没漏、方案没编、人读没漂（原型一致性见 Roadmap）
+
+**一句话：** 把含糊的 PRD / 工单 / FAQ，压成可开发规格；口号式「假详细」会被 Python CLI 拦下。
 
 | 痛点 | Spec Kit 怎么处理 |
 |------|-------------------|
-| 需求写了很长，研发仍要猜显隐、文案、默认值 | 人读视图强制线框 · 控件表 · 状态矩阵 · 编号主路径 |
+| 需求写了很长，研发仍要猜显隐、文案、默认值 | 人读视图强制线框 · 控件表 · 状态/动作矩阵 · 编号主路径 |
 | 「智能 / 尽快 / 体验好」冒充可开发 | 硬门禁 `FAIL`：空话 then / 不可观察 AC 直接否决 |
-| 人读与机读各改各的，越改越漂 | **以机读 YAML 为唯一准据**（行业常说 single source of truth）；人读只由生成器产出 |
+| 人读与机读各改各的，越改越漂 | **以机读 YAML 为唯一准据**（single source of truth）；人读只由生成器产出；有 FAIL 时拒绝生成 |
 | 未决事项假装已就绪 | `Pending` 须齐四要素；挂在 `ready` 上 → `FAIL` |
-| 没装 Python/Node 就没法干活 | 可用 Skill 降级检查，但必须标 `gate_mode: degraded`，不得冒充硬门禁 |
+| 没装 Python 就没法跑硬门禁 | 可用 Skill 降级检查，必须标 `gate_mode: degraded`；Node CLI = Deferred |
 
 <p align="center">
-  <img src="docs/assets/ipo-flow.svg" alt="输入 → 处理 → 输出 / Input → Process → Output" width="920"/>
+  <img src="docs/assets/ipo-flow.svg" alt="输入 → 处理 → 输出 / Input → Process → Output" width="100%"/>
 </p>
 
 ### 谁用 · 什么时候用
 
 | 场景 | 做什么 |
 |------|--------|
-| 产品 / BA 收口需求 | 从原料起草机读 YAML，跑门禁，再生成人读施工图给研发 |
-| 研发开工前 | 用控件表与状态矩阵对齐「能不能做、做到哪」 |
+| 产品 / BA 收口需求 | 从原料起草机读 YAML，跑门禁，再生成人读施工图给研发 / 评审 |
+| 需求评审前 | 用门禁报告确认结构完备、Pending 已闭合、假详细被拦下 |
+| 研发开工前 | 用控件表与状态/动作矩阵对齐「能不能做、做到哪」 |
 | 测试写用例前 | 用 AC 与空态文案当验收输入 |
-| Agent / Skill 协作 | 让 Agent 改机读而不是空改 Markdown；CLI 当机器验收 |
+| Agent / Skill 协作 | Skill 起草机读；Python CLI 当确定性验收 |
 | 复盘假详细稿 | 对照 `case-order-cancel-bad`：看哪些规则会打死坏稿 |
 
-**不是什么：** 不是又一份口号式 PRD 模板，也不是完整商业 PRD 替代品。上游 PRD 仍是**原料**；Spec Kit 的正式产出名是**可开发的需求规格说明书**。
+**不是什么：** 不是又一份口号式 PRD 模板，也不是完整商业 PRD / 全链路 SDD 平台。上游 PRD 仍是**原料**；正式产出名是**可开发的需求规格说明书**（并用于评审收口）。
+
+### 能力状态（诚实分层）
+
+| 能力 | 状态 | 说明 |
+|------|------|------|
+| YAML/JSON 机读校验（Schema + 规则） | **Available** | `./cli/run-check.sh` |
+| 人读施工图生成 | **Available** | `./cli/run-generate-human.sh`（FAIL 时拒绝写入） |
+| FAIL / WARN / Pending 分层 | **Available** | 见 `docs/gate-modes.md` |
+| 通用 `action_matrix`（非订单域样例） | **Available** | 见 `examples/case-list-search/` |
+| Skill 起草 / 降级检查 | **Available** | 降级须标 `degraded` |
+| 原料覆盖（SourceClaim）一致性报告 | **Planned** | P1 |
+| 人读哈希 / stale 检测 | **Planned** | P1 |
+| 原型 Manifest 一致性 | **Planned** | P2 |
+| 任意原料一键转机读 | **Planned** | Skill + 人工确认 |
+| Node 等价硬门禁 | **Deferred** | 勿当硬门禁 |
+| Web / MCP | **Deferred** | — |
 
 ---
 
@@ -66,11 +89,11 @@
 
 ## Overview · 工具长什么样
 
-**载体（最终态）：**
+**载体：**
 
 | 层 | 是什么 | 职责 |
 |----|--------|------|
-| **CLI**（主） | `./cli/run-check.sh` · `./cli/run-generate-human.sh` | 硬门禁；机读 → 人读 |
+| **CLI**（主 · Python） | `./cli/run-check.sh` · `./cli/run-generate-human.sh` | 硬门禁；机读 → 人读 |
 | **Scaffold**（主） | `templates/` · `examples/` | 字段体例与施工图级样例 |
 | **Skill**（辅） | `skills/` | 起草机读；无运行时的降级检查 |
 
@@ -78,15 +101,14 @@
   <img src="docs/assets/flow.svg" alt="Spec Kit 主流程" width="100%"/>
 </p>
 
-**能力一览**
+**能力一览（Available）**
 
 | Capability | 白话 |
 |------------|------|
-| Machine-first | 改 YAML/JSON；人读 Markdown 由 CLI 生成，禁止长期手改漂移 |
-| Construction-grade human | 线框 · 控件表 · 状态矩阵 · 编号主路径 · AC · Pending |
-| Hard CLI gate | `FAIL_COUNT` 必须为 0 才 PASS；`WARN` 暴露质量债 |
-| Dual runtime | `python3` 或 `node`（`cli/node` 需先 `npm i`） |
-| Degraded Skill | 无运行时可用，但结果必须标 `degraded` |
+| Machine-first | 改 YAML/JSON；人读由 CLI 生成；有 FAIL 时默认不生成 |
+| Construction-grade human | 线框 · 控件表 · 状态/动作矩阵 · 编号主路径 · AC · Pending |
+| Hard CLI gate | Python：`FAIL_COUNT` 必须为 0；Schema + ID/引用校验 |
+| Degraded Skill | 无 Python 时可用，结果必须标 `degraded` |
 
 ---
 
@@ -128,7 +150,7 @@
 
 ## Quick Start
 
-**前置：** `python3`（推荐）或 `node`（`cd cli/node && npm i`）
+**前置：** `python3` + `pip install pyyaml jsonschema`
 
 ```bash
 cd spec-kit
@@ -139,17 +161,21 @@ cd spec-kit
 # 2) 看假详细如何被拦下
 ./cli/run-check.sh examples/case-order-cancel-bad/machine/spec.yaml
 
-# 3) 机读 → 人读施工图
+# 3) 非订单域样例（通用 action_matrix）
+./cli/run-check.sh examples/case-list-search/machine/spec.yaml
+
+# 4) 机读 → 人读施工图（有 FAIL 时拒绝写入）
 ./cli/run-generate-human.sh \
   examples/case-order-cancel-raw/machine/spec.yaml \
   examples/case-order-cancel-raw/human/spec.md
 
-# 4) 回归
+# 5) 回归
 python3 tests/test_cli.py
 ```
 
 > [!NOTE]
-> 无 Python/Node：用 `skills/` 做降级检查，结果必须写明 `gate_mode: degraded`，不得冒充硬门禁。
+> 无 Python：用 `skills/` 做降级检查，必须写明 `gate_mode: degraded`。  
+> Node CLI = **Deferred**，不是等价硬门禁。
 
 ---
 
@@ -179,15 +205,14 @@ python3 tests/test_cli.py
 
 ## Examples
 
-同一业务主题：**电商 · 未发货自助取消**（虚构脱敏）
-
 | 案例 | 输入 | 门禁 | 跳转 |
 |------|------|------|------|
 | Order cancel · raw | 运营约束清单 | PASS | [打开](examples/case-order-cancel-raw/) |
 | Order cancel · bad | 假详细 PRD → 修好稿 | FAIL → PASS | [打开](examples/case-order-cancel-bad/) |
 | Order cancel · FAQ | 客服 FAQ 反推 | PASS | [打开](examples/case-order-cancel-ops-faq/) |
+| List search | 商品列表搜索（非订单域） | PASS | [打开](examples/case-list-search/) |
 
-坏稿会被哪些规则打死（示例）：缺 `ui` / `states` / `actors`、then 含「智能/尽快/体验好」、AC 不可观察、`ready` 仍留 `open_questions`。
+坏稿会被哪些规则打死（示例）：Schema 非法 status、缺 `ui` / `states` / `actors`、引用断裂、then 含「智能/尽快/体验好」、AC 不可观察、`ready` 仍留 `open_questions`。
 
 更多说明：[`examples/README.md`](examples/README.md)
 

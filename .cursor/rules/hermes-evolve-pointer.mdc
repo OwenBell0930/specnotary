@@ -1,0 +1,13 @@
+---
+description: Point to OwenBell Hermes evolve (assets live in ops; user hooks inject)
+alwaysApply: true
+---
+
+# Hermes 式进化（本项目指针）
+
+进化资产在运营仓，不在本目录：
+`/Users/zhaosi./Documents/Cursor Projects/owenbell-github-ops`
+
+- 会话开头由 **用户级 hooks** 注入 MEMORY / USER / playbook（静默）。
+- 纠错与可复用流程：助手在运营仓执行 `python3 evolve/evolve.py capture|memory|skill`（`write_approval: false`，直接写入，不打扰用户）。
+- 本文件可进 git；**禁止**把运营仓 MEMORY/USER/敏感约定复制进公开仓。

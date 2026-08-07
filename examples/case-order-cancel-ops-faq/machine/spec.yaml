@@ -52,24 +52,30 @@ states:
   - shipped
   - completed
   - cancelled
-  cancel_matrix:
+  action_matrix:
   - state: unpaid
-    buyer_self_cancel: 允许
+    action: buyer_self_cancel
+    allowed: true
     zh: 取消后关单，释放锁券，无退款单
   - state: paid_unshipped
-    buyer_self_cancel: 允许
+    action: buyer_self_cancel
+    allowed: true
     zh: 取消后原路退款+回库；不自动回券
   - state: fulfilling
-    buyer_self_cancel: 禁止
+    action: buyer_self_cancel
+    allowed: false
     zh: 按钮隐藏或置灰，文案 not_allowed
   - state: shipped
-    buyer_self_cancel: 禁止
+    action: buyer_self_cancel
+    allowed: false
     zh: 引导售后
   - state: completed
-    buyer_self_cancel: 禁止
+    action: buyer_self_cancel
+    allowed: false
     zh: 无取消入口
   - state: cancelled
-    buyer_self_cancel: 禁止
+    action: buyer_self_cancel
+    allowed: false
     zh: 已取消，展示退款进度入口（若有退款单）
 ui:
   entry:

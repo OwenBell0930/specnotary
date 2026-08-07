@@ -2,40 +2,47 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 TARGET="${1:-}"
-OUT="${2:-}"
+OUT=""
+ALLOW=""
+
+usage() {
+  echo "Usage: ./cli/run-generate-human.sh <machine-spec.yaml|json> [out.md] [--allow-invalid]"
+}
 
 if [[ -z "$TARGET" ]]; then
-  echo "Usage: ./cli/run-generate-human.sh <machine-spec.yaml|json> [out.md]"
+  usage
   exit 2
 fi
 
-runtime="${SPEC_KIT_RUNTIME:-}"
-if [[ -z "$runtime" ]]; then
-  if command -v python3 >/dev/null 2>&1; then
-    runtime=python
-  elif command -v node >/dev/null 2>&1; then
-    runtime=node
+shift || true
+for arg in "$@"; do
+  if [[ "$arg" == "--allow-invalid" ]]; then
+    ALLOW="--allow-invalid"
+  elif [[ -z "$OUT" ]]; then
+    OUT="$arg"
   else
-    echo "ERROR: No runtime. Use Skill degraded mode to draft human view."
-    exit 3
+    usage
+    exit 2
   fi
+done
+
+if ! command -v python3 >/dev/null 2>&1; then
+  echo "ERROR: python3 required to generate human view."
+  echo "Or use Skill degraded drafting. Node generator is Deferred."
+  exit 3
 fi
 
-echo "spec-kit generate-human: runtime=$runtime"
-case "$runtime" in
-  python)
-    if [[ -n "$OUT" ]]; then
-      exec python3 "$ROOT/cli/python/generate_human.py" "$TARGET" "$OUT"
-    else
-      exec python3 "$ROOT/cli/python/generate_human.py" "$TARGET"
-    fi
-    ;;
-  node)
-    if [[ -n "$OUT" ]]; then
-      exec node "$ROOT/cli/node/generate_human.js" "$TARGET" "$OUT"
-    else
-      exec node "$ROOT/cli/node/generate_human.js" "$TARGET"
-    fi
-    ;;
-  *) echo "ERROR: SPEC_KIT_RUNTIME must be python or node"; exit 2 ;;
-esac
+echo "spec-kit generate-human: runtime=python"
+if [[ -n "$OUT" ]]; then
+  if [[ -n "$ALLOW" ]]; then
+    exec python3 "$ROOT/cli/python/generate_human.py" "$TARGET" "$OUT" "$ALLOW"
+  else
+    exec python3 "$ROOT/cli/python/generate_human.py" "$TARGET" "$OUT"
+  fi
+else
+  if [[ -n "$ALLOW" ]]; then
+    exec python3 "$ROOT/cli/python/generate_human.py" "$TARGET" "$ALLOW"
+  else
+    exec python3 "$ROOT/cli/python/generate_human.py" "$TARGET"
+  fi
+fi

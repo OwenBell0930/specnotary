@@ -14,7 +14,7 @@ permissions: []
 defaults: {}
 states:
   lifecycle: []
-  cancel_matrix: []   # or action_matrix for non-cancel features
+  action_matrix: []   # [{state, action, allowed, zh}]
 ui:
   entry:
     zh: 入口说明

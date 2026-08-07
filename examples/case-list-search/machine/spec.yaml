@@ -1,0 +1,112 @@
+spec_version: "0.1"
+id: SPEC-LIST-SEARCH-001
+title:
+  zh: 商品列表 · 标题/ID 搜索
+  en: Product list · Title/ID search
+status: ready
+baseline:
+  zh: 虚构自营商城后台商品列表（不含向量检索）
+in_scope:
+  - zh: 按商品标题模糊匹配
+  - zh: 按商品 ID 精确匹配
+  - zh: 空结果展示固定文案
+out_of_scope:
+  - zh: 语义检索、同义词扩展、跨店聚合
+actors:
+  - id: merchant_ops
+    zh: 商家运营
+  - id: platform_admin
+    zh: 平台管理员
+permissions:
+  - actor: merchant_ops
+    can: [search_own_products]
+  - actor: platform_admin
+    can: [search_all_products]
+defaults:
+  page_size: 20
+  match_mode: fuzzy_title_or_exact_id
+  max_keyword_len: 64
+states:
+  lifecycle:
+    - idle
+    - searching
+    - results
+    - empty
+  action_matrix:
+    - state: idle
+      action: submit_search
+      allowed: true
+      zh: 可提交关键词
+    - state: searching
+      action: submit_search
+      allowed: false
+      zh: 请求进行中，按钮置灰
+    - state: results
+      action: submit_search
+      allowed: true
+      zh: 可再次搜索
+    - state: empty
+      action: submit_search
+      allowed: true
+      zh: 可修改关键词重试
+ui:
+  entry:
+    zh: 商品列表页顶部搜索栏
+  wireframe: |
+    ┌─ 商品列表 ────────────────────────────┐
+    │ [关键词________] [搜索]               │
+    │ 结果表… / 空态文案                    │
+    └───────────────────────────────────────┘
+  controls:
+    - id: inp_keyword
+      zh: 请输入标题或商品 ID
+      visible_when:
+        zh: 始终
+      action:
+        zh: 输入
+      fail_feedback:
+        zh: —
+    - id: btn_search
+      zh: 搜索
+      visible_when:
+        zh: 始终；searching 时置灰
+      action:
+        zh: 提交搜索
+      fail_feedback:
+        zh: 搜索失败，请稍后重试
+empty_states:
+  no_match:
+    zh: 无匹配商品，请调整关键词
+  keyword_too_long:
+    zh: 关键词最长 64 字
+object_ai:
+  enabled: false
+behaviors:
+  - id: B1
+    step_id: 1
+    name:
+      zh: 标题模糊搜索
+    given:
+      zh: 运营在商品列表页，列表有数据
+    when:
+      zh: 输入标题片段并点击搜索
+    then:
+      zh: 返回标题包含关键词的商品，按更新时间倒序，每页 20 条
+  - id: B2
+    step_id: 2
+    name:
+      zh: 空结果
+    given:
+      zh: 关键词无匹配
+    when:
+      zh: 点击搜索
+    then:
+      zh: 列表为空，展示文案「无匹配商品，请调整关键词」
+acceptance:
+  - id: AC-01
+    behavior: B1
+    zh: 输入「蓝牙」可看到标题含「蓝牙」的商品行
+  - id: AC-02
+    behavior: B2
+    zh: 输入不存在关键词时页面展示固定空态文案
+pending: []

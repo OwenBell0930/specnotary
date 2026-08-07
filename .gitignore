@@ -4,3 +4,9 @@ __pycache__/
 node_modules/
 .venv/
 project.yaml
+
+# Local Cursor config — keep only the Hermes pointer rule if present
+.cursor/*
+!.cursor/rules/
+.cursor/rules/*
+!.cursor/rules/hermes-evolve-pointer.mdc

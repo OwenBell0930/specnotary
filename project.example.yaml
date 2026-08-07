@@ -1,5 +1,6 @@
-# project declaration (example) — copy to project.yaml
-# 项目声明示例：复制为 project.yaml 后按项目修改
+# project declaration (example) — copy to project.yaml manually
+# 项目声明示例：请复制为 project.yaml 后按项目修改
+# CLI 不会自动加载本文件（避免误把示例当成真实配置）
 
 name: example-product
 locale: zh-CN          # zh-CN | en-US | bilingual
@@ -9,5 +10,5 @@ object_ai_weight: medium   # low | medium | high
 object_ai_notes: ""        # why this weight / 权重理由
 
 # paths relative to repo root
-machine_spec: examples/sample.machine.yaml
-human_spec_out: examples/sample.human.md
+machine_spec: examples/case-list-search/machine/spec.yaml
+human_spec_out: examples/case-list-search/human/spec.md

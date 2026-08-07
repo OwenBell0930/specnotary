@@ -1,4 +1,4 @@
-spec_version: "0.1"
+spec_version: '0.1'
 id: SPEC-ORDER-CANCEL-001
 title:
   zh: 电商订单 · 未发货自助取消
@@ -8,29 +8,35 @@ baseline:
   zh: 虚构自营商城 App 现网交易链路（不含跨境与订阅购）
   en: Fictional retail app checkout (no cross-border / subscription)
 in_scope:
-  - zh: 待支付订单买家自助取消并释放锁定优惠券
-  - zh: 已支付未发货订单买家自助取消、原路退款、库存立即回库
-  - zh: 履约中/已发货不可自助取消，引导客服或售后
+- zh: 待支付订单买家自助取消并释放锁定优惠券
+- zh: 已支付未发货订单买家自助取消、原路退款、库存立即回库
+- zh: 履约中/已发货不可自助取消，引导客服或售后
 out_of_scope:
-  - zh: 部分取消、改地址、跨境税、订阅购、已支付取消自动回券
+- zh: 部分取消、改地址、跨境税、订阅购、已支付取消自动回券
 actors:
-  - id: buyer
-    zh: 买家（下单人）
-  - id: cs_agent
-    zh: 客服
-  - id: seller_ops
-    zh: 商家运营
-  - id: risk_engine
-    zh: 风控引擎（系统）
+- id: buyer
+  zh: 买家（下单人）
+- id: cs_agent
+  zh: 客服
+- id: seller_ops
+  zh: 商家运营
+- id: risk_engine
+  zh: 风控引擎（系统）
 permissions:
-  - actor: buyer
-    can: [cancel_unpaid, cancel_paid_unshipped, view_refund_progress]
-  - actor: cs_agent
-    can: [force_cancel_with_reason]
-  - actor: seller_ops
-    can: [view_cancel_logs]
-  - actor: risk_engine
-    can: [flag_block_self_cancel]
+- actor: buyer
+  can:
+  - cancel_unpaid
+  - cancel_paid_unshipped
+  - view_refund_progress
+- actor: cs_agent
+  can:
+  - force_cancel_with_reason
+- actor: seller_ops
+  can:
+  - view_cancel_logs
+- actor: risk_engine
+  can:
+  - flag_block_self_cancel
 defaults:
   refund_path: original
   refund_visible_sla_hours: 2
@@ -41,88 +47,106 @@ defaults:
   risk_block_self_cancel: true
 states:
   lifecycle:
-    - unpaid
-    - paid_unshipped
-    - fulfilling
-    - shipped
-    - completed
-    - cancelled
-  cancel_matrix:
-    - state: unpaid
-      buyer_self_cancel: 允许
-      zh: 取消后关单，释放锁券，无退款单
-    - state: paid_unshipped
-      buyer_self_cancel: 允许
-      zh: 取消后原路退款+回库；不自动回券
-    - state: fulfilling
-      buyer_self_cancel: 禁止
-      zh: 按钮隐藏或置灰，文案 not_allowed
-    - state: shipped
-      buyer_self_cancel: 禁止
-      zh: 引导售后
-    - state: completed
-      buyer_self_cancel: 禁止
-      zh: 无取消入口
-    - state: cancelled
-      buyer_self_cancel: 禁止
-      zh: 已取消，展示退款进度入口（若有退款单）
+  - unpaid
+  - paid_unshipped
+  - fulfilling
+  - shipped
+  - completed
+  - cancelled
+  action_matrix:
+  - state: unpaid
+    action: buyer_self_cancel
+    allowed: true
+    zh: 取消后关单，释放锁券，无退款单
+  - state: paid_unshipped
+    action: buyer_self_cancel
+    allowed: true
+    zh: 取消后原路退款+回库；不自动回券
+  - state: fulfilling
+    action: buyer_self_cancel
+    allowed: false
+    zh: 按钮隐藏或置灰，文案 not_allowed
+  - state: shipped
+    action: buyer_self_cancel
+    allowed: false
+    zh: 引导售后
+  - state: completed
+    action: buyer_self_cancel
+    allowed: false
+    zh: 无取消入口
+  - state: cancelled
+    action: buyer_self_cancel
+    allowed: false
+    zh: 已取消，展示退款进度入口（若有退款单）
 ui:
   entry:
     zh: 订单详情页（买家端）右下操作区；订单列表「更多」内同步暴露同一规则
-  wireframe: |
-    ┌─ 订单详情 ─────────────────────────────────────┐
+  wireframe: '┌─ 订单详情 ─────────────────────────────────────┐
+
     │ 订单号 ORD***        状态：已支付待发货          │
+
     │ 商品行…                                          │
+
     │                                                  │
+
     │  [联系客服]     [申请售后]     [取消订单]         │
+
     └──────────────────────────────────────────────────┘
+
     点击「取消订单」→ 确认弹窗：
+
     ┌─ 取消订单？ ─────────────────┐
+
     │ 取消后将原路退款，库存回库。   │
+
     │ 优惠券不自动退回。             │
+
     │  [再想想]      [确认取消]     │
+
     └──────────────────────────────┘
+
+    '
   controls:
-    - id: btn_cancel
-      zh: 取消订单
-      visible_when:
-        zh: 买家本人且状态∈{unpaid,paid_unshipped}且风控未拦截
-      action:
-        zh: 打开确认弹窗
-      fail_feedback:
-        zh: —
-    - id: btn_cancel_disabled
-      zh: 取消订单（置灰）
-      visible_when:
-        zh: 状态∈{fulfilling,shipped}（也可直接隐藏，二选一：本期=置灰+点击仍提示）
-      action:
-        zh: Toast 展示 not_allowed，并给出客服/售后入口
-      fail_feedback:
-        zh: 当前订单状态不支持自助取消，请联系客服或去售后中心
-    - id: dlg_confirm_title
-      zh: 取消订单？
-      visible_when:
-        zh: 确认弹窗打开时
-      action:
-        zh: —
-      fail_feedback:
-        zh: —
-    - id: dlg_confirm_ok
-      zh: 确认取消
-      visible_when:
-        zh: 确认弹窗打开时
-      action:
-        zh: 提交取消；成功后关弹窗并刷新详情
-      fail_feedback:
-        zh: 取消失败，请稍后重试（网络/支付通道异常时）
-    - id: dlg_confirm_cancel
-      zh: 再想想
-      visible_when:
-        zh: 确认弹窗打开时
-      action:
-        zh: 关闭弹窗，订单不变
-      fail_feedback:
-        zh: —
+  - id: btn_cancel
+    zh: 取消订单
+    visible_when:
+      zh: 买家本人且状态∈{unpaid,paid_unshipped}且风控未拦截
+    action:
+      zh: 打开确认弹窗
+    fail_feedback:
+      zh: —
+  - id: btn_cancel_disabled
+    zh: 取消订单（置灰）
+    visible_when:
+      zh: 状态∈{fulfilling,shipped}（也可直接隐藏，二选一：本期=置灰+点击仍提示）
+    action:
+      zh: Toast 展示 not_allowed，并给出客服/售后入口
+    fail_feedback:
+      zh: 当前订单状态不支持自助取消，请联系客服或去售后中心
+  - id: dlg_confirm_title
+    zh: 取消订单？
+    visible_when:
+      zh: 确认弹窗打开时
+    action:
+      zh: —
+    fail_feedback:
+      zh: —
+  - id: dlg_confirm_ok
+    zh: 确认取消
+    visible_when:
+      zh: 确认弹窗打开时
+    action:
+      zh: 提交取消；成功后关弹窗并刷新详情
+    fail_feedback:
+      zh: 取消失败，请稍后重试（网络/支付通道异常时）
+  - id: dlg_confirm_cancel
+    zh: 再想想
+    visible_when:
+      zh: 确认弹窗打开时
+    action:
+      zh: 关闭弹窗，订单不变
+    fail_feedback:
+      zh: —
 empty_states:
   not_allowed:
     zh: 当前订单状态不支持自助取消，请联系客服或去售后中心
@@ -135,70 +159,70 @@ empty_states:
 object_ai:
   enabled: false
   tools_boundary: []
-  failure_fallback: ""
+  failure_fallback: ''
   human_takeover_when: []
   unacceptable_outputs: []
 behaviors:
-  - id: B1
-    step_id: "1"
-    name:
-      zh: 取消待支付订单
-    given:
-      zh: 买家登录且为下单人；订单状态=unpaid；风控未拦截
-    when:
-      zh: 点击「取消订单」并在弹窗点「确认取消」
-    then:
-      zh: 订单状态变为 cancelled；不创建退款单；已锁定优惠券释放为可再用；若有预占库存则释放
-    side_effects:
-      - zh: 列表与详情刷新后不再显示「取消订单」
-  - id: B2
-    step_id: "2"
-    name:
-      zh: 取消已支付未发货订单
-    given:
-      zh: 买家登录且为下单人；订单状态=paid_unshipped；风控未拦截
-    when:
-      zh: 点击「取消订单」并确认
-    then:
-      zh: 订单状态变为 cancelled；创建 refund_path=original 的退款单；库存立即回库；页面展示 refund_pending 文案；优惠券不自动退回
-    side_effects:
-      - zh: 「退款进度」入口对买家可见
-  - id: B3
-    step_id: "3"
-    name:
-      zh: 履约中/已发货拦截
-    given:
-      zh: 订单状态=fulfilling 或 shipped
-    when:
-      zh: 买家点击置灰的「取消订单」或寻找取消入口
-    then:
-      zh: 订单状态不变；展示 not_allowed；提供客服与售后入口
-  - id: B4
-    step_id: "4"
-    name:
-      zh: 风控拦截
-    given:
-      zh: 订单被 risk_engine 标记禁止自助取消
-    when:
-      zh: 买家点击「取消订单」
-    then:
-      zh: 不打开成功确认提交；展示 risk_blocked；订单状态不变
+- id: B1
+  step_id: '1'
+  name:
+    zh: 取消待支付订单
+  given:
+    zh: 买家登录且为下单人；订单状态=unpaid；风控未拦截
+  when:
+    zh: 点击「取消订单」并在弹窗点「确认取消」
+  then:
+    zh: 订单状态变为 cancelled；不创建退款单；已锁定优惠券释放为可再用；若有预占库存则释放
+  side_effects:
+  - zh: 列表与详情刷新后不再显示「取消订单」
+- id: B2
+  step_id: '2'
+  name:
+    zh: 取消已支付未发货订单
+  given:
+    zh: 买家登录且为下单人；订单状态=paid_unshipped；风控未拦截
+  when:
+    zh: 点击「取消订单」并确认
+  then:
+    zh: 订单状态变为 cancelled；创建 refund_path=original 的退款单；库存立即回库；页面展示 refund_pending 文案；优惠券不自动退回
+  side_effects:
+  - zh: 「退款进度」入口对买家可见
+- id: B3
+  step_id: '3'
+  name:
+    zh: 履约中/已发货拦截
+  given:
+    zh: 订单状态=fulfilling 或 shipped
+  when:
+    zh: 买家点击置灰的「取消订单」或寻找取消入口
+  then:
+    zh: 订单状态不变；展示 not_allowed；提供客服与售后入口
+- id: B4
+  step_id: '4'
+  name:
+    zh: 风控拦截
+  given:
+    zh: 订单被 risk_engine 标记禁止自助取消
+  when:
+    zh: 买家点击「取消订单」
+  then:
+    zh: 不打开成功确认提交；展示 risk_blocked；订单状态不变
 acceptance:
-  - id: AC-01
-    behavior: B1
-    zh: Given 待支付订单 When 确认取消 Then 状态=cancelled 且无退款单且原锁定券可再次下单使用
-  - id: AC-02
-    behavior: B2
-    zh: Given 已支付未发货且购买数量=1 When 确认取消 Then 对应 SKU 可用库存 +1 且存在原路退款单
-  - id: AC-03
-    behavior: B2
-    zh: Given 取消成功 When 买家打开退款进度 Then 2 小时内可查询到非空进度状态（成功/处理中/失败三者之一）
-  - id: AC-04
-    behavior: B3
-    zh: Given 履约中 When 点击取消 Then 状态仍为 fulfilling 且 Toast/文案为 not_allowed 原文
-  - id: AC-05
-    behavior: B4
-    zh: Given 风控拦截单 When 点击取消 Then 展示 risk_blocked 原文且无退款单创建
+- id: AC-01
+  behavior: B1
+  zh: Given 待支付订单 When 确认取消 Then 状态=cancelled 且无退款单且原锁定券可再次下单使用
+- id: AC-02
+  behavior: B2
+  zh: Given 已支付未发货且购买数量=1 When 确认取消 Then 对应 SKU 可用库存 +1 且存在原路退款单
+- id: AC-03
+  behavior: B2
+  zh: Given 取消成功 When 买家打开退款进度 Then 2 小时内可查询到非空进度状态（成功/处理中/失败三者之一）
+- id: AC-04
+  behavior: B3
+  zh: Given 履约中 When 点击取消 Then 状态仍为 fulfilling 且 Toast/文案为 not_allowed 原文
+- id: AC-05
+  behavior: B4
+  zh: Given 风控拦截单 When 点击取消 Then 展示 risk_blocked 原文且无退款单创建
 pending: []
 project_hint:
   object_ai_weight: low
