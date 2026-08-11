@@ -1,0 +1,72 @@
+prototype_version: "0.1"
+generated_from_spec:
+  id: SPEC-ORDER-CANCEL-001
+  hash: 14a562b5f4e57d6cc93ea17fd42d00fae14dc2590871e0cdf23ff79408e45986
+screens:
+  - id: SCREEN-ORDER-DETAIL
+    path: order-detail.html
+    required: true
+    spec_refs: []
+    controls:
+      - id: PROTO-BTN-CANCEL
+        spec_refs: [btn_cancel, B1, B2]
+        selector: "[data-spec-id='btn_cancel']"
+        states: [visible]
+        role: control
+      - id: PROTO-BTN-CANCEL-DISABLED
+        spec_refs: [btn_cancel_disabled, B3]
+        selector: "[data-spec-id='btn_cancel_disabled']"
+        states: [disabled]
+        role: control
+      - id: PROTO-DLG-TITLE
+        spec_refs: [dlg_confirm_title]
+        selector: "[data-spec-id='dlg_confirm_title']"
+        role: control
+      - id: PROTO-DLG-OK
+        spec_refs: [dlg_confirm_ok, B1, B2]
+        selector: "[data-spec-id='dlg_confirm_ok']"
+        role: control
+      - id: PROTO-DLG-CANCEL
+        spec_refs: [dlg_confirm_cancel]
+        selector: "[data-spec-id='dlg_confirm_cancel']"
+        role: control
+interactions:
+  - id: PROTO-FLOW-UNPAID
+    spec_refs: [B1]
+    from: SCREEN-ORDER-DETAIL
+    trigger: PROTO-BTN-CANCEL
+    to: PROTO-DLG-OK
+    role: flow
+  - id: PROTO-FLOW-PAID
+    spec_refs: [B2]
+    from: SCREEN-ORDER-DETAIL
+    trigger: PROTO-DLG-OK
+    to: SCREEN-ORDER-DETAIL
+    role: flow
+  - id: PROTO-FLOW-FULFILLING
+    spec_refs: [B3]
+    from: SCREEN-ORDER-DETAIL
+    trigger: PROTO-BTN-CANCEL-DISABLED
+    to: SCREEN-ORDER-DETAIL
+    role: flow
+  - id: PROTO-FLOW-RISK
+    spec_refs: [B4]
+    from: SCREEN-ORDER-DETAIL
+    trigger: PROTO-BTN-CANCEL
+    to: SCREEN-ORDER-DETAIL
+    role: flow
+decorations:
+  - id: PROTO-DECO-CS
+    note: 联系客服入口，本期无独立控件规格
+  - id: PROTO-DECO-AFTERSALE
+    note: 申请售后入口，本期无独立控件规格
+copy_refs:
+  - id: PROTO-COPY-NOT-ALLOWED
+    spec_refs: [empty_states.not_allowed]
+  - id: PROTO-COPY-RISK
+    spec_refs: [empty_states.risk_blocked]
+  - id: PROTO-COPY-REFUND
+    spec_refs: [empty_states.refund_pending]
+  - id: PROTO-COPY-FAIL
+    spec_refs: [empty_states.cancel_failed]
+semantic_warnings: []

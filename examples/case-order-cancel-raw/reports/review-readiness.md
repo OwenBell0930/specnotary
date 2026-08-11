@@ -4,6 +4,7 @@
 - 规格 ID：`SPEC-ORDER-CANCEL-001` · 状态：`ready`
 - 机读哈希：`14a562b5f4e57d6cc93ea17fd42d00fae14dc2590871e0cdf23ff79408e45986`
 - 人读：`/Users/zhaosi./Documents/Cursor Projects/spec-kit/examples/case-order-cancel-raw/human/spec.md`
+- 原型：`/Users/zhaosi./Documents/Cursor Projects/spec-kit/examples/case-order-cancel-raw/prototype/prototype.manifest.yaml`
 - FAIL：0 · WARN：0
 
 ## 原料覆盖汇总

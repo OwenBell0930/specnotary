@@ -1,7 +1,7 @@
 # Spec Kit v0.2 优化执行方案：产品经理评审就绪版
 
 > 文档用途：供 Cursor 按顺序实施，不作为当前已完成功能说明。  
-> **采纳决议（2026-08-07）：** 可开发 ∩ 评审就绪（并集）；Node=Deferred；按 P0→P1→P2 开干。P0 已落地。**P1（2026-08-11）已落地** SourceClaim / 机读哈希 / 人读 stale / `run-report.sh`。  
+> **采纳决议（2026-08-07）：** 可开发 ∩ 评审就绪（并集）；Node=Deferred；按 P0→P1→P2 开干。P0 / P1 已落地。**P2（2026-08-11）已落地** PrototypeManifest / `data-spec-id` / 对齐+漂移样例 / 报告 missing·extra·stale·mismatch·unverified。  
 > 目标用户：不承担全栈开发、主要负责需求收口与评审准备的产品经理 / BA。  
 > 核心场景：需求评审前，将零散原料整理为方案与 PRD 级规格，并检查原料、机读规格、人读文档、Agent 原型之间的意图一致性。  
 > 执行原则：先让门禁可信，再增加一致性能力；未通过本阶段验收，不进入下一阶段。
@@ -401,7 +401,7 @@ report: reports/review-readiness.md
 - YAML 校验与人读生成：Available；
 - 任意原料自动转机读：Planned；
 - 原料覆盖检查：Available；
-- 原型一致性检查：Planned；
+- 原型一致性检查：Available；
 - Node 等价硬门禁：Deferred；
 - Web / MCP：Deferred。
 

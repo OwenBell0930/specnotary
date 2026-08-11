@@ -1,0 +1,36 @@
+prototype_version: "0.1"
+generated_from_spec:
+  id: SPEC-ORDER-CANCEL-001
+  hash: deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef
+screens:
+  - id: SCREEN-ORDER-DETAIL
+    path: order-detail.html
+    required: true
+    controls:
+      - id: PROTO-DLG-OK
+        spec_refs: [dlg_confirm_ok]
+        selector: "[data-spec-id='dlg_confirm_ok']"
+        role: control
+      - id: PROTO-GHOST
+        spec_refs: [CTRL-NOT-EXIST]
+        selector: "[data-spec-id='CTRL-NOT-EXIST']"
+        role: control
+      - id: PROTO-PAYOUT
+        spec_refs: []
+        selector: "[data-spec-id='btn_one_click_payout']"
+        role: business
+interactions:
+  - id: PROTO-FLOW-PAYOUT
+    spec_refs: []
+    from: SCREEN-ORDER-DETAIL
+    trigger: PROTO-PAYOUT
+    to: SCREEN-ORDER-DETAIL
+    role: business
+decorations:
+  - id: PROTO-LOGO
+    note: 纯视觉装饰，无规格引用
+semantic_warnings:
+  - target: dlg_confirm_ok
+    evidence: prototype-drift/order-detail.html:确认取消
+    note: 截图文案疑似与规格确认弹窗上下文不一致
+    confidence: medium

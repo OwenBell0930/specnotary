@@ -9,6 +9,7 @@
 | 在无 Python 时做**降级检查**并写明 `gate_mode: degraded` | 把降级结果写成与 CLI 同等效力；把 Node Deferred CLI 当硬门禁 |
 | 根据输入建议或询问**对象 AI 权重** | 偷偷提高/隐瞒 AI 范围 |
 | 从原料拆 **SourceClaim**（须写证据位置） | 宣称 CLI 能独立理解任意自然语言原料 |
+| 生成原型时同步写 **PrototypeManifest** + `data-spec-id` | 把 LLM 截图判断写成硬 FAIL；不写 Manifest 却宣称原型已对齐 |
 
 原则：**对错以机读 + CLI 硬门禁为准**；Skill 是写作与降级执行器。
 

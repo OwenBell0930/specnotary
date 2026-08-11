@@ -10,4 +10,5 @@
 | [case-list-search](case-list-search/) | 商品列表搜索（通用 `action_matrix`） | PASS |
 
 人读含：线框、控件表、状态/动作矩阵、编号主路径、AC、Pending、原料覆盖表。  
-覆盖报告：`./cli/run-report.sh <machine.yaml>`。
+覆盖报告：`./cli/run-report.sh <machine.yaml>`。  
+原型：`case-order-cancel-raw/prototype/`（对齐）与 `prototype-drift/`（故意漂移）。

@@ -78,7 +78,7 @@
 | Skill 起草 / 降级检查 | **Available** | 降级须标 `degraded` |
 | 原料覆盖（SourceClaim） | **Available** | `sources` + `source_claims`；`./cli/run-report.sh` |
 | 人读哈希 / stale 检测 | **Available** | 人读头 `spec_hash`；手改/未重生成 → FAIL |
-| 原型 Manifest 一致性 | **Planned** | P2 |
+| 原型 Manifest 一致性 | **Available** | `prototype/prototype.manifest.yaml`；对齐 + 漂移样例 |
 | 任意原料一键转机读 | **Planned** | Skill + 人工确认 |
 | Node 等价硬门禁 | **Deferred** | 勿当硬门禁 |
 | Web / MCP | **Deferred** | — |
@@ -173,7 +173,10 @@ cd spec-kit
 ./cli/run-report.sh examples/case-order-cancel-raw/machine/spec.yaml \
   examples/case-order-cancel-raw/reports/review-readiness.md
 
-# 6) 回归
+# 6) 原型一致性（自动读 examples/.../prototype/prototype.manifest.yaml）
+./cli/run-check.sh examples/case-order-cancel-raw/machine/spec.yaml
+
+# 7) 回归
 python3 tests/test_cli.py
 ```
 

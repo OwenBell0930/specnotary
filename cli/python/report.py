@@ -7,6 +7,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+from libproto import classify_proto_issues, default_manifest_path  # noqa: E402
 from libspec import (  # noqa: E402
     claim_summary,
     default_human_path,
@@ -17,7 +18,13 @@ from libspec import (  # noqa: E402
 )
 
 
-def render_report(data: dict, result: dict, spec_path: Path, human_path: Path | None) -> str:
+def render_report(
+    data: dict,
+    result: dict,
+    spec_path: Path,
+    human_path: Path | None,
+    manifest_path: Path | None = None,
+) -> str:
     buckets = claim_summary(data)
     digest = spec_hash(data)
     lines = [
@@ -27,6 +34,7 @@ def render_report(data: dict, result: dict, spec_path: Path, human_path: Path | 
         f"- 规格 ID：`{data.get('id')}` · 状态：`{data.get('status')}`",
         f"- 机读哈希：`{digest}`",
         f"- 人读：`{human_path}`" if human_path else "- 人读：未提供",
+        f"- 原型：`{manifest_path}`" if manifest_path else "- 原型：未提供",
         f"- FAIL：{len(result['fail'])} · WARN：{len(result['warn'])}",
         "",
         "## 原料覆盖汇总",
@@ -50,6 +58,18 @@ def render_report(data: dict, result: dict, spec_path: Path, human_path: Path | 
             lines.append(
                 f"| {c.get('id')} | {c.get('disposition')} | {c.get('quote_or_summary') or '—'} | {extra} |"
             )
+    proto = classify_proto_issues(result["fail"], result["warn"])
+    proto_fail = [e for e in result["fail"] if e.startswith("prototype")]
+    if proto_fail or any(proto[k] for k in proto):
+        lines += ["", "## 原型一致性", ""]
+        lines.append("| 类型 | 条数 |")
+        lines.append("|------|------|")
+        for key in ("missing", "extra", "stale", "mismatch", "unverified"):
+            lines.append(f"| `{key}` | {len(proto[key])} |")
+        for key in ("missing", "extra", "stale", "mismatch", "unverified"):
+            for item in proto[key]:
+                if item.startswith("prototype") or "unverified" in item:
+                    lines.append(f"- `{key}`: {item}")
     lines += ["", "## 门禁", ""]
     if result["fail"]:
         lines.append("**RESULT: FAIL**")
@@ -84,8 +104,11 @@ def main() -> int:
     if isinstance(data.get("project_hint"), dict):
         project = {**project, **data["project_hint"]}
     human = default_human_path(spec_path)
-    result = validate(data, project, spec_path=spec_path, human_path=human)
-    md = render_report(data, result, spec_path, human)
+    manifest = default_manifest_path(spec_path)
+    result = validate(
+        data, project, spec_path=spec_path, human_path=human, manifest_path=manifest
+    )
+    md = render_report(data, result, spec_path, human, manifest)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(md, encoding="utf-8")
     print(f"wrote: {out}")

@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"/>
+  <title>订单详情 · 未发货取消（对齐原型）</title>
+  <style>
+    body { font-family: "PingFang SC", sans-serif; background: #FFFCF7; color: #3F3A36; margin: 24px; }
+    .card { max-width: 520px; background: #fff; border: 1.5px dashed #E8E0D5; border-radius: 16px; padding: 20px; }
+    .row { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+    button { border-radius: 10px; border: 1px solid #C4B5A5; padding: 8px 14px; background: #fff; }
+    button.primary { background: #F0F7F4; border-color: #7BAF9E; }
+    button[disabled] { opacity: .45; }
+    dialog { border: 1.5px solid #8FA3D4; border-radius: 14px; padding: 16px; }
+    .toast { margin-top: 12px; color: #9A5C4E; min-height: 1.2em; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <p>订单号 ORD*** · 状态：已支付待发货</p>
+    <div class="row">
+      <button type="button" data-spec-id="deco_contact">联系客服</button>
+      <button type="button" data-spec-id="deco_aftersale">申请售后</button>
+      <button type="button" class="primary" data-spec-id="btn_cancel">取消订单</button>
+      <button type="button" disabled data-spec-id="btn_cancel_disabled">取消订单</button>
+    </div>
+    <p class="toast" data-spec-id="empty_states.not_allowed" hidden>当前订单状态不支持自助取消，请联系客服或去售后中心</p>
+    <p class="toast" data-spec-id="empty_states.risk_blocked" hidden>订单存在风险控制，暂不可自助取消</p>
+    <p class="toast" data-spec-id="empty_states.refund_pending" hidden>取消成功，退款处理中，预计可在 2 小时内查询到账进度</p>
+    <p class="toast" data-spec-id="empty_states.cancel_failed" hidden>取消失败，请稍后重试</p>
+  </div>
+  <dialog id="dlg" open>
+    <p data-spec-id="dlg_confirm_title">取消订单？</p>
+    <p>取消后将原路退款，库存回库。优惠券不自动退回。</p>
+    <div class="row">
+      <button type="button" data-spec-id="dlg_confirm_cancel">再想想</button>
+      <button type="button" class="primary" data-spec-id="dlg_confirm_ok">确认取消</button>
+    </div>
+  </dialog>
+</body>
+</html>

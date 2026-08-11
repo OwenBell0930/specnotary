@@ -3,9 +3,10 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 TARGET="${1:-}"
 HUMAN="${2:-}"
+MANIFEST="${3:-}"
 
 if [[ -z "$TARGET" ]]; then
-  echo "Usage: ./cli/run-check.sh <machine-spec.yaml|json> [human.md]"
+  echo "Usage: ./cli/run-check.sh <machine-spec.yaml|json> [human.md] [prototype.manifest.yaml]"
   exit 2
 fi
 
@@ -24,11 +25,14 @@ fi
 echo "spec-kit: using runtime=$runtime"
 case "$runtime" in
   python)
+    args=("$TARGET")
     if [[ -n "$HUMAN" ]]; then
-      exec python3 "$ROOT/cli/python/check.py" "$TARGET" "$HUMAN"
-    else
-      exec python3 "$ROOT/cli/python/check.py" "$TARGET"
+      args+=("$HUMAN")
     fi
+    if [[ -n "$MANIFEST" ]]; then
+      args+=("$MANIFEST")
+    fi
+    exec python3 "$ROOT/cli/python/check.py" "${args[@]}"
     ;;
   node)
     echo "WARN: Node CLI is Deferred — rules may lag behind Python. Prefer python3."

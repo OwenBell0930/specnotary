@@ -274,6 +274,7 @@ def validate(
     *,
     spec_path: Path | None = None,
     human_path: Path | None = None,
+    manifest_path: Path | None = None,
 ) -> dict[str, list[str]]:
     """Return {fail, warn} lists. Pending rules apply when status=ready."""
     fail: list[str] = []
@@ -405,6 +406,14 @@ def validate(
         _validate_human_stale(data, resolved_human, fail, warn)
     elif spec_path is not None and data.get("status") == "ready":
         warn.append("human spec not found beside machine/ — skip stale check")
+
+    from libproto import default_manifest_path, load_and_validate_prototype  # noqa: PLC0415
+
+    resolved_manifest = manifest_path if manifest_path is not None else default_manifest_path(spec_path)
+    if resolved_manifest is not None and resolved_manifest.is_file():
+        proto = load_and_validate_prototype(data, resolved_manifest)
+        fail.extend(proto["fail"])
+        warn.extend(proto["warn"])
 
     return {"fail": fail, "warn": warn}
 

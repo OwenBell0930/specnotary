@@ -21,6 +21,7 @@
 2. **确定性规则** — ID 唯一、跨对象引用、ready 完备性、Pending 四要素  
 3. **原料覆盖（P1）** — SourceClaim 处置与 `spec_refs`；`omitted` / 未闭合 `conflict` 在 `ready` 上 FAIL；`assumption` 为 WARN  
 4. **人读 stale（P1）** — 人读头 `spec_hash` 必须等于当前机读内容哈希  
+5. **原型一致性（P2）** — 若存在 `prototype/prototype.manifest.yaml`：哈希、必需控件/行为映射、禁止无规格业务动作；`semantic_warnings` 仅为 WARN  
 
 依赖：`pip install pyyaml jsonschema`
 

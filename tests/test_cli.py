@@ -9,6 +9,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 CHECK = ROOT / "cli" / "run-check.sh"
 sys.path.insert(0, str(ROOT / "cli" / "python"))
+from libproto import classify_proto_issues, validate_prototype  # noqa: E402
 from libspec import load_spec, render_human, spec_hash, validate  # noqa: E402
 
 
@@ -213,6 +214,63 @@ def test_generate_list_search_human():
     assert "状态与允许动作" in text
 
 
+RAW = ROOT / "examples/case-order-cancel-raw/machine/spec.yaml"
+ALIGN = ROOT / "examples/case-order-cancel-raw/prototype/prototype.manifest.yaml"
+DRIFT = ROOT / "examples/case-order-cancel-raw/prototype-drift/prototype.manifest.yaml"
+
+
+def test_aligned_prototype_pass():
+    data = load_spec(RAW)
+    result = validate(data, {}, spec_path=RAW, manifest_path=ALIGN)
+    proto_fails = [e for e in result["fail"] if e.startswith("prototype")]
+    assert proto_fails == [], result
+    code, out = run(RAW)
+    assert code == 0, out
+    assert "prototype:" in out
+
+
+def test_drift_missing_required_control():
+    data = load_spec(RAW)
+    result = validate(data, {}, spec_path=RAW, manifest_path=DRIFT)
+    assert any("required control not mapped: btn_cancel" in e for e in result["fail"]), result
+
+
+def test_drift_unknown_spec_ref():
+    data = load_spec(RAW)
+    result = validate(data, {}, spec_path=RAW, manifest_path=DRIFT)
+    assert any("CTRL-NOT-EXIST" in e for e in result["fail"]), result
+
+
+def test_drift_stale_hash():
+    data = load_spec(RAW)
+    result = validate(data, {}, spec_path=RAW, manifest_path=DRIFT)
+    assert any("prototype stale" in e for e in result["fail"]), result
+
+
+def test_drift_extra_business_action():
+    data = load_spec(RAW)
+    result = validate(data, {}, spec_path=RAW, manifest_path=DRIFT)
+    assert any("PROTO-PAYOUT" in e or "PROTO-FLOW-PAYOUT" in e for e in result["fail"]), result
+
+
+def test_decoration_without_refs_ok():
+    data = load_spec(RAW)
+    manifest = load_spec(ALIGN)
+    result = validate_prototype(data, manifest, manifest_path=ALIGN)
+    assert not any("PROTO-DECO" in e or "decoration" in e.lower() for e in result["fail"]), result
+
+
+def test_semantic_warning_is_warn():
+    data = load_spec(RAW)
+    result = validate(data, {}, spec_path=RAW, manifest_path=DRIFT)
+    assert any("unverified" in w for w in result["warn"]), result
+    buckets = classify_proto_issues(result["fail"], result["warn"])
+    assert buckets["unverified"]
+    assert buckets["stale"]
+    assert buckets["missing"]
+    assert buckets["extra"]
+
+
 if __name__ == "__main__":
     failed = 0
     for t in [
@@ -234,6 +292,13 @@ if __name__ == "__main__":
         test_human_stale_after_hand_edit,
         test_human_missing_hash_fail,
         test_report_lists_dispositions,
+        test_aligned_prototype_pass,
+        test_drift_missing_required_control,
+        test_drift_unknown_spec_ref,
+        test_drift_stale_hash,
+        test_drift_extra_business_action,
+        test_decoration_without_refs_ok,
+        test_semantic_warning_is_warn,
     ]:
         try:
             t()

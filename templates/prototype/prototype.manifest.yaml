@@ -1,0 +1,24 @@
+# Agent 生成原型时必须同时写出本文件。路径相对本文件所在目录。
+prototype_version: "0.1"
+generated_from_spec:
+  id: SPEC-XXX-001
+  hash: REPLACE_WITH_MACHINE_SPEC_HASH
+screens:
+  - id: SCREEN-MAIN
+    path: main.html
+    required: true
+    controls:
+      - id: PROTO-CTRL-1
+        spec_refs: [ctrl_id]
+        selector: "[data-spec-id='ctrl_id']"
+        role: control
+interactions:
+  - id: PROTO-FLOW-1
+    spec_refs: [B1]
+    from: SCREEN-MAIN
+    trigger: PROTO-CTRL-1
+    to: SCREEN-MAIN
+    role: flow
+decorations: []
+copy_refs: []
+semantic_warnings: []
