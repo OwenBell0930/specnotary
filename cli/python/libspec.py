@@ -2,7 +2,9 @@
 """Spec Kit shared load / validate (FAIL|WARN|Pending) / render human spec."""
 from __future__ import annotations
 
+import hashlib
 import json
+import re
 from pathlib import Path
 from typing import Any
 
@@ -19,6 +21,15 @@ except ImportError:  # pragma: no cover
 REQUIRED_TOP = ["spec_version", "id", "title", "status", "behaviors", "acceptance"]
 VAGUE = ("体验好", "尽量快", "智能", "方便地", "good ux", "quickly", "尽快", "尽量")
 SCHEMA_PATH = Path(__file__).resolve().parents[2] / "schemas" / "machine-spec.schema.json"
+CLAIM_DISPOSITIONS = {
+    "covered",
+    "omitted",
+    "assumption",
+    "conflict",
+    "out_of_scope",
+    "pending",
+}
+OPEN_CONFLICT = {"", "open", "unresolved", "待确认", "tbd"}
 
 
 def load_spec(path: Path) -> Any:
@@ -108,7 +119,162 @@ def _collect_ids(fail: list[str], items: list, kind: str) -> set[str]:
     return seen
 
 
-def validate(data: Any, project: dict | None = None) -> dict[str, list[str]]:
+def spec_hash(data: dict) -> str:
+    """SHA-256 of canonical machine spec (excludes content_hash if present)."""
+    payload = {k: v for k, v in data.items() if k != "content_hash"}
+    blob = json.dumps(payload, ensure_ascii=False, sort_keys=True, default=str)
+    return hashlib.sha256(blob.encode("utf-8")).hexdigest()
+
+
+def parse_human_header(text: str) -> dict[str, str]:
+    meta: dict[str, str] = {}
+    for raw in text.splitlines()[:40]:
+        m = re.match(r"^<!--\s*([a-z_]+)\s*:\s*(.*?)\s*-->\s*$", raw.strip())
+        if m:
+            meta[m.group(1)] = m.group(2)
+    return meta
+
+
+def default_human_path(spec_path: Path | None) -> Path | None:
+    if spec_path is None:
+        return None
+    sibling = spec_path.resolve().parent.parent / "human" / "spec.md"
+    return sibling if sibling.is_file() else None
+
+
+def known_entity_ids(data: dict) -> set[str]:
+    ids: set[str] = set()
+    for kind, items in (
+        ("actor", data.get("actors") or []),
+        ("behavior", data.get("behaviors") or []),
+        ("acceptance", data.get("acceptance") or []),
+        ("pending", data.get("pending") or []),
+        ("control", (data.get("ui") or {}).get("controls") or []),
+        ("source", data.get("sources") or []),
+        ("claim", data.get("source_claims") or []),
+    ):
+        del kind
+        for item in items:
+            if isinstance(item, dict) and item.get("id"):
+                ids.add(str(item.get("id")))
+    states = data.get("states") or {}
+    if isinstance(states, dict):
+        for s in states.get("lifecycle") or []:
+            ids.add(str(s))
+        for row in action_matrix_rows(states):
+            if row.get("action"):
+                ids.add(str(row.get("action")))
+    for key in data.get("defaults") or {}:
+        ids.add(f"defaults.{key}")
+        ids.add(str(key))
+    for key in data.get("empty_states") or {}:
+        ids.add(f"empty_states.{key}")
+        ids.add(str(key))
+    return ids
+
+
+def claim_summary(data: dict) -> dict[str, list[dict]]:
+    buckets: dict[str, list[dict]] = {k: [] for k in CLAIM_DISPOSITIONS}
+    buckets["undisposed"] = []
+    for claim in data.get("source_claims") or []:
+        if not isinstance(claim, dict):
+            continue
+        disp = str(claim.get("disposition") or "").strip()
+        if disp in buckets:
+            buckets[disp].append(claim)
+        else:
+            buckets["undisposed"].append(claim)
+    return buckets
+
+
+def _validate_source_layer(data: dict, fail: list[str], warn: list[str]) -> None:
+    sources = data.get("sources") or []
+    claims = data.get("source_claims") or []
+    source_ids = _collect_ids(fail, sources if isinstance(sources, list) else [], "source")
+    claim_ids = _collect_ids(fail, claims if isinstance(claims, list) else [], "source_claim")
+    del claim_ids
+    entities = known_entity_ids(data)
+    status = data.get("status")
+
+    if status == "ready" and not claims:
+        warn.append("source_claims missing — coverage not proven (review-ready P1)")
+
+    for src in sources if isinstance(sources, list) else []:
+        if not isinstance(src, dict):
+            continue
+        path = src.get("path")
+        if path:
+            # existence is optional (relative to machine file); Skill should fill evidence
+            pass
+        st = src.get("status")
+        if st and st not in {"registered", "superseded"}:
+            fail.append(f"source {src.get('id')}: status must be registered|superseded")
+
+    for claim in claims if isinstance(claims, list) else []:
+        if not isinstance(claim, dict):
+            continue
+        cid = claim.get("id") or "?"
+        disp = str(claim.get("disposition") or "").strip()
+        if not disp:
+            fail.append(f"source_claim {cid}: missing disposition")
+            continue
+        if disp not in CLAIM_DISPOSITIONS:
+            fail.append(f"source_claim {cid}: invalid disposition {disp!r}")
+            continue
+        if not claim.get("quote_or_summary") and not claim.get("evidence"):
+            fail.append(f"source_claim {cid}: need quote_or_summary or evidence")
+        sref = claim.get("source_ref")
+        if sref and source_ids and str(sref) not in source_ids:
+            fail.append(f"source_claim {cid}: source_ref missing: {sref}")
+        refs = claim.get("spec_refs") or []
+        if disp == "covered":
+            if not refs:
+                fail.append(f"source_claim {cid}: covered but spec_refs is empty")
+            for ref in refs:
+                if str(ref) not in entities:
+                    fail.append(f"source_claim {cid}: spec_ref missing: {ref}")
+        if disp == "omitted" and status == "ready":
+            fail.append(f"source_claim {cid}: omitted — unexplained gap blocks ready")
+        if disp == "conflict":
+            resolution = str(claim.get("resolution") or "").strip().lower()
+            if resolution in OPEN_CONFLICT and status == "ready":
+                fail.append(f"source_claim {cid}: conflict not closed (need resolution)")
+        if disp == "pending" and status == "ready":
+            fail.append(f"source_claim {cid}: pending disposition cannot stay on ready")
+        if disp == "assumption":
+            warn.append(f"source_claim {cid}: assumption — confirm with product owner")
+
+
+def _validate_human_stale(
+    data: dict, human_path: Path, fail: list[str], warn: list[str]
+) -> None:
+    try:
+        text = human_path.read_text(encoding="utf-8")
+    except OSError as exc:
+        fail.append(f"human spec unreadable: {human_path} ({exc})")
+        return
+    meta = parse_human_header(text)
+    expected = spec_hash(data)
+    recorded = (meta.get("spec_hash") or "").replace("sha256:", "").strip()
+    if not recorded:
+        fail.append(f"human spec stale: {human_path.name} missing spec_hash — regenerate")
+        return
+    if recorded != expected:
+        fail.append(
+            f"human spec stale: hash {recorded[:12]}… != machine {expected[:12]}… — regenerate"
+        )
+    sid = meta.get("spec_id")
+    if sid and sid != str(data.get("id")):
+        fail.append(f"human spec id mismatch: {sid} != {data.get('id')}")
+
+
+def validate(
+    data: Any,
+    project: dict | None = None,
+    *,
+    spec_path: Path | None = None,
+    human_path: Path | None = None,
+) -> dict[str, list[str]]:
     """Return {fail, warn} lists. Pending rules apply when status=ready."""
     fail: list[str] = []
     warn: list[str] = []
@@ -232,6 +398,14 @@ def validate(data: Any, project: dict | None = None) -> dict[str, list[str]]:
                 if not obj.get(key):
                     fail.append(f"object_ai_weight=high requires object_ai.{key}")
 
+    _validate_source_layer(data, fail, warn)
+
+    resolved_human = human_path if human_path is not None else default_human_path(spec_path)
+    if resolved_human is not None and resolved_human.is_file():
+        _validate_human_stale(data, resolved_human, fail, warn)
+    elif spec_path is not None and data.get("status") == "ready":
+        warn.append("human spec not found beside machine/ — skip stale check")
+
     return {"fail": fail, "warn": warn}
 
 
@@ -241,15 +415,20 @@ def render_human(data: dict, source: str, gate_mode: str = "hard") -> str:
     title_en = _lang(data.get("title"), "en")
     ui = data.get("ui") or {}
     states = data.get("states") or {}
+    digest = spec_hash(data)
     lines: list[str] = [
         f"<!-- generated_from: {source} -->",
+        f"<!-- spec_id: {data.get('id')} -->",
+        f"<!-- spec_version: {data.get('spec_version')} -->",
+        f"<!-- spec_hash: {digest} -->",
         f"<!-- gate_mode: {gate_mode} -->",
         "<!-- 以机读 YAML 为唯一准据；禁止长期只改本文件 -->",
         "",
         f"# {title_zh}",
         "",
         f"> **文档类型**：可开发的需求规格说明书（人读视图）  ",
-        f"> **规格 ID**：`{data.get('id')}` · **状态**：`{data.get('status')}` · **版本**：`{data.get('spec_version')}`",
+        f"> **规格 ID**：`{data.get('id')}` · **状态**：`{data.get('status')}` · **版本**：`{data.get('spec_version')}`  ",
+        f"> **机读哈希**：`{digest[:16]}…`",
         "",
     ]
     if title_en and title_en != title_zh:
@@ -385,6 +564,20 @@ def render_human(data: dict, source: str, gate_mode: str = "hard") -> str:
         for t in obj.get("human_takeover_when") or []:
             lines.append(f"  - {_lang(t, 'zh')}")
     lines.append("")
+
+    claims = data.get("source_claims") or []
+    if claims:
+        lines += ["## 10. 原料覆盖（SourceClaim）", ""]
+        lines.append("| ID | 处置 | 摘要 | 规格引用 |")
+        lines.append("|----|------|------|----------|")
+        for c in claims:
+            if not isinstance(c, dict):
+                continue
+            refs = ", ".join(f"`{r}`" for r in (c.get("spec_refs") or [])) or "—"
+            lines.append(
+                f"| `{c.get('id')}` | `{c.get('disposition')}` | {c.get('quote_or_summary') or c.get('evidence') or '—'} | {refs} |"
+            )
+        lines.append("")
     return "\n".join(lines)
 
 

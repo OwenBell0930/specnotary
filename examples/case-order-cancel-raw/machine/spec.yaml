@@ -228,3 +228,50 @@ project_hint:
   object_ai_weight: low
   object_ai_notes:
     zh: 本期无模型决策
+sources:
+  - id: SRC-001
+    kind: ops_request
+    path: ../input/ops-request.zh.txt
+    status: registered
+    zh: 运营需求摘录
+source_claims:
+  - id: SRC-CLM-001
+    source_ref: SRC-001
+    quote_or_summary: 待支付订单取消后应关闭，并释放优惠券（若已锁定）
+    evidence: ops-request.zh.txt:约束第1条
+    kind: requirement
+    disposition: covered
+    spec_refs: [B1, AC-01]
+    confidence: high
+  - id: SRC-CLM-002
+    source_ref: SRC-001
+    quote_or_summary: 已支付未发货取消后须原路退款、库存回库，2小时内退款状态可查
+    evidence: ops-request.zh.txt:约束第2条
+    kind: requirement
+    disposition: covered
+    spec_refs: [B2, AC-02, AC-03]
+    confidence: high
+  - id: SRC-CLM-003
+    source_ref: SRC-001
+    quote_or_summary: 履约中买家不可自助取消，只能联系客服
+    evidence: ops-request.zh.txt:约束第3条
+    kind: requirement
+    disposition: covered
+    spec_refs: [B3, AC-04]
+    confidence: high
+  - id: SRC-CLM-004
+    source_ref: SRC-001
+    quote_or_summary: 风控命中订单禁止自助取消
+    evidence: ops-request.zh.txt:约束第4条
+    kind: requirement
+    disposition: covered
+    spec_refs: [B4, AC-05]
+    confidence: high
+  - id: SRC-CLM-005
+    source_ref: SRC-001
+    quote_or_summary: 部分取消、改地址、跨境税、订阅购不在本期
+    evidence: ops-request.zh.txt:非目标
+    kind: constraint
+    disposition: out_of_scope
+    spec_refs: []
+    confidence: high

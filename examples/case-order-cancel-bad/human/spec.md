@@ -1,11 +1,15 @@
 <!-- generated_from: examples/case-order-cancel-bad/machine/spec.fixed.yaml -->
+<!-- spec_id: SPEC-ORDER-CANCEL-001 -->
+<!-- spec_version: 0.1 -->
+<!-- spec_hash: 34c90697228df4963c297373e4689edeba748151eb604fd247bd17c3eae64d1f -->
 <!-- gate_mode: hard -->
 <!-- 以机读 YAML 为唯一准据；禁止长期只改本文件 -->
 
 # 电商订单 · 未发货自助取消
 
 > **文档类型**：可开发的需求规格说明书（人读视图）  
-> **规格 ID**：`SPEC-ORDER-CANCEL-001` · **状态**：`ready` · **版本**：`0.1`
+> **规格 ID**：`SPEC-ORDER-CANCEL-001` · **状态**：`ready` · **版本**：`0.1`  
+> **机读哈希**：`34c90697228df496…`
 
 **EN title:** Commerce order · Buyer self-cancel before shipment
 
@@ -150,3 +154,9 @@
 ## 9. 对象 AI
 
 - enabled: `False`
+
+## 10. 原料覆盖（SourceClaim）
+
+| ID | 处置 | 摘要 | 规格引用 |
+|----|------|------|----------|
+| `SRC-CLM-FIX-01` | `covered` | 未发货前可自助取消；已发货不可 | `B1`, `B2`, `B3` |

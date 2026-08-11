@@ -29,3 +29,7 @@ object_ai:
 behaviors: []
 acceptance: []
 pending: []   # {id, missing, impact, owner, status}
+sources: []   # {id, kind, path, status: registered|superseded}
+source_claims: []
+  # {id, source_ref, quote_or_summary, evidence, kind, disposition, spec_refs, confidence}
+  # disposition: covered | omitted | assumption | conflict | out_of_scope | pending

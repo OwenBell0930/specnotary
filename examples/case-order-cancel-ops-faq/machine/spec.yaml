@@ -227,3 +227,42 @@ project_hint:
   object_ai_weight: low
   object_ai_notes:
     zh: 本期无模型决策
+sources:
+  - id: SRC-FAQ-001
+    kind: cs_faq
+    path: ../input/cs-faq.zh.txt
+    status: registered
+    zh: 客服 FAQ 摘录
+source_claims:
+  - id: SRC-CLM-F01
+    source_ref: SRC-FAQ-001
+    quote_or_summary: 履约中或已发货隐藏自助取消，走售后或人工
+    evidence: cs-faq.zh.txt:Q1
+    kind: requirement
+    disposition: covered
+    spec_refs: [B3, AC-04]
+    confidence: high
+  - id: SRC-CLM-F02
+    source_ref: SRC-FAQ-001
+    quote_or_summary: 已支付未发货取消后原路退回，两小时内可在退款进度看到状态
+    evidence: cs-faq.zh.txt:Q2
+    kind: requirement
+    disposition: covered
+    spec_refs: [B2, AC-03]
+    confidence: high
+  - id: SRC-CLM-F03
+    source_ref: SRC-FAQ-001
+    quote_or_summary: 待支付取消释放锁券；已支付取消不自动回券
+    evidence: cs-faq.zh.txt:Q3
+    kind: requirement
+    disposition: covered
+    spec_refs: [B1, B2]
+    confidence: high
+  - id: SRC-CLM-F04
+    source_ref: SRC-FAQ-001
+    quote_or_summary: 命中风控标签禁止自助取消
+    evidence: cs-faq.zh.txt:Q4
+    kind: requirement
+    disposition: covered
+    spec_refs: [B4, AC-05]
+    confidence: high

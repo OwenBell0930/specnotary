@@ -76,8 +76,8 @@
 | FAIL / WARN / Pending 分层 | **Available** | 见 `docs/gate-modes.md` |
 | 通用 `action_matrix`（非订单域样例） | **Available** | 见 `examples/case-list-search/` |
 | Skill 起草 / 降级检查 | **Available** | 降级须标 `degraded` |
-| 原料覆盖（SourceClaim）一致性报告 | **Planned** | P1 |
-| 人读哈希 / stale 检测 | **Planned** | P1 |
+| 原料覆盖（SourceClaim） | **Available** | `sources` + `source_claims`；`./cli/run-report.sh` |
+| 人读哈希 / stale 检测 | **Available** | 人读头 `spec_hash`；手改/未重生成 → FAIL |
 | 原型 Manifest 一致性 | **Planned** | P2 |
 | 任意原料一键转机读 | **Planned** | Skill + 人工确认 |
 | Node 等价硬门禁 | **Deferred** | 勿当硬门禁 |
@@ -93,7 +93,7 @@
 
 | 层 | 是什么 | 职责 |
 |----|--------|------|
-| **CLI**（主 · Python） | `./cli/run-check.sh` · `./cli/run-generate-human.sh` | 硬门禁；机读 → 人读 |
+| **CLI**（主 · Python） | `run-check.sh` · `run-generate-human.sh` · `run-report.sh` | 硬门禁；机读 → 人读；覆盖报告 |
 | **Scaffold**（主） | `templates/` · `examples/` | 字段体例与施工图级样例 |
 | **Skill**（辅） | `skills/` | 起草机读；无运行时的降级检查 |
 
@@ -169,7 +169,11 @@ cd spec-kit
   examples/case-order-cancel-raw/machine/spec.yaml \
   examples/case-order-cancel-raw/human/spec.md
 
-# 5) 回归
+# 5) 原料覆盖 + 人读哈希报告
+./cli/run-report.sh examples/case-order-cancel-raw/machine/spec.yaml \
+  examples/case-order-cancel-raw/reports/review-readiness.md
+
+# 6) 回归
 python3 tests/test_cli.py
 ```
 
@@ -228,7 +232,7 @@ python3 tests/test_cli.py
 
 | 路径 | 作用 |
 |------|------|
-| [`cli/`](cli/) | 硬门禁与人读生成（主入口） |
+| [`cli/`](cli/) | `run-check.sh` · `run-generate-human.sh` · `run-report.sh` |
 | [`templates/machine`](templates/machine) · [`templates/human`](templates/human) | 机读字段体例 · 人读体例 |
 | [`examples/`](examples/) | 施工图级样例 |
 | [`skills/`](skills/) | 辅：起草与降级 |
@@ -253,7 +257,7 @@ python3 tests/test_cli.py
 | Doc | 内容 |
 |-----|------|
 | [`docs/what-is-dev-ready.md`](docs/what-is-dev-ready.md) | 什么叫「可开发」 |
-| [`docs/gate-modes.md`](docs/gate-modes.md) | hard / degraded 门禁模式 |
+| [`docs/gate-modes.md`](docs/gate-modes.md) | hard / degraded；原料覆盖与 stale |
 | [`docs/skill-boundary.md`](docs/skill-boundary.md) | CLI 与 Skill 边界 |
 | [`examples/README.md`](examples/README.md) | 案例索引 |
 | [`skills/SKILL.md`](skills/SKILL.md) | Skill 规则 |

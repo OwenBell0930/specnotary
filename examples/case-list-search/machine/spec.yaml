@@ -110,3 +110,40 @@ acceptance:
     behavior: B2
     zh: 输入不存在关键词时页面展示固定空态文案
 pending: []
+sources:
+  - id: SRC-LS-001
+    kind: ops_note
+    path: ../input/ops-note.zh.txt
+    status: registered
+source_claims:
+  - id: SRC-CLM-LS-01
+    source_ref: SRC-LS-001
+    quote_or_summary: 按标题模糊搜、按商品 ID 精确搜
+    evidence: ops-note.zh.txt:L2
+    kind: requirement
+    disposition: covered
+    spec_refs: [B1, AC-01]
+    confidence: high
+  - id: SRC-CLM-LS-02
+    source_ref: SRC-LS-001
+    quote_or_summary: 无匹配时展示固定空态文案
+    evidence: ops-note.zh.txt:L3
+    kind: requirement
+    disposition: covered
+    spec_refs: [B2, AC-02]
+    confidence: high
+  - id: SRC-CLM-LS-03
+    source_ref: SRC-LS-001
+    quote_or_summary: 不做语义检索
+    evidence: ops-note.zh.txt:L4
+    kind: constraint
+    disposition: out_of_scope
+    confidence: high
+  - id: SRC-CLM-LS-04
+    source_ref: SRC-LS-001
+    quote_or_summary: 默认每页 20 条（原料未写死，产品补默认）
+    evidence: 推导
+    kind: assumption
+    disposition: assumption
+    spec_refs: [defaults.page_size]
+    confidence: medium

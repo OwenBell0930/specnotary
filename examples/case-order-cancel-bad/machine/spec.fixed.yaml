@@ -228,3 +228,17 @@ project_hint:
   object_ai_weight: low
   object_ai_notes:
     zh: 本期无模型决策
+sources:
+  - id: SRC-001
+    kind: bad_prd_fixed
+    path: ../input/bad-prd.zh.md
+    status: registered
+source_claims:
+  - id: SRC-CLM-FIX-01
+    source_ref: SRC-001
+    quote_or_summary: 未发货前可自助取消；已发货不可
+    evidence: 修好稿对齐运营约束
+    kind: requirement
+    disposition: covered
+    spec_refs: [B1, B2, B3]
+    confidence: high

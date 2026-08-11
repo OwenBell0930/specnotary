@@ -9,4 +9,5 @@
 | [case-order-cancel-ops-faq](case-order-cancel-ops-faq/) | 客服 FAQ 反推 | PASS |
 | [case-list-search](case-list-search/) | 商品列表搜索（通用 `action_matrix`） | PASS |
 
-人读含：线框、控件表、状态/动作矩阵、编号主路径、AC、Pending。
+人读含：线框、控件表、状态/动作矩阵、编号主路径、AC、Pending、原料覆盖表。  
+覆盖报告：`./cli/run-report.sh <machine.yaml>`。

@@ -18,4 +18,23 @@ description: >
 6. Never long-term edit only the human doc. Generator refuses to write when machine has FAIL (unless `--allow-invalid`).
 7. Do not copy proprietary scaffold/business PRDs into this repo; fictional examples only.
 8. Use `states.action_matrix` (`state` / `action` / `allowed`); `cancel_matrix` is legacy.
-9. Dual goals: **dev-ready** specs + **review-ready** intake (source coverage / prototype consistency are Planned).
+9. Dual goals: **dev-ready** specs + **review-ready** intake (prototype consistency is Planned / P2).
+
+## 提取 SourceClaim（P1 · Skill 职责）
+
+CLI **不读懂**任意自然语言。Skill 从 `inputs/` 拆原子项，写入机读 `sources` + `source_claims`。
+
+每条 claim 必须有：
+
+- `id`、`source_ref`（指向 `sources[].id`）
+- `quote_or_summary` 或 `evidence`（证据位置：文件 + 行/段落）
+- `disposition`：`covered` | `omitted` | `assumption` | `conflict` | `out_of_scope` | `pending`
+- `covered` 必须带可解析的 `spec_refs`（行为 / AC / 控件 / `defaults.x`）
+
+然后跑：
+
+```bash
+./cli/run-check.sh <machine.yaml>
+./cli/run-generate-human.sh <machine.yaml> <human.md>
+./cli/run-report.sh <machine.yaml> [report.md]
+```

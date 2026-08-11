@@ -148,6 +148,43 @@
       }
     },
     "project_hint": { "type": "object" },
-    "source_claims": { "type": "array" }
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "kind": { "type": "string" },
+          "path": { "type": "string" },
+          "status": { "type": "string", "enum": ["registered", "superseded"] },
+          "zh": { "type": "string" },
+          "en": { "type": "string" }
+        },
+        "additionalProperties": true
+      }
+    },
+    "source_claims": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "disposition"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "source_ref": { "type": "string" },
+          "quote_or_summary": { "type": "string" },
+          "evidence": { "type": "string" },
+          "kind": { "type": "string" },
+          "disposition": {
+            "type": "string",
+            "enum": ["covered", "omitted", "assumption", "conflict", "out_of_scope", "pending"]
+          },
+          "spec_refs": { "type": "array", "items": { "type": "string" } },
+          "confidence": { "type": "string" },
+          "resolution": { "type": "string" }
+        },
+        "additionalProperties": true
+      }
+    }
   }
 }
