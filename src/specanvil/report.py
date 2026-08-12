@@ -86,6 +86,27 @@ def render_report(
     return "\n".join(lines)
 
 
+def build_report(spec_path: Path) -> tuple[str, dict]:
+    """Shared assembly for CLI and MCP — one resolution path, one verdict.
+
+    The external audit caught the MCP outlet skipping the project_hint merge
+    and diverging from the CLI; every outlet must go through here.
+    """
+    data = load_spec(spec_path)
+    if not isinstance(data, dict):
+        raise ValueError("root must be object")
+    project = load_project_for(spec_path)
+    if isinstance(data.get("project_hint"), dict):
+        project = {**project, **data["project_hint"]}
+    human = default_human_path(spec_path)
+    manifest = default_manifest_path(spec_path)
+    result = validate(
+        data, project, spec_path=spec_path, human_path=human, manifest_path=manifest
+    )
+    md = render_report(data, result, spec_path, human, manifest)
+    return md, result
+
+
 def main(argv: list[str] | None = None) -> int:
     argv = list(sys.argv[1:] if argv is None else argv)
     if len(argv) not in {1, 2}:
@@ -97,22 +118,13 @@ def main(argv: list[str] | None = None) -> int:
         return 2
     out = Path(argv[1]) if len(argv) == 2 else spec_path.parent.parent / "reports" / "review-readiness.md"
     try:
-        data = load_spec(spec_path)
+        md, result = build_report(spec_path)
+    except ValueError as exc:
+        print(f"FAIL: {exc}")
+        return 1
     except Exception as exc:  # noqa: BLE001
         print(f"FAIL: {exc}")
         return 2
-    if not isinstance(data, dict):
-        print("FAIL: root must be object")
-        return 1
-    project = load_project_for(spec_path)
-    if isinstance(data.get("project_hint"), dict):
-        project = {**project, **data["project_hint"]}
-    human = default_human_path(spec_path)
-    manifest = default_manifest_path(spec_path)
-    result = validate(
-        data, project, spec_path=spec_path, human_path=human, manifest_path=manifest
-    )
-    md = render_report(data, result, spec_path, human, manifest)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(md, encoding="utf-8")
     print(f"wrote: {out}")

@@ -29,6 +29,7 @@ SpecAnvil 遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)；�
 
 ### Fixed
 
+- **外部红队修复包（2026-08-12 审计，11 条负例全部封死）**：原料内容哈希钉死快照（`sources[].content_hash`，原料一变即 FAIL）；`sync` 不再静默重新认证原型（须显式 `--attest-prototype`，背书是动作不是副作用）；任意类型错误的输入稳定 FAIL 不再崩溃；AC 必须关联 behavior；`action_matrix` 缺 `allowed` 或同键矛盾行 FAIL；`--allow-invalid` 产物改盖 `degraded` 并标注 forced；MCP 与 CLI 共用同一装配（`project_hint` 合并一致）；`human` 默认输出对齐 `human/spec.md`；样例补齐「ID 精确搜」行为与业务动因登记；自动主路径流程图移除（渲染器 v4——行为常为互斥分支，串成顺序流是错误语义）；证明边界唯一口径见 `docs/proof-boundary.md`。
 - Node CLI（check 与 generate）不再可能冒充 `gate_mode: hard` / `RESULT: PASS`——一律退出码 3，且不携带影子规则集。
 - `jsonschema` 未安装时 FAIL 而非静默降级。
 - 显式传入不存在的人读/原型路径不再被跳过。

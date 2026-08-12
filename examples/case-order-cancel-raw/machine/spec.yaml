@@ -367,6 +367,7 @@ sources:
   - id: SRC-001
     kind: ops_request
     path: ../input/ops-request.zh.txt
+    content_hash: aad114355f672f332534164c3317381e42a94ed0f1cdad3690943373a7ea9acd
     status: registered
     zh: 运营需求摘录
 source_claims:
@@ -409,4 +410,20 @@ source_claims:
     kind: constraint
     disposition: out_of_scope
     spec_refs: []
+    confidence: high
+  - id: SRC-CLM-006
+    source_ref: SRC-001
+    quote_or_summary: 背景与痛点：日单量约 8 万；客服被「点错想取消」工单淹没；库存被无效占用
+    evidence: ops-request.zh.txt:背景/痛点
+    kind: context
+    disposition: covered
+    spec_refs: [B1, B2, D-01]
+    confidence: high
+  - id: SRC-CLM-007
+    source_ref: SRC-001
+    quote_or_summary: 已发货走售后，不在本期
+    evidence: ops-request.zh.txt:诉求
+    kind: constraint
+    disposition: covered
+    spec_refs: [B3, D-02]
     confidence: high

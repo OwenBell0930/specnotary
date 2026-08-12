@@ -36,7 +36,7 @@ VAGUE = (
     "blazingly fast",
     "best-in-class",
 )
-RENDERER_VERSION = "3"
+RENDERER_VERSION = "4"
 SCHEMA_PATH = Path(__file__).resolve().parent / "schemas" / "machine-spec.schema.json"
 CLAIM_DISPOSITIONS = {
     "covered",
@@ -159,7 +159,7 @@ _EN = {
     "{n} 类角色；可执行动作与状态矩阵联动。": "{n} actor roles; allowed actions tie back to the state matrix.",
     "| 角色 | 说明 | 可执行动作 |": "| Role | Description | Allowed actions |",
     "{s} 个状态 × {a} 类动作，其中明确禁止 {d} 项。前端显隐与置灰以下表为唯一准据。": "{s} states × {a} action kinds, {d} explicitly denied. The table below is the single source of truth for enabling/hiding controls.",
-    "生命周期顺序（示意）：": "Lifecycle order (indicative):",
+    "生命周期枚举顺序（非流程图；转移条件以矩阵为准）：": "Lifecycle enumeration order (not a flow diagram; transitions are governed by the matrix):",
     "**生命周期（编号供流程对照）：**": "**Lifecycle (numbered for flow reference):**",
     "| 状态 | 动作 | 是否允许 | 说明 |": "| State | Action | Allowed | Notes |",
     "| （机读未提供 action_matrix） | — | — | — |": "| (machine source has no action_matrix) | — | — | — |",
@@ -168,7 +168,7 @@ _EN = {
     "### 控件规格": "### Control Spec",
     "共 {n} 个控件，其中 {f} 个定义了失败反馈文案。": "{n} controls, {f} of them with explicit failure-feedback copy.",
     "| 控件 | 文案/占位 | 显示条件 | 交互 | 失败反馈 |": "| Control | Label/placeholder | Visible when | Interaction | Failure feedback |",
-    "共 {n} 步；每步的 Given/When/Then 同时是测试的验收输入。": "{n} steps; every Given/When/Then doubles as test acceptance input.",
+    "共 {n} 步；每步的 Given/When/Then 同时是测试的验收输入。步骤为编号清单，非执行顺序。": "{n} steps; every Given/When/Then doubles as test acceptance input. Steps are a numbered list, not an execution sequence.",
     "### 步骤 {step} · {name}": "### Step {step} · {name}",
     "- **Given：** {v}": "- **Given:** {v}",
     "- **When：** {v}": "- **When:** {v}",
@@ -373,6 +373,10 @@ def _resolve_source_path(raw: str, spec_path: Path | None) -> Path | None:
     return (spec_path.parent / p).resolve()
 
 
+def file_sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
 def _covered_spec_refs(claims: list) -> set[str]:
     refs: set[str] = set()
     for claim in claims:
@@ -407,6 +411,23 @@ def _validate_source_layer(
                 warn.append(f"source {src.get('id')}: path not verified (no spec file context)")
             elif not resolved.is_file():
                 fail.append(f"source {src.get('id')}: path missing: {path}")
+            else:
+                # Claims are only as trustworthy as the material they cite.
+                # Pinning the source content hash turns "原料没漏" from pure
+                # self-report into a snapshot claim: touch the source file and
+                # every claim on it goes stale until re-reviewed.
+                recorded = str(src.get("content_hash") or "").replace("sha256:", "").strip()
+                if recorded:
+                    actual = file_sha256(resolved)
+                    if recorded != actual:
+                        fail.append(
+                            f"source {src.get('id')}: content changed since claims were written "
+                            f"({recorded[:12]}… != {actual[:12]}…) — re-review claims and update content_hash"
+                        )
+                elif status == "ready":
+                    warn.append(
+                        f"source {src.get('id')}: no content_hash — claims not pinned to source content"
+                    )
         st = src.get("status")
         if st and st not in {"registered", "superseded"}:
             fail.append(f"source {src.get('id')}: status must be registered|superseded")
@@ -562,12 +583,26 @@ def _layer_structure(data: dict, fail: list[str], warn: list[str]) -> list[dict]
     matrix = action_matrix_rows(states if isinstance(states, dict) else {})
     if isinstance(states, dict) and states.get("cancel_matrix") and not states.get("action_matrix"):
         warn.append("states.cancel_matrix is legacy — prefer states.action_matrix (state/action/allowed)")
+    has_modern_matrix = isinstance(states, dict) and bool(states.get("action_matrix"))
+    seen_pairs: dict[tuple[str, str], object] = {}
     for row in matrix:
         st = row.get("state")
+        act = row.get("action")
         if lifecycle and st and str(st) not in lifecycle:
             fail.append(f"action_matrix state not in lifecycle: {st}")
-        if not row.get("action"):
+        if not act:
             fail.append(f"action_matrix row for state={st} missing action")
+            continue
+        if has_modern_matrix and "allowed" not in row:
+            fail.append(f"action_matrix {st}/{act}: missing allowed — the matrix is the single source of truth")
+        pair = (str(st), str(act))
+        if pair in seen_pairs:
+            if seen_pairs[pair] != row.get("allowed"):
+                fail.append(f"action_matrix conflict: {st}/{act} declared both allowed and denied")
+            else:
+                warn.append(f"action_matrix duplicate row: {st}/{act}")
+        else:
+            seen_pairs[pair] = row.get("allowed")
     return matrix
 
 
@@ -620,6 +655,8 @@ def _layer_ready(data: dict, matrix: list[dict], fail: list[str]) -> None:
     for a in acceptance if isinstance(acceptance, list) else []:
         if not isinstance(a, dict):
             continue
+        if not str(a.get("behavior") or "").strip():
+            fail.append(f"acceptance {a.get('id')}: missing behavior link — every AC must verify a behavior")
         text = (_lang(a, "zh") + " " + _lang(a, "en")).strip()
         if not text:
             fail.append(f"acceptance {a.get('id')}: missing observable zh/en text")
@@ -725,6 +762,31 @@ def _layer_prototype(
         warn.append("prototype manifest not found — prototype consistency skipped")
 
 
+# Keys the rule layers dereference; wrong shapes must degrade to a FAIL,
+# never to a traceback — a gate that crashes on bad input is not a gate.
+_DICT_KEYS = ("title", "states", "ui", "defaults", "empty_states", "object_ai",
+              "overview", "architecture", "project_hint")
+_LIST_KEYS = ("behaviors", "acceptance", "actors", "permissions", "pending",
+              "in_scope", "out_of_scope", "open_questions", "sources",
+              "source_claims", "responsibilities", "data_contracts",
+              "error_codes", "decisions")
+
+
+def _sanitize_shapes(data: dict, fail: list[str]) -> dict:
+    """Return a copy where wrongly-typed top-level containers are emptied,
+    each recorded as a FAIL. Downstream layers can then rely on shapes."""
+    safe = dict(data)
+    for key in _DICT_KEYS:
+        if key in safe and safe[key] is not None and not isinstance(safe[key], dict):
+            fail.append(f"{key} must be an object, got {type(safe[key]).__name__}")
+            safe[key] = {}
+    for key in _LIST_KEYS:
+        if key in safe and safe[key] is not None and not isinstance(safe[key], list):
+            fail.append(f"{key} must be an array, got {type(safe[key]).__name__}")
+            safe[key] = []
+    return safe
+
+
 def validate(
     data: Any,
     project: dict | None = None,
@@ -742,6 +804,7 @@ def validate(
         return {"fail": ["root must be an object"], "warn": []}
 
     _layer_schema(data, fail)
+    data = _sanitize_shapes(data, fail)
     matrix = _layer_structure(data, fail, warn)
     for tok in dangling_refs(data):
         msg = f"dangling reference: {tok} mentioned in text but not declared"
@@ -823,19 +886,10 @@ def mermaid_lifecycle(states: dict) -> str | None:
     return "flowchart LR\n  " + nodes
 
 
-def mermaid_main_path(behaviors: list, lang: str = "zh") -> str | None:
-    """Deterministic step-chain diagram from behaviors order."""
-    steps = []
-    for b in behaviors or []:
-        if not isinstance(b, dict):
-            continue
-        sid = b.get("step_id") or b.get("id")
-        name = _lang(b.get("name"), lang) or str(b.get("id") or "")
-        steps.append(f"{sid}. {name}".strip())
-    if len(steps) < 2:
-        return None
-    nodes = " --> ".join(f'B{i}["{_mermaid_label(s)}"]' for i, s in enumerate(steps))
-    return "flowchart TD\n  " + nodes
+# NOTE: an auto-generated "main path" chain diagram was removed in renderer v4.
+# Behaviors are frequently alternative branches, not a sequence; chaining them
+# asserted flow relations the machine source never declared. A diagram that
+# states false relations is worse than no diagram.
 
 
 def render_human(data: dict, source: str, gate_mode: str = "hard", lang: str = "zh") -> str:
@@ -850,6 +904,7 @@ def render_human(data: dict, source: str, gate_mode: str = "hard", lang: str = "
     field-language preference; zh output is byte-stable.
     """
     t = _tt(lang)
+    data = _sanitize_shapes(dict(data), [])
     title_zh = _lang(data.get("title"), "zh")
     title_en = _lang(data.get("title"), "en")
     title_main = title_en if lang == "en" and title_en else title_zh
@@ -976,7 +1031,7 @@ def render_human(data: dict, source: str, gate_mode: str = "hard", lang: str = "
         ]
     life_mermaid = mermaid_lifecycle(states)
     if life_mermaid:
-        sec += [t("生命周期顺序（示意）："), "", "```mermaid", life_mermaid, "```", ""]
+        sec += [t("生命周期枚举顺序（非流程图；转移条件以矩阵为准）："), "", "```mermaid", life_mermaid, "```", ""]
     if lifecycle:
         sec.append(t("**生命周期（编号供流程对照）：**"))
         for i, s in enumerate(lifecycle, 1):
@@ -1025,10 +1080,7 @@ def render_human(data: dict, source: str, gate_mode: str = "hard", lang: str = "
     sections.append(("页面与交互", sec))
 
     # ---- 主路径（编号） ----
-    sec = [t("共 {n} 步；每步的 Given/When/Then 同时是测试的验收输入。").format(n=len(behaviors)), ""]
-    path_mermaid = mermaid_main_path(behaviors, lang)
-    if path_mermaid:
-        sec += ["```mermaid", path_mermaid, "```", ""]
+    sec = [t("共 {n} 步；每步的 Given/When/Then 同时是测试的验收输入。步骤为编号清单，非执行顺序。").format(n=len(behaviors)), ""]
     for b in behaviors:
         step = (b or {}).get("step_id") or (b or {}).get("id")
         sec += [

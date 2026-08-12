@@ -1,9 +1,9 @@
 <!-- generated_from: examples/case-order-cancel-raw/machine/spec.yaml -->
 <!-- spec_id: SPEC-ORDER-CANCEL-001 -->
 <!-- spec_version: 0.1 -->
-<!-- spec_hash: 94fe38439128d7e8a84f09bdc6571c9b0b96bbeff2729f91751020bcf9b15330 -->
-<!-- body_hash: c147d9db56aa540b7ec228c941872d2346f3280c5f10e1b088df99c5a7bf6070 -->
-<!-- renderer_version: 3 -->
+<!-- spec_hash: fc0cc2a042ab1180648dd08570b42a9970eb296ad80ec28f6a9bb20f03c635d6 -->
+<!-- body_hash: 65206e666a51f47ba0af58c1b3dbaa133f28d0d86696c0f4af4ae64e55a9a1d1 -->
+<!-- renderer_version: 4 -->
 <!-- lang: zh -->
 <!-- gate_mode: hard -->
 <!-- 以机读 YAML 为唯一准据；禁止长期只改本文件 -->
@@ -11,7 +11,7 @@
 
 > **文档类型**：可开发的需求规格说明书（人读视图）  
 > **规格 ID**：`SPEC-ORDER-CANCEL-001` · **状态**：`ready` · **版本**：`0.1`  
-> **机读哈希**：`94fe38439128d7e8…`
+> **机读哈希**：`fc0cc2a042ab1180…`
 
 **EN title:** Commerce order · Buyer self-cancel before shipment
 
@@ -146,7 +146,7 @@ flowchart LR
 
 6 个状态 × 1 类动作，其中明确禁止 4 项。前端显隐与置灰以下表为唯一准据。
 
-生命周期顺序（示意）：
+生命周期枚举顺序（非流程图；转移条件以矩阵为准）：
 
 ```mermaid
 flowchart LR
@@ -205,12 +205,7 @@ flowchart LR
 
 ## 9. 主路径（编号）
 
-共 4 步；每步的 Given/When/Then 同时是测试的验收输入。
-
-```mermaid
-flowchart TD
-  B0["1. 取消待支付订单"] --> B1["2. 取消已支付未发货订单"] --> B2["3. 履约中/已发货拦截"] --> B3["4. 风控拦截"]
-```
+共 4 步；每步的 Given/When/Then 同时是测试的验收输入。步骤为编号清单，非执行顺序。
 
 ### 步骤 1 · 取消待支付订单
 
@@ -302,7 +297,7 @@ flowchart TD
 
 ## 16. 原料覆盖（SourceClaim）
 
-覆盖账本（附录）：原料每句话的下落。covered 4 · assumption 0 · out_of_scope 1 · 其他 0。
+覆盖账本（附录）：原料每句话的下落。covered 6 · assumption 0 · out_of_scope 1 · 其他 0。
 
 | ID | 处置 | 摘要 | 规格引用 |
 |----|------|------|----------|
@@ -311,3 +306,5 @@ flowchart TD
 | `SRC-CLM-003` | `covered` | 履约中买家不可自助取消，只能联系客服 | `B3`, `AC-04`, `btn_cancel_disabled` |
 | `SRC-CLM-004` | `covered` | 风控命中订单禁止自助取消 | `B4`, `AC-05` |
 | `SRC-CLM-005` | `out_of_scope` | 部分取消、改地址、跨境税、订阅购不在本期 | — |
+| `SRC-CLM-006` | `covered` | 背景与痛点：日单量约 8 万；客服被「点错想取消」工单淹没；库存被无效占用 | `B1`, `B2`, `D-01` |
+| `SRC-CLM-007` | `covered` | 已发货走售后，不在本期 | `B3`, `D-02` |

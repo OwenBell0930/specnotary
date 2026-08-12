@@ -468,7 +468,7 @@ def test_interaction_broken_link_fail():
     assert any("link broken" in e for e in result["fail"]), result
 
 
-def test_sync_roundtrip():
+def test_sync_roundtrip_requires_attest():
     with tempfile.TemporaryDirectory() as td:
         case = Path(td) / "case"
         shutil.copytree(ROOT / "examples/case-order-cancel-raw", case)
@@ -479,15 +479,28 @@ def test_sync_roundtrip():
         stale_code, stale_out = run(spec)
         assert stale_code == 1, stale_out
         assert "stale" in stale_out
+        # Plain sync regenerates the human but must NOT re-certify the prototype.
         p = subprocess.run(
             ["bash", str(ROOT / "cli" / "run-sync.sh"), str(spec)],
             capture_output=True,
             text=True,
         )
-        assert p.returncode == 0, p.stdout + p.stderr
+        assert p.returncode == 1, p.stdout + p.stderr
+        assert "NOT refreshed" in p.stdout + p.stderr
         code, out = run(spec)
-        assert code == 0, out
-        assert "RESULT: PASS" in out
+        assert code == 1, out
+        assert "prototype stale" in out
+        # Explicit attestation is the only way to re-certify.
+        p2 = subprocess.run(
+            ["bash", str(ROOT / "cli" / "run-sync.sh"), str(spec), "--attest-prototype"],
+            capture_output=True,
+            text=True,
+        )
+        assert p2.returncode == 0, p2.stdout + p2.stderr
+        assert "attested" in p2.stdout + p2.stderr
+        code2, out2 = run(spec)
+        assert code2 == 0, out2
+        assert "RESULT: PASS" in out2
 
 
 def test_quoted_ui_label_not_vague():
@@ -558,7 +571,10 @@ def test_v3_toc_overview_and_diagrams():
     text = (ROOT / "examples/case-order-cancel-raw/human/spec.md").read_text(encoding="utf-8")
     assert "## 目录" in text
     assert "概览" in text and "设计原则" in text
-    assert text.count("```mermaid") >= 3  # architecture + lifecycle + main path
+    assert text.count("```mermaid") >= 2  # architecture + lifecycle
+    # v4: no auto main-path chain — behaviors are often branches, not a sequence
+    assert "flowchart TD" not in text
+    assert "非流程图" in text
     assert "职责边界" in text and "不负责" in text
 
 
@@ -604,6 +620,120 @@ def test_data_contract_claimable():
     ]
     result = validate(data, {})
     assert not any("not a spec entity" in e for e in result["fail"]), result
+
+
+def test_malformed_shapes_never_crash():
+    base = {
+        "spec_version": "0.1", "id": "X", "title": {"zh": "t"}, "status": "draft",
+        "behaviors": [{"id": "B1"}], "acceptance": [{"id": "AC-01"}],
+    }
+    mutations = [
+        {"ui": "字符串"}, {"states": [1, 2]}, {"behaviors": {"id": "B1"}},
+        {"defaults": "str"}, {"object_ai": 3}, {"overview": ["x"]},
+        {"acceptance": "nope"}, {"pending": {"id": "P-01"}}, {"title": ["l"]},
+    ]
+    for m in mutations:
+        data = {**base, **m}
+        result = validate(data, {})  # must not raise
+        assert result["fail"], m
+        render_human(data, source="mem")  # must not raise either
+
+
+def test_ac_missing_behavior_link_fail():
+    data = load_spec(ROOT / "examples/case-list-search/machine/spec.yaml")
+    data["acceptance"][0].pop("behavior")
+    result = validate(data, {})
+    assert any("missing behavior link" in e for e in result["fail"]), result
+
+
+def test_matrix_missing_allowed_and_conflict_fail():
+    data = load_spec(ROOT / "examples/case-list-search/machine/spec.yaml")
+    data["states"]["action_matrix"][0].pop("allowed")
+    data["states"]["action_matrix"].append(
+        {"state": "idle", "action": "submit_search", "allowed": False, "zh": "矛盾"}
+    )
+    result = validate(data, {})
+    assert any("missing allowed" in e for e in result["fail"]), result
+    assert any("conflict" in e for e in result["fail"]), result
+
+
+def test_source_content_hash_pins_material():
+    with tempfile.TemporaryDirectory() as td:
+        case = Path(td) / "case"
+        shutil.copytree(ROOT / "examples/case-list-search", case)
+        spec = case / "machine" / "spec.yaml"
+        code, out = run(spec)
+        assert code == 0, out
+        # Silently appending a requirement to the source material must break PASS.
+        note = case / "input" / "ops-note.zh.txt"
+        note.write_text(note.read_text(encoding="utf-8") + "\n新增：还要支持按价格区间筛选。\n", encoding="utf-8")
+        code2, out2 = run(spec)
+        assert code2 == 1, out2
+        assert "content changed" in out2
+
+
+def test_ready_missing_content_hash_warn():
+    data = load_spec(ROOT / "examples/case-list-search/machine/spec.yaml")
+    data["sources"][0].pop("content_hash")
+    result = validate(
+        data, {}, spec_path=ROOT / "examples/case-list-search/machine/spec.yaml"
+    )
+    assert any("not pinned" in w for w in result["warn"]), result
+
+
+def test_allow_invalid_stamps_degraded():
+    src = ROOT / "examples/case-order-cancel-bad/machine/spec.yaml"
+    with tempfile.TemporaryDirectory() as td:
+        out = Path(td) / "out.md"
+        p = subprocess.run(
+            ["bash", str(ROOT / "cli" / "run-generate-human.sh"), str(src), str(out), "--allow-invalid"],
+            capture_output=True, text=True,
+        )
+        assert p.returncode == 0, p.stdout + p.stderr
+        text = out.read_text(encoding="utf-8")
+        assert "<!-- gate_mode: degraded -->" in text
+        assert "gate_mode: hard" not in text
+        assert "forced: --allow-invalid" in text
+
+
+def test_human_default_out_standard_layout():
+    with tempfile.TemporaryDirectory() as td:
+        case = Path(td) / "case"
+        shutil.copytree(ROOT / "examples/case-list-search", case)
+        shutil.rmtree(case / "human")
+        env = {**os.environ, "PYTHONPATH": str(ROOT / "src")}
+        p = subprocess.run(
+            [sys.executable, "-m", "specanvil.generate_human", str(case / "machine" / "spec.yaml")],
+            capture_output=True, text=True, env=env,
+        )
+        assert p.returncode == 0, p.stdout + p.stderr
+        assert (case / "human" / "spec.md").is_file(), p.stdout
+
+
+def test_mcp_report_matches_cli():
+    import json as _json
+    with tempfile.TemporaryDirectory() as td:
+        case = Path(td) / "case"
+        shutil.copytree(ROOT / "examples/case-list-search", case)
+        spec = case / "machine" / "spec.yaml"
+        # project_hint raises the bar; spec has no object_ai block → must FAIL everywhere
+        text = spec.read_text(encoding="utf-8")
+        spec.write_text(text + "\nproject_hint:\n  object_ai_weight: high\n", encoding="utf-8")
+        env = {**os.environ, "PYTHONPATH": str(ROOT / "src")}
+        cli = subprocess.run(
+            [sys.executable, "-m", "specanvil.cli", "check", str(spec)],
+            capture_output=True, text=True, env=env,
+        )
+        assert cli.returncode == 1, cli.stdout
+        req = _json.dumps({"jsonrpc": "2.0", "id": 1, "method": "tools/call", "params": {
+            "name": "review_report", "arguments": {"path": str(spec)}}}) + "\n"
+        mcp = subprocess.run(
+            [sys.executable, "-m", "specanvil.cli", "mcp"],
+            input=req, capture_output=True, text=True, env=env, timeout=60,
+        )
+        body = _json.loads(mcp.stdout.splitlines()[0])["result"]["content"][0]["text"]
+        assert "RESULT: FAIL" in body, body[:400]
+        assert "object_ai" in body
 
 
 def test_json_output():
@@ -736,6 +866,14 @@ if __name__ == "__main__":
         test_drift_extra_business_action,
         test_decoration_without_refs_ok,
         test_semantic_warning_is_warn,
+        test_malformed_shapes_never_crash,
+        test_ac_missing_behavior_link_fail,
+        test_matrix_missing_allowed_and_conflict_fail,
+        test_source_content_hash_pins_material,
+        test_ready_missing_content_hash_warn,
+        test_allow_invalid_stamps_degraded,
+        test_human_default_out_standard_layout,
+        test_mcp_report_matches_cli,
         test_ready_placeholder_ui_fail,
         test_ready_empty_then_fail,
         test_html_comment_not_a_hit,
@@ -750,7 +888,7 @@ if __name__ == "__main__":
         test_explain_flag_prints_gap,
         test_in_scope_required_for_ready,
         test_interaction_broken_link_fail,
-        test_sync_roundtrip,
+        test_sync_roundtrip_requires_attest,
         test_quoted_ui_label_not_vague,
         test_dangling_ref_fail_on_ready,
         test_declared_ref_in_text_ok,

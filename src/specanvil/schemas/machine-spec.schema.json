@@ -157,6 +157,7 @@
           "id": { "type": "string", "minLength": 1 },
           "kind": { "type": "string" },
           "path": { "type": "string" },
+          "content_hash": { "type": "string", "description": "sha256 of the source file; pins claims to a content snapshot" },
           "status": { "type": "string", "enum": ["registered", "superseded"] },
           "zh": { "type": "string" },
           "en": { "type": "string" }

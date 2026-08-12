@@ -236,6 +236,7 @@ sources:
   - id: SRC-FAQ-001
     kind: cs_faq
     path: ../input/cs-faq.zh.txt
+    content_hash: 0906d6dde8e9416552ecb6cc358fa777ed792102751684d82485f0df3f0d8979
     status: registered
     zh: 客服 FAQ 摘录
 source_claims:

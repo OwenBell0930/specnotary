@@ -19,7 +19,7 @@
 
 1. **JSON Schema**（`src/specanvil/schemas/machine-spec.schema.json`）— 类型、enum、必填  
 2. **确定性规则** — ID 唯一、跨对象引用、ready 完备性（占位 ui/defaults/states 不算数；given/when/then 与 AC 非空且禁空话，`「…」`内的字面 UI 文案豁免；`in_scope` 非空）、Pending 五字段、**决策记录未拍板（`decisions` 无 `chosen`）在 ready 上 FAIL**、自由文本悬空引用（`P-*` / `AC-*` / `SRC-*` / `D-*` 提及即必须存在；ready FAIL，draft WARN）；ready 缺 `overview` 为 WARN  
-3. **原料覆盖** — `sources[].path` 必须存在；ready 至少 1 条 `covered`；每个必选 behavior/AC/control 须被 claim 引用；`omitted` / 未闭合 `conflict` 在 `ready` 上 FAIL；`assumption` 为 WARN  
+3. **原料覆盖** — `sources[].path` 必须存在；`content_hash` 钉死原料内容快照（原料一变全体 claims stale FAIL；ready 未钉为 WARN）；ready 至少 1 条 `covered`；每个必选 behavior/AC/control 须被 claim 引用；`omitted` / 未闭合 `conflict` 在 `ready` 上 FAIL；`assumption` 为 WARN  
 4. **人读 stale** — 人读头 `spec_hash` 必须等于当前机读内容哈希；`renderer_version` 必须等于当前渲染器版本（版本不符给出单条「重新生成」提示）；正文须与按机读重渲染逐字一致（只改正文也 FAIL）  
 5. **原型一致性** — 若存在 `prototype/prototype.manifest.yaml`：manifest 哈希、必需控件/行为映射、禁止无规格业务动作、`data-spec-id` 落点核对（HTML 与 React/Vue/Svelte 源文件均可；注释不算命中）、interaction `from/to/trigger` 不得断链、`required` screen 必须有 path；`semantic_warnings` 仅为 WARN。无 manifest 时跳过（ready 下 WARN，不挡 PASS）
 
@@ -42,13 +42,14 @@ specanvil check <machine.yaml> --explain
 
 对 draft 规格额外打印 `READY-GAP`：若现在把 `status` 翻成 `ready` 会新增哪些 FAIL。确定性 dry-run，判定零 LLM。
 
-## 一键同步哈希链
+## 一键同步派生物（背书须显式）
 
 ```bash
-specanvil sync <machine.yaml>
+specanvil sync <machine.yaml>                      # 重新生成人读 + 复跑门禁
+specanvil sync <machine.yaml> --attest-prototype   # 复核原型后，显式背书刷新 manifest 哈希
 ```
 
-改机读之后：重新生成人读、刷新 `prototype.manifest.yaml` 的 `generated_from_spec.hash`、复跑门禁。机读本身有 FAIL 时拒绝同步。
+人读是**派生物**（真的被重新渲染），sync 直接重生成；原型**不是**（sync 不重新生成原型），所以默认不刷新 `generated_from_spec.hash`——机读变更后原型保持 stale FAIL，直到人/Agent 复核原型并显式 `--attest-prototype`。背书是动作，不是副作用。两类哈希效力差异详见 [`proof-boundary.md`](proof-boundary.md)。机读本身有 FAIL 时拒绝同步。
 
 ## 存量项目接入（retrofit）
 

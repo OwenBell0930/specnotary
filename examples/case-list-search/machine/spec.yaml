@@ -102,6 +102,16 @@ behaviors:
       zh: 点击搜索
     then:
       zh: 列表为空，展示文案「无匹配商品，请调整关键词」
+  - id: B3
+    step_id: 3
+    name:
+      zh: 商品 ID 精确匹配
+    given:
+      zh: 运营在商品列表页，已知某商品 ID
+    when:
+      zh: 输入完整商品 ID 并点击搜索
+    then:
+      zh: 仅返回该 ID 对应的一行商品；ID 不存在则走空结果分支
 acceptance:
   - id: AC-01
     behavior: B1
@@ -109,6 +119,9 @@ acceptance:
   - id: AC-02
     behavior: B2
     zh: 输入不存在关键词时页面展示固定空态文案
+  - id: AC-03
+    behavior: B3
+    zh: 输入已存在的完整商品 ID 时结果有且仅有该商品一行；输入不存在的 ID 时展示空态文案
 pending: []
 overview:
   summary:
@@ -120,6 +133,7 @@ sources:
   - id: SRC-LS-001
     kind: ops_note
     path: ../input/ops-note.zh.txt
+    content_hash: deede9ca28da4967b09834c11effe2b7dec4df062e9f998d51ae06a37605099b
     status: registered
 source_claims:
   - id: SRC-CLM-LS-01
@@ -128,7 +142,7 @@ source_claims:
     evidence: ops-note.zh.txt:L2
     kind: requirement
     disposition: covered
-    spec_refs: [B1, AC-01, inp_keyword, btn_search]
+    spec_refs: [B1, AC-01, B3, AC-03, inp_keyword, btn_search]
     confidence: high
   - id: SRC-CLM-LS-02
     source_ref: SRC-LS-001

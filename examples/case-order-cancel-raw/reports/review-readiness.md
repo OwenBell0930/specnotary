@@ -2,7 +2,7 @@
 
 - 机读：`examples/case-order-cancel-raw/machine/spec.yaml`
 - 规格 ID：`SPEC-ORDER-CANCEL-001` · 状态：`ready`
-- 机读哈希：`94fe38439128d7e8a84f09bdc6571c9b0b96bbeff2729f91751020bcf9b15330`
+- 机读哈希：`fc0cc2a042ab1180648dd08570b42a9970eb296ad80ec28f6a9bb20f03c635d6`
 - 人读：`examples/case-order-cancel-raw/human/spec.md`
 - 原型：`examples/case-order-cancel-raw/prototype/prototype.manifest.yaml`
 - FAIL：0 · WARN：0
@@ -11,7 +11,7 @@
 
 | 处置 | 条数 |
 |------|------|
-| `covered` | 4 |
+| `covered` | 6 |
 | `omitted` | 0 |
 | `assumption` | 0 |
 | `conflict` | 0 |
@@ -28,6 +28,8 @@
 | SRC-CLM-003 | covered | 履约中买家不可自助取消，只能联系客服 | B3, AC-04, btn_cancel_disabled |
 | SRC-CLM-004 | covered | 风控命中订单禁止自助取消 | B4, AC-05 |
 | SRC-CLM-005 | out_of_scope | 部分取消、改地址、跨境税、订阅购不在本期 | — |
+| SRC-CLM-006 | covered | 背景与痛点：日单量约 8 万；客服被「点错想取消」工单淹没；库存被无效占用 | B1, B2, D-01 |
+| SRC-CLM-007 | covered | 已发货走售后，不在本期 | B3, D-02 |
 
 ## 门禁
 

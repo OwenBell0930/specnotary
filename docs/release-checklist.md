@@ -7,7 +7,7 @@
 
 | # | 项 | 验证命令 / 位置 | 状态 |
 |---|----|-----------------|------|
-| 1 | 全量回归绿 | `python3 tests/test_cli.py` | ✅ 46 项 |
+| 1 | 全量回归绿 | `python3 tests/test_cli.py`（**数量以命令输出为准，不在文档手抄**） | ✅ |
 | 2 | 样例门禁 PASS | `./cli/run-check.sh examples/case-order-cancel-raw/machine/spec.yaml` | ✅ |
 | 3 | 模板首触 PASS | `./cli/run-check.sh templates/machine/spec.template.yaml` | ✅ draft |
 | 4 | pip 安装可用 | `pip install . && specanvil check …` | ✅ 已在 venv 实测 |
@@ -15,7 +15,10 @@
 | 6 | LICENSE / CHANGELOG / CONTRIBUTING / SECURITY | 根目录 | ✅ |
 | 7 | 无本机绝对路径入库 | `rg "/Users/" --glob '!*.svg'` 应为空 | 发布前复查 |
 | 8 | 无真实公司资料 / 未脱敏内容 | 人工复查 examples/ docs/ | 发布前复查 |
-| 9 | 名称无混淆 | SpecAnvil（GitHub/npm/PyPI 检索无同名活跃项目，2026-08-12 核查） | ✅ |
+| 9 | 名称无混淆 | **未通过**：specanvil.com 已存在且定位重合（2026-08-12 外部审计发现）；需改名或差异化决策，全渠道核查含域名/社交 | ❌ 阻断 |
+| 10 | 个人资产隔离 | `.cursor/` 运营指针不入 git；`git ls-files .cursor/` 应为空 | ✅ 本轮已移除 |
+| 11 | 外部无上下文红队 | 换一个未参与开发的模型/人，对照 `docs/proof-boundary.md` 打对抗负例，全部有 FAIL 或有边界解释 | 每次发布前执行 |
+| 12 | 承诺与证明对齐 | README 中英承诺语句逐条对照 `docs/proof-boundary.md` | ✅ 本轮已校准 |
 
 ## 增长面就绪（本地已实现，发布后生效）
 

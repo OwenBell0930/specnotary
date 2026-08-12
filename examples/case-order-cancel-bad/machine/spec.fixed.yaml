@@ -235,6 +235,7 @@ sources:
   - id: SRC-001
     kind: bad_prd_fixed
     path: ../input/bad-prd.zh.md
+    content_hash: 23ad02ecb032ae8f77bf0512511347f995dfa972395bd5b683fb83eeacdb0fab
     status: registered
 source_claims:
   - id: SRC-CLM-FIX-01

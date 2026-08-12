@@ -1,9 +1,9 @@
 <!-- generated_from: examples/case-order-cancel-bad/machine/spec.fixed.yaml -->
 <!-- spec_id: SPEC-ORDER-CANCEL-001 -->
 <!-- spec_version: 0.1 -->
-<!-- spec_hash: 80691eb10738f3e437634ee127a6912a8e81bed397a0b466ce69b230b45ba0b6 -->
-<!-- body_hash: 3b0b160cdab21d563af1493c6ea603e450092ef4d6078f86b64f7ebc65ffa855 -->
-<!-- renderer_version: 3 -->
+<!-- spec_hash: 8d54ba1030d49dda015f0affd2902e92a4eafa074bd8d12206b8ec653455fd6e -->
+<!-- body_hash: ec71b0d92a7bb78dcb440b2489e7e8b63ba7c6830bf135e3097ecca4b72aa7af -->
+<!-- renderer_version: 4 -->
 <!-- lang: zh -->
 <!-- gate_mode: hard -->
 <!-- 以机读 YAML 为唯一准据；禁止长期只改本文件 -->
@@ -11,7 +11,7 @@
 
 > **文档类型**：可开发的需求规格说明书（人读视图）  
 > **规格 ID**：`SPEC-ORDER-CANCEL-001` · **状态**：`ready` · **版本**：`0.1`  
-> **机读哈希**：`80691eb10738f3e4…`
+> **机读哈希**：`8d54ba1030d49dda…`
 
 **EN title:** Commerce order · Buyer self-cancel before shipment
 
@@ -62,7 +62,7 @@
 
 6 个状态 × 1 类动作，其中明确禁止 4 项。前端显隐与置灰以下表为唯一准据。
 
-生命周期顺序（示意）：
+生命周期枚举顺序（非流程图；转移条件以矩阵为准）：
 
 ```mermaid
 flowchart LR
@@ -121,12 +121,7 @@ flowchart LR
 
 ## 6. 主路径（编号）
 
-共 4 步；每步的 Given/When/Then 同时是测试的验收输入。
-
-```mermaid
-flowchart TD
-  B0["1. 取消待支付订单"] --> B1["2. 取消已支付未发货订单"] --> B2["3. 履约中/已发货拦截"] --> B3["4. 风控拦截"]
-```
+共 4 步；每步的 Given/When/Then 同时是测试的验收输入。步骤为编号清单，非执行顺序。
 
 ### 步骤 1 · 取消待支付订单
 

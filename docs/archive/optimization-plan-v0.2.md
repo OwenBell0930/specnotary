@@ -1,5 +1,7 @@
 # Spec Kit v0.2 优化执行方案：产品经理评审就绪版
 
+<!-- evolve-gate: allow —— 历史归档件，按最终态原则不回改措辞；非对外交付物 -->
+
 > 文档用途：供 Cursor 按顺序实施，不作为当前已完成功能说明。  
 > **采纳决议（2026-08-07）：** 可开发 ∩ 评审就绪（并集）；Node=Deferred；按 P0→P1→P2 开干。P0 / P1 已落地。**P2（2026-08-11）已落地** PrototypeManifest / `data-spec-id` / 对齐+漂移样例 / 报告 missing·extra·stale·mismatch·unverified。  
 > 目标用户：不承担全栈开发、主要负责需求收口与评审准备的产品经理 / BA。  

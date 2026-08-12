@@ -63,6 +63,8 @@ def _tool_ready_gap(path: str) -> str:
     if not isinstance(data, dict):
         return json.dumps({"error": "root must be object"})
     project = load_project_for(p)
+    if isinstance(data.get("project_hint"), dict):
+        project = {**project, **data["project_hint"]}
     gap = ready_gap(data, project, spec_path=p)
     return json.dumps(
         {"status": data.get("status"), "ready_gap": gap, "count": len(gap)},
@@ -72,19 +74,10 @@ def _tool_ready_gap(path: str) -> str:
 
 
 def _tool_review_report(path: str) -> str:
-    from .libproto import default_manifest_path  # noqa: PLC0415
-    from .libspec import default_human_path, validate  # noqa: PLC0415
-    from .report import render_report  # noqa: PLC0415
+    from .report import build_report  # noqa: PLC0415
 
-    p = Path(path)
-    data = load_spec(p)
-    if not isinstance(data, dict):
-        return "FAIL: root must be object"
-    project = load_project_for(p)
-    human = default_human_path(p)
-    manifest = default_manifest_path(p)
-    result = validate(data, project, spec_path=p, human_path=human, manifest_path=manifest)
-    return render_report(data, result, p, human, manifest)
+    md, _result = build_report(Path(path))
+    return md
 
 
 def _handle(req: dict) -> dict | None:

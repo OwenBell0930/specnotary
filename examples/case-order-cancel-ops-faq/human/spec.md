@@ -1,9 +1,9 @@
 <!-- generated_from: examples/case-order-cancel-ops-faq/machine/spec.yaml -->
 <!-- spec_id: SPEC-ORDER-CANCEL-002 -->
 <!-- spec_version: 0.1 -->
-<!-- spec_hash: d1bf34901759f8f687e9751b0190ca86ebc3c0fd1ef500165792e30b34ba9dc9 -->
-<!-- body_hash: 749e3759f9de69f9c7371dfb3363d75cad2ab18997be0e4ebd6b1a6d4e82ac36 -->
-<!-- renderer_version: 3 -->
+<!-- spec_hash: 9abeffa52fe0b7432f430a20450369b6efd62014c234917f2b3a3d04fa803fb9 -->
+<!-- body_hash: e15383edfa7884058c3c1ce1a563fece78bcc78912cf7ca18f614cd132ac34b3 -->
+<!-- renderer_version: 4 -->
 <!-- lang: zh -->
 <!-- gate_mode: hard -->
 <!-- 以机读 YAML 为唯一准据；禁止长期只改本文件 -->
@@ -11,7 +11,7 @@
 
 > **文档类型**：可开发的需求规格说明书（人读视图）  
 > **规格 ID**：`SPEC-ORDER-CANCEL-002` · **状态**：`ready` · **版本**：`0.1`  
-> **机读哈希**：`d1bf34901759f8f6…`
+> **机读哈希**：`9abeffa52fe0b743…`
 
 **EN title:** Order cancel reversed from CS FAQ
 
@@ -66,7 +66,7 @@
 
 6 个状态 × 1 类动作，其中明确禁止 4 项。前端显隐与置灰以下表为唯一准据。
 
-生命周期顺序（示意）：
+生命周期枚举顺序（非流程图；转移条件以矩阵为准）：
 
 ```mermaid
 flowchart LR
@@ -125,12 +125,7 @@ flowchart LR
 
 ## 6. 主路径（编号）
 
-共 4 步；每步的 Given/When/Then 同时是测试的验收输入。
-
-```mermaid
-flowchart TD
-  B0["1. 取消待支付订单"] --> B1["2. 取消已支付未发货订单"] --> B2["3. 履约中/已发货拦截"] --> B3["4. 风控拦截"]
-```
+共 4 步；每步的 Given/When/Then 同时是测试的验收输入。步骤为编号清单，非执行顺序。
 
 ### 步骤 1 · 取消待支付订单
 

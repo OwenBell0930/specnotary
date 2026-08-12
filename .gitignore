@@ -13,8 +13,5 @@ dist/
 # Local launch drafts — never ship marketing drafts in the public tree
 launch/
 
-# Local Cursor config — keep only the Hermes pointer rule if present
-.cursor/*
-!.cursor/rules/
-.cursor/rules/*
-!.cursor/rules/hermes-evolve-pointer.mdc
+# Local Cursor config — never ship personal/ops assets in the public tree
+.cursor/

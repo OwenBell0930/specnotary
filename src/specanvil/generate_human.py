@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 
 from .libspec import (
+    expected_human_path,
     find_repo_root,
     load_project_for,
     load_spec,
@@ -49,7 +50,13 @@ def main(argv: list[str] | None = None) -> int:
     if not src.exists():
         print(f"FAIL: file not found: {src}")
         return 2
-    out = Path(args[1]) if len(args) == 2 else src.with_suffix(".human.md")
+    if len(args) == 2:
+        out = Path(args[1])
+    elif src.resolve().parent.name == "machine":
+        # Standard layout: write where the gate will look for it.
+        out = expected_human_path(src)
+    else:
+        out = src.with_suffix(".human.md")
     try:
         data = load_spec(src)
     except Exception as exc:  # noqa: BLE001
@@ -73,12 +80,20 @@ def main(argv: list[str] | None = None) -> int:
             print(f"WARN: {w}")
         return 1
 
-    md = render_human(data, source=relpath_from_root(src, find_repo_root(src)), gate_mode="hard", lang=lang)
+    # A human view forced past a failing gate must never carry the hard stamp.
+    mode = "hard" if not result["fail"] else "degraded"
+    md = render_human(data, source=relpath_from_root(src, find_repo_root(src)), gate_mode=mode, lang=lang)
+    if result["fail"]:
+        md = md.replace(
+            f"<!-- gate_mode: {mode} -->",
+            f"<!-- gate_mode: {mode} -->\n<!-- forced: --allow-invalid, FAIL_COUNT={len(result['fail'])} -->",
+            1,
+        )
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(md, encoding="utf-8")
     print(f"wrote: {out}")
     if result["fail"]:
-        print("NOTE: generated with --allow-invalid despite FAIL")
+        print(f"NOTE: generated with --allow-invalid despite FAIL — stamped gate_mode: {mode}")
         for e in result["fail"]:
             print(f"FAIL: {e}")
     for w in result["warn"]:

@@ -30,11 +30,13 @@ Specs fail teams in ways linters never let code fail them:
 |------|---------------------|
 | "smart search, great UX, as fast as possible" shipped as a spec | Hard `FAIL`: vague given/when/then, unobservable acceptance criteria, placeholder ui/defaults |
 | Human doc and machine truth drift apart | Human view is **generated** from machine YAML; hand-editing it fails the gate (`body_hash`) |
-| Nobody can prove the source material was covered | SourceClaim ledger: every statement gets a disposition (covered / omitted / assumption / conflict), every required entity needs a claim |
-| Prototype quietly diverges from the spec | Prototype manifest + `data-spec-id` DOM markers verified against the spec hash |
+| Nobody can show what the source material became | SourceClaim ledger over a **pinned source snapshot** (`content_hash`): touch the source file and every claim goes stale; every required entity needs a claim |
+| Prototype quietly diverges from the spec | Manifest + `data-spec-id` DOM markers; re-attesting after machine edits is an **explicit action** (`sync --attest-prototype`), never a side effect |
 | "Ready" specs full of open questions | Pending items and undecided decisions **block** `status: ready` |
 
 The gate is **deterministic**: schema + rules + hash chains. No LLM, no API key, no network, no telemetry. LLMs are welcome to *draft* specs (that is the Skill layer); they never get to *judge* them.
+
+> What PASS does and does not prove is spelled out in [`docs/proof-boundary.md`](docs/proof-boundary.md) — PASS means the structure and evidence chain are closed over declared scope, not that the business content is correct.
 
 ## Quick start
 
@@ -74,7 +76,7 @@ They orchestrate *how humans and agents work through* specs; SpecAnvil verifies 
 
 ## Honest capability tiers
 
-Everything advertised above is implemented and tested (57+ regression tests, each gate rule has a failing-input test). Node runtime and web UI are explicitly **Deferred** — the stubs refuse to fake a hard PASS rather than shipping a second rule set.
+Everything advertised above is implemented and regression-tested; the gate has been adversarially hardened — negative cases from an external red-team audit are now regression tests. Node runtime and web UI are explicitly **Deferred** — the stubs refuse to fake a hard PASS rather than shipping a second rule set. Proof boundary: [`docs/proof-boundary.md`](docs/proof-boundary.md).
 
 ## License
 

@@ -1,9 +1,9 @@
 <!-- generated_from: examples/case-list-search/machine/spec.yaml -->
 <!-- spec_id: SPEC-LIST-SEARCH-001 -->
 <!-- spec_version: 0.1 -->
-<!-- spec_hash: 7af9b6454b4b33d735e23adc27b37fbbc44ce0757c54f7c28b2a747ee55808c1 -->
-<!-- body_hash: e54452daba1855f8fd38326bc782c9188c7d343f944eaffa6d86da1547d95cde -->
-<!-- renderer_version: 3 -->
+<!-- spec_hash: 71c6eb06dc70f7bb3f84c15c23a84eee03dae7e68300e058da8cbdfb8372afe6 -->
+<!-- body_hash: 9e2004fd923356a59849a3922e2373349f18256e385cd80f6755e92281433ecd -->
+<!-- renderer_version: 4 -->
 <!-- lang: zh -->
 <!-- gate_mode: hard -->
 <!-- 以机读 YAML 为唯一准据；禁止长期只改本文件 -->
@@ -11,7 +11,7 @@
 
 > **文档类型**：可开发的需求规格说明书（人读视图）  
 > **规格 ID**：`SPEC-LIST-SEARCH-001` · **状态**：`ready` · **版本**：`0.1`  
-> **机读哈希**：`7af9b6454b4b33d7…`
+> **机读哈希**：`71c6eb06dc70f7bb…`
 
 **EN title:** Product list · Title/ID search
 
@@ -65,7 +65,7 @@
 
 4 个状态 × 1 类动作，其中明确禁止 1 项。前端显隐与置灰以下表为唯一准据。
 
-生命周期顺序（示意）：
+生命周期枚举顺序（非流程图；转移条件以矩阵为准）：
 
 ```mermaid
 flowchart LR
@@ -109,12 +109,7 @@ flowchart LR
 
 ## 6. 主路径（编号）
 
-共 2 步；每步的 Given/When/Then 同时是测试的验收输入。
-
-```mermaid
-flowchart TD
-  B0["1. 标题模糊搜索"] --> B1["2. 空结果"]
-```
+共 3 步；每步的 Given/When/Then 同时是测试的验收输入。步骤为编号清单，非执行顺序。
 
 ### 步骤 1 · 标题模糊搜索
 
@@ -127,6 +122,12 @@ flowchart TD
 - **Given：** 关键词无匹配
 - **When：** 点击搜索
 - **Then：** 列表为空，展示文案「无匹配商品，请调整关键词」
+
+### 步骤 3 · 商品 ID 精确匹配
+
+- **Given：** 运营在商品列表页，已知某商品 ID
+- **When：** 输入完整商品 ID 并点击搜索
+- **Then：** 仅返回该 ID 对应的一行商品；ID 不存在则走空结果分支
 
 ## 7. 默认值与提示文案
 
@@ -147,10 +148,11 @@ flowchart TD
 
 ## 8. 验收标准（AC）
 
-共 2 条；逐条可执行，不可观察的表述会被门禁否决。
+共 3 条；逐条可执行，不可观察的表述会被门禁否决。
 
 - **AC-01**（行为 `B1`）：输入「蓝牙」可看到标题含「蓝牙」的商品行
 - **AC-02**（行为 `B2`）：输入不存在关键词时页面展示固定空态文案
+- **AC-03**（行为 `B3`）：输入已存在的完整商品 ID 时结果有且仅有该商品一行；输入不存在的 ID 时展示空态文案
 
 ## 9. 信息待闭合项（Pending）
 
@@ -166,7 +168,7 @@ flowchart TD
 
 | ID | 处置 | 摘要 | 规格引用 |
 |----|------|------|----------|
-| `SRC-CLM-LS-01` | `covered` | 按标题模糊搜、按商品 ID 精确搜 | `B1`, `AC-01`, `inp_keyword`, `btn_search` |
+| `SRC-CLM-LS-01` | `covered` | 按标题模糊搜、按商品 ID 精确搜 | `B1`, `AC-01`, `B3`, `AC-03`, `inp_keyword`, `btn_search` |
 | `SRC-CLM-LS-02` | `covered` | 无匹配时展示固定空态文案 | `B2`, `AC-02` |
 | `SRC-CLM-LS-03` | `out_of_scope` | 不做语义检索 | — |
 | `SRC-CLM-LS-04` | `assumption` | 默认每页 20 条（原料未写死，产品补默认） | `defaults.page_size` |
