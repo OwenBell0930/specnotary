@@ -20,7 +20,8 @@ except ImportError:  # pragma: no cover
 
 REQUIRED_TOP = ["spec_version", "id", "title", "status", "behaviors", "acceptance"]
 VAGUE = ("体验好", "尽量快", "智能", "方便地", "good ux", "quickly", "尽快", "尽量")
-SCHEMA_PATH = Path(__file__).resolve().parents[2] / "schemas" / "machine-spec.schema.json"
+RENDERER_VERSION = "2"
+SCHEMA_PATH = Path(__file__).resolve().parent / "schemas" / "machine-spec.schema.json"
 CLAIM_DISPOSITIONS = {
     "covered",
     "omitted",
@@ -357,27 +358,22 @@ def _validate_human_stale(
     sid = meta.get("spec_id")
     if sid and sid != str(data.get("id")):
         fail.append(f"human spec id mismatch: {sid} != {data.get('id')}")
+    recorded_rv = (meta.get("renderer_version") or "").strip()
+    if recorded_rv != RENDERER_VERSION:
+        # Renderer upgrades change body layout without changing meaning;
+        # give a targeted message instead of a confusing body-hash mismatch.
+        fail.append(
+            f"human spec stale: renderer v{recorded_rv or '?'} != v{RENDERER_VERSION}"
+            " — regenerate (spec content unchanged)"
+        )
+        return
     expected_body = split_human_markdown(render_human(data, source=meta.get("generated_from") or str(human_path)))[1]
     if human_body_hash(body) != human_body_hash(expected_body):
         fail.append(f"human spec stale: body edited or not regenerated — {human_path.name}")
 
 
-def validate(
-    data: Any,
-    project: dict | None = None,
-    *,
-    spec_path: Path | None = None,
-    human_path: Path | None = None,
-    manifest_path: Path | None = None,
-    check_human: bool = True,
-) -> dict[str, list[str]]:
-    """Return {fail, warn} lists. Pending rules apply when status=ready."""
-    fail: list[str] = []
-    warn: list[str] = []
-    if not isinstance(data, dict):
-        return {"fail": ["root must be an object"], "warn": []}
-
-    # Layer 1: JSON Schema
+def _layer_schema(data: dict, fail: list[str]) -> None:
+    """Layer 1 — JSON Schema (types, enums, required)."""
     if jsonschema is None:
         fail.append("schema: jsonschema not installed — cannot claim hard gate (pip install jsonschema)")
         for key in REQUIRED_TOP:
@@ -386,15 +382,18 @@ def validate(
         status = data.get("status")
         if status is not None and status not in {"draft", "ready", "deprecated"}:
             fail.append(f"status invalid (schema): {status!r} — allowed: draft|ready|deprecated")
-    else:
-        try:
-            jsonschema.validate(instance=data, schema=load_schema())
-        except jsonschema.ValidationError as exc:
-            path = ".".join(str(p) for p in exc.absolute_path) or "(root)"
-            fail.append(f"schema: {exc.message} at {path}")
-        except Exception as exc:  # noqa: BLE001
-            fail.append(f"schema validation error: {exc}")
+        return
+    try:
+        jsonschema.validate(instance=data, schema=load_schema())
+    except jsonschema.ValidationError as exc:
+        path = ".".join(str(p) for p in exc.absolute_path) or "(root)"
+        fail.append(f"schema: {exc.message} at {path}")
+    except Exception as exc:  # noqa: BLE001
+        fail.append(f"schema validation error: {exc}")
 
+
+def _layer_structure(data: dict, fail: list[str], warn: list[str]) -> list[dict]:
+    """Layer 2 — ID uniqueness, cross-references, action matrix. Returns matrix rows."""
     behaviors = data.get("behaviors") or []
     acceptance = data.get("acceptance") or []
     if not isinstance(behaviors, list) or len(behaviors) < 1:
@@ -408,7 +407,6 @@ def validate(
     _collect_ids(fail, (data.get("ui") or {}).get("controls") or [], "control")
     _collect_ids(fail, data.get("pending") or [], "pending")
 
-    # Cross-refs
     for p in data.get("permissions") or []:
         if not isinstance(p, dict):
             continue
@@ -434,70 +432,78 @@ def validate(
             fail.append(f"action_matrix state not in lifecycle: {st}")
         if not row.get("action"):
             fail.append(f"action_matrix row for state={st} missing action")
+    return matrix
 
-    status = data.get("status")
+
+def _layer_ready(data: dict, matrix: list[dict], fail: list[str]) -> None:
+    """Layer 3 — dev-ready completeness. Placeholders do not count."""
+    if data.get("status") != "ready":
+        return
+    behaviors = data.get("behaviors") or []
+    acceptance = data.get("acceptance") or []
     pending = data.get("pending") or []
-    open_qs = data.get("open_questions") or []
+    if data.get("open_questions"):
+        fail.append("status=ready but open_questions is not empty — move to pending with owner or resolve")
+    if not data.get("actors"):
+        fail.append("status=ready requires actors")
+    if not [s for s in (data.get("in_scope") or []) if _lang(s, "zh") or _lang(s, "en")]:
+        fail.append("status=ready requires non-empty in_scope")
+    defaults = data.get("defaults") or {}
+    real_defaults = [
+        k
+        for k in (defaults if isinstance(defaults, dict) else {})
+        if str(k).strip() not in {"_", "-", "todo", "placeholder"}
+        and not str(k).startswith("_")
+    ]
+    if not real_defaults:
+        fail.append("status=ready requires defaults with at least one real key")
+    ui = data.get("ui") if isinstance(data.get("ui"), dict) else {}
+    wire = str((ui or {}).get("wireframe") or "").strip()
+    real_controls = [
+        c for c in ((ui or {}).get("controls") or []) if isinstance(c, dict) and c.get("id")
+    ]
+    if not ui:
+        fail.append("status=ready requires ui (wireframe or non-empty controls)")
+    elif not wire and not real_controls:
+        fail.append("status=ready requires ui.wireframe or non-empty ui.controls")
+    states_obj = data.get("states") if isinstance(data.get("states"), dict) else {}
+    if not states_obj:
+        fail.append("status=ready requires states (lifecycle / allowed actions)")
+    elif not matrix:
+        fail.append("status=ready requires states.action_matrix (lifecycle alone is not enough)")
+    for b in behaviors if isinstance(behaviors, list) else []:
+        if not isinstance(b, dict):
+            continue
+        bid = b.get("id")
+        for field in ("given", "when", "then"):
+            clause = (_lang(b.get(field), "zh") + " " + _lang(b.get(field), "en")).strip()
+            if not clause:
+                fail.append(f"behavior {bid}: {field} is empty")
+            elif any(v in clause.lower() for v in VAGUE):
+                fail.append(f"behavior {bid}: {field}-clause too vague for ready")
+    for a in acceptance if isinstance(acceptance, list) else []:
+        if not isinstance(a, dict):
+            continue
+        text = (_lang(a, "zh") + " " + _lang(a, "en")).strip()
+        if not text:
+            fail.append(f"acceptance {a.get('id')}: missing observable zh/en text")
+        elif any(v in text.lower() for v in ("体验好", "功能正常", "good ux", "as fast")):
+            fail.append(f"acceptance {a.get('id')}: not observable")
+    for p in pending if isinstance(pending, list) else []:
+        if not _pending_ok(p):
+            fail.append(
+                "pending item missing required fields: id, missing, impact, owner, status"
+            )
+        elif str((p or {}).get("status", "")).strip().lower() in {"open", "待确认", "tbd"}:
+            fail.append(
+                f"pending {(p or {}).get('id')} still open — cannot mark status=ready"
+            )
 
-    if status == "ready":
-        if open_qs:
-            fail.append("status=ready but open_questions is not empty — move to pending with owner or resolve")
-        if not data.get("actors"):
-            fail.append("status=ready requires actors")
-        defaults = data.get("defaults") or {}
-        real_defaults = [
-            k
-            for k in (defaults if isinstance(defaults, dict) else {})
-            if str(k).strip() not in {"_", "-", "todo", "placeholder"}
-            and not str(k).startswith("_")
-        ]
-        if not real_defaults:
-            fail.append("status=ready requires defaults with at least one real key")
-        ui = data.get("ui") if isinstance(data.get("ui"), dict) else {}
-        wire = str((ui or {}).get("wireframe") or "").strip()
-        real_controls = [
-            c
-            for c in ((ui or {}).get("controls") or [])
-            if isinstance(c, dict) and c.get("id")
-        ]
-        if not ui:
-            fail.append("status=ready requires ui (wireframe or non-empty controls)")
-        elif not wire and not real_controls:
-            fail.append("status=ready requires ui.wireframe or non-empty ui.controls")
-        states_obj = data.get("states") if isinstance(data.get("states"), dict) else {}
-        if not states_obj:
-            fail.append("status=ready requires states (lifecycle / allowed actions)")
-        elif not matrix:
-            fail.append("status=ready requires states.action_matrix (lifecycle alone is not enough)")
-        for b in behaviors if isinstance(behaviors, list) else []:
-            if not isinstance(b, dict):
-                continue
-            bid = b.get("id")
-            for field in ("given", "when", "then"):
-                clause = (_lang(b.get(field), "zh") + " " + _lang(b.get(field), "en")).strip()
-                if not clause:
-                    fail.append(f"behavior {bid}: {field} is empty")
-                elif any(v in clause.lower() for v in VAGUE):
-                    fail.append(f"behavior {bid}: {field}-clause too vague for ready")
-        for a in acceptance if isinstance(acceptance, list) else []:
-            if not isinstance(a, dict):
-                continue
-            text = (_lang(a, "zh") + " " + _lang(a, "en")).strip()
-            if not text:
-                fail.append(f"acceptance {a.get('id')}: missing observable zh/en text")
-            elif any(v in text.lower() for v in ("体验好", "功能正常", "good ux", "as fast")):
-                fail.append(f"acceptance {a.get('id')}: not observable")
-        for p in pending if isinstance(pending, list) else []:
-            if not _pending_ok(p):
-                fail.append(
-                    "pending item missing four fields: id, missing, impact, owner, status"
-                )
-            elif str((p or {}).get("status", "")).strip().lower() in {"open", "待确认", "tbd"}:
-                fail.append(
-                    f"pending {(p or {}).get('id')} still open — cannot mark status=ready"
-                )
 
-    # WARN tier
+def _layer_quality_warn(data: dict, warn: list[str]) -> None:
+    """Layer 4 — quality debt that does not block PASS."""
+    behaviors = data.get("behaviors") or []
+    pending = data.get("pending") or []
     if not data.get("ui"):
         warn.append("ui block missing — human spec will lack wireframe/controls")
     if not data.get("states"):
@@ -508,11 +514,13 @@ def validate(
         for b in behaviors:
             if not (b or {}).get("step_id"):
                 warn.append(f"behavior {(b or {}).get('id')}: prefer step_id for numbered main path")
-    if pending and status != "ready":
+    if pending and data.get("status") != "ready":
         for p in pending:
             if not _pending_ok(p):
-                warn.append("pending item should use four fields: id/missing/impact/owner/status")
+                warn.append("pending item should carry: id/missing/impact/owner/status")
 
+
+def _layer_object_ai(data: dict, project: dict | None, fail: list[str]) -> None:
     weight = (project or {}).get("object_ai_weight", "medium")
     obj = data.get("object_ai") or {}
     if weight == "high":
@@ -523,17 +531,30 @@ def validate(
                 if not obj.get(key):
                     fail.append(f"object_ai_weight=high requires object_ai.{key}")
 
-    _validate_source_layer(data, fail, warn, spec_path=spec_path)
 
-    if check_human:
-        explicit_human = human_path is not None
-        resolved_human = human_path if explicit_human else expected_human_path(spec_path)
-        if resolved_human is not None and resolved_human.is_file():
-            _validate_human_stale(data, resolved_human, fail, warn)
-        elif resolved_human is not None and (explicit_human or data.get("status") == "ready"):
-            fail.append(f"human spec missing: {resolved_human}")
+def _layer_human(
+    data: dict,
+    spec_path: Path | None,
+    human_path: Path | None,
+    fail: list[str],
+    warn: list[str],
+) -> None:
+    explicit_human = human_path is not None
+    resolved_human = human_path if explicit_human else expected_human_path(spec_path)
+    if resolved_human is not None and resolved_human.is_file():
+        _validate_human_stale(data, resolved_human, fail, warn)
+    elif resolved_human is not None and (explicit_human or data.get("status") == "ready"):
+        fail.append(f"human spec missing: {resolved_human}")
 
-    from libproto import default_manifest_path, expected_manifest_path, load_and_validate_prototype  # noqa: PLC0415
+
+def _layer_prototype(
+    data: dict,
+    spec_path: Path | None,
+    manifest_path: Path | None,
+    fail: list[str],
+    warn: list[str],
+) -> None:
+    from .libproto import default_manifest_path, expected_manifest_path, load_and_validate_prototype  # noqa: PLC0415
 
     explicit_manifest = manifest_path is not None
     resolved_manifest = manifest_path if explicit_manifest else default_manifest_path(spec_path)
@@ -552,7 +573,78 @@ def validate(
     ):
         warn.append("prototype manifest not found — prototype consistency skipped")
 
+
+def validate(
+    data: Any,
+    project: dict | None = None,
+    *,
+    spec_path: Path | None = None,
+    human_path: Path | None = None,
+    manifest_path: Path | None = None,
+    check_human: bool = True,
+) -> dict[str, list[str]]:
+    """Return {fail, warn}. Pipeline: schema → structure → ready → warn →
+    object-AI → source coverage → human staleness → prototype consistency."""
+    fail: list[str] = []
+    warn: list[str] = []
+    if not isinstance(data, dict):
+        return {"fail": ["root must be an object"], "warn": []}
+
+    _layer_schema(data, fail)
+    matrix = _layer_structure(data, fail, warn)
+    _layer_ready(data, matrix, fail)
+    _layer_quality_warn(data, warn)
+    _layer_object_ai(data, project, fail)
+    _validate_source_layer(data, fail, warn, spec_path=spec_path)
+    if check_human:
+        _layer_human(data, spec_path, human_path, fail, warn)
+    _layer_prototype(data, spec_path, manifest_path, fail, warn)
+
     return {"fail": fail, "warn": warn}
+
+
+def ready_gap(
+    data: dict,
+    project: dict | None = None,
+    *,
+    spec_path: Path | None = None,
+    human_path: Path | None = None,
+    manifest_path: Path | None = None,
+) -> list[str]:
+    """What extra FAILs would appear if status were flipped to ready right now.
+
+    Deterministic dry-run for drafts: answers 「距 ready 还差什么」without
+    forcing authors to flip the flag and read a wall of FAILs.
+    """
+    if not isinstance(data, dict) or data.get("status") == "ready":
+        return []
+    current = validate(
+        data, project, spec_path=spec_path, human_path=human_path, manifest_path=manifest_path
+    )
+    simulated_data = json.loads(json.dumps(data, ensure_ascii=False, default=str))
+    simulated_data["status"] = "ready"
+    simulated = validate(
+        simulated_data,
+        project,
+        spec_path=spec_path,
+        human_path=human_path,
+        manifest_path=manifest_path,
+    )
+    seen = set(current["fail"])
+    gap: list[str] = []
+    regen_noted = False
+    for e in simulated["fail"]:
+        if e in seen:
+            continue
+        # Flipping status changes spec_hash, so hash-stale entries are a given;
+        # collapse them into one actionable line instead of noise.
+        if "stale: hash" in e or "renderer v" in e:
+            if not regen_noted:
+                gap.append("regenerate human/prototype after flipping status (hash will change)")
+                regen_noted = True
+            continue
+        gap.append(e)
+    return gap
 
 
 def render_human(data: dict, source: str, gate_mode: str = "hard") -> str:
@@ -726,6 +818,7 @@ def render_human(data: dict, source: str, gate_mode: str = "hard") -> str:
         f"<!-- spec_version: {data.get('spec_version')} -->",
         f"<!-- spec_hash: {digest} -->",
         f"<!-- body_hash: {human_body_hash(body)} -->",
+        f"<!-- renderer_version: {RENDERER_VERSION} -->",
         f"<!-- gate_mode: {gate_mode} -->",
         "<!-- 以机读 YAML 为唯一准据；禁止长期只改本文件 -->",
         "",
@@ -741,3 +834,19 @@ def load_project(root: Path) -> dict:
         if isinstance(data, dict):
             return data
     return {}
+
+
+def find_repo_root(start: Path) -> Path:
+    """Walk up from a spec file to the enclosing repo/project root."""
+    cur = start.resolve()
+    if cur.is_file():
+        cur = cur.parent
+    for candidate in (cur, *cur.parents):
+        if (candidate / ".git").exists() or (candidate / "project.yaml").is_file():
+            return candidate
+    return cur
+
+
+def load_project_for(spec_path: Path) -> dict:
+    """Load project.yaml from the spec file's own repo, not the tool's."""
+    return load_project(find_repo_root(spec_path))

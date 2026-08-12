@@ -5,18 +5,19 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-from libproto import classify_proto_issues, default_manifest_path  # noqa: E402
-from libspec import (  # noqa: E402
+from .libproto import classify_proto_issues, default_manifest_path
+from .libspec import (
     claim_summary,
     default_human_path,
-    load_project,
+    find_repo_root,
+    load_project_for,
     load_spec,
     relpath_from_root,
     spec_hash,
     validate,
 )
+
+USAGE = "Usage: specanvil report <machine-spec> [out.md]"
 
 
 def render_report(
@@ -26,16 +27,17 @@ def render_report(
     human_path: Path | None,
     manifest_path: Path | None = None,
 ) -> str:
+    root = find_repo_root(spec_path)
     buckets = claim_summary(data)
     digest = spec_hash(data)
     lines = [
         "# 评审就绪报告 / Review-readiness report",
         "",
-        f"- 机读：`{relpath_from_root(spec_path, ROOT)}`",
+        f"- 机读：`{relpath_from_root(spec_path, root)}`",
         f"- 规格 ID：`{data.get('id')}` · 状态：`{data.get('status')}`",
         f"- 机读哈希：`{digest}`",
-        f"- 人读：`{relpath_from_root(human_path, ROOT)}`" if human_path else "- 人读：未提供",
-        f"- 原型：`{relpath_from_root(manifest_path, ROOT)}`" if manifest_path else "- 原型：未提供",
+        f"- 人读：`{relpath_from_root(human_path, root)}`" if human_path else "- 人读：未提供",
+        f"- 原型：`{relpath_from_root(manifest_path, root)}`" if manifest_path else "- 原型：未提供",
         f"- FAIL：{len(result['fail'])} · WARN：{len(result['warn'])}",
         "",
         "## 原料覆盖汇总",
@@ -84,15 +86,16 @@ def render_report(
     return "\n".join(lines)
 
 
-def main() -> int:
-    if len(sys.argv) not in {2, 3}:
-        print("Usage: report.py <machine-spec> [out.md]")
+def main(argv: list[str] | None = None) -> int:
+    argv = list(sys.argv[1:] if argv is None else argv)
+    if len(argv) not in {1, 2}:
+        print(USAGE)
         return 2
-    spec_path = Path(sys.argv[1])
+    spec_path = Path(argv[0])
     if not spec_path.exists():
         print(f"FAIL: file not found: {spec_path}")
         return 2
-    out = Path(sys.argv[2]) if len(sys.argv) == 3 else spec_path.parent.parent / "reports" / "review-readiness.md"
+    out = Path(argv[1]) if len(argv) == 2 else spec_path.parent.parent / "reports" / "review-readiness.md"
     try:
         data = load_spec(spec_path)
     except Exception as exc:  # noqa: BLE001
@@ -101,7 +104,7 @@ def main() -> int:
     if not isinstance(data, dict):
         print("FAIL: root must be object")
         return 1
-    project = load_project(ROOT)
+    project = load_project_for(spec_path)
     if isinstance(data.get("project_hint"), dict):
         project = {**project, **data["project_hint"]}
     human = default_human_path(spec_path)

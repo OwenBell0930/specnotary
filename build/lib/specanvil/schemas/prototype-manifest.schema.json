@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://owenbell.local/spec-kit/prototype-manifest.schema.json",
+  "title": "Spec Kit prototype manifest",
+  "type": "object",
+  "required": ["prototype_version", "generated_from_spec"],
+  "additionalProperties": true,
+  "properties": {
+    "prototype_version": { "type": "string", "minLength": 1 },
+    "generated_from_spec": {
+      "type": "object",
+      "required": ["id", "hash"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "hash": { "type": "string", "minLength": 8 }
+      },
+      "additionalProperties": true
+    },
+    "screens": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "path": { "type": "string" },
+          "spec_refs": { "type": "array", "items": { "type": "string" } },
+          "required": { "type": "boolean" },
+          "role": { "type": "string" },
+          "controls": { "type": "array" }
+        },
+        "additionalProperties": true
+      }
+    },
+    "interactions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "spec_refs": { "type": "array", "items": { "type": "string" } },
+          "from": { "type": "string" },
+          "trigger": { "type": "string" },
+          "to": { "type": "string" },
+          "required": { "type": "boolean" },
+          "role": { "type": "string" }
+        },
+        "additionalProperties": true
+      }
+    },
+    "decorations": { "type": "array" },
+    "copy_refs": { "type": "array" },
+    "semantic_warnings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "target": { "type": "string" },
+          "evidence": { "type": "string" },
+          "note": { "type": "string" },
+          "confidence": { "type": "string" }
+        },
+        "additionalProperties": true
+      }
+    }
+  }
+}

@@ -1,20 +1,28 @@
 #!/usr/bin/env python3
+"""Generate the human construction-grade view from the machine source."""
 from __future__ import annotations
 
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-from libspec import load_project, load_spec, relpath_from_root, render_human, validate  # noqa: E402
+from .libspec import (
+    find_repo_root,
+    load_project_for,
+    load_spec,
+    relpath_from_root,
+    render_human,
+    validate,
+)
 
-ROOT = Path(__file__).resolve().parents[2]
+USAGE = "Usage: specanvil human <machine-spec> [out.md] [--allow-invalid]"
 
 
-def main() -> int:
-    args = [a for a in sys.argv[1:] if a != "--allow-invalid"]
-    allow_invalid = "--allow-invalid" in sys.argv[1:]
+def main(argv: list[str] | None = None) -> int:
+    argv = list(sys.argv[1:] if argv is None else argv)
+    allow_invalid = "--allow-invalid" in argv
+    args = [a for a in argv if a != "--allow-invalid"]
     if len(args) not in {1, 2}:
-        print("Usage: generate_human.py <machine-spec> [out.md] [--allow-invalid]")
+        print(USAGE)
         return 2
     src = Path(args[0])
     if not src.exists():
@@ -30,7 +38,7 @@ def main() -> int:
         print("FAIL: root must be object")
         return 1
 
-    project = load_project(ROOT)
+    project = load_project_for(src)
     if isinstance(data.get("project_hint"), dict):
         project = {**project, **data["project_hint"]}
     result = validate(data, project, spec_path=src, check_human=False)
@@ -44,7 +52,7 @@ def main() -> int:
             print(f"WARN: {w}")
         return 1
 
-    md = render_human(data, source=relpath_from_root(src, ROOT), gate_mode="hard")
+    md = render_human(data, source=relpath_from_root(src, find_repo_root(src)), gate_mode="hard")
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(md, encoding="utf-8")
     print(f"wrote: {out}")

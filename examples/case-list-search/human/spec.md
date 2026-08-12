@@ -3,6 +3,7 @@
 <!-- spec_version: 0.1 -->
 <!-- spec_hash: bdd58eafb2f2f61c4c44844f613da83e57b5cfebceda8ecc7f9153822a2d4897 -->
 <!-- body_hash: 635111c645b012954ff826dcb0f2c1d5b9bde66bc0867595d1ab8982d5a040cd -->
+<!-- renderer_version: 2 -->
 <!-- gate_mode: hard -->
 <!-- 以机读 YAML 为唯一准据；禁止长期只改本文件 -->
 # 商品列表 · 标题/ID 搜索

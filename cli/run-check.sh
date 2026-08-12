@@ -2,11 +2,9 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 TARGET="${1:-}"
-HUMAN="${2:-}"
-MANIFEST="${3:-}"
 
 if [[ -z "$TARGET" ]]; then
-  echo "Usage: ./cli/run-check.sh <machine-spec.yaml|json> [human.md] [prototype.manifest.yaml]"
+  echo "Usage: ./cli/run-check.sh <machine-spec.yaml|json> [human.md] [prototype.manifest.yaml] [--explain]"
   exit 2
 fi
 
@@ -22,17 +20,11 @@ if [[ -z "$runtime" ]]; then
   fi
 fi
 
-echo "spec-kit: using runtime=$runtime"
 case "$runtime" in
   python)
-    args=("$TARGET")
-    if [[ -n "$HUMAN" ]]; then
-      args+=("$HUMAN")
-    fi
-    if [[ -n "$MANIFEST" ]]; then
-      args+=("$MANIFEST")
-    fi
-    exec python3 "$ROOT/cli/python/check.py" "${args[@]}"
+    echo "specanvil: using runtime=python"
+    export PYTHONPATH="$ROOT/src${PYTHONPATH:+:$PYTHONPATH}"
+    exec python3 -m specanvil.check "$@"
     ;;
   node)
     echo "ERROR: Node CLI is Deferred and cannot produce a hard PASS."

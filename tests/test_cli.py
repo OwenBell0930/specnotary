@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -9,9 +10,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 CHECK = ROOT / "cli" / "run-check.sh"
-sys.path.insert(0, str(ROOT / "cli" / "python"))
-from libproto import classify_proto_issues, validate_prototype  # noqa: E402
-from libspec import load_spec, render_human, spec_hash, validate  # noqa: E402
+sys.path.insert(0, str(ROOT / "src"))
+from specanvil.libproto import classify_proto_issues, validate_prototype  # noqa: E402
+from specanvil.libspec import load_spec, ready_gap, render_human, spec_hash, validate  # noqa: E402
 
 
 def run(path: Path) -> tuple[int, str]:
@@ -405,6 +406,110 @@ def test_node_generate_refuses_hard_stamp():
     assert "gate_mode: hard" not in out or "cannot stamp" in out
 
 
+def test_template_draft_passes_gate():
+    code, out = run(ROOT / "templates/machine/spec.template.yaml")
+    assert code == 0, out
+    assert "RESULT: PASS" in out
+
+
+def test_renderer_version_stale():
+    data = load_spec(ROOT / "examples/case-list-search/machine/spec.yaml")
+    with tempfile.TemporaryDirectory() as td:
+        human = Path(td) / "spec.md"
+        text = render_human(data, source="mem")
+        text = text.replace("<!-- renderer_version: ", "<!-- renderer_version: 0", 1)
+        human.write_text(text, encoding="utf-8")
+        result = validate(data, {}, human_path=human)
+        assert any("renderer v" in e for e in result["fail"]), result
+
+
+def test_explain_ready_gap():
+    data = load_spec(ROOT / "examples/case-list-search/machine/spec.yaml")
+    data["status"] = "draft"
+    data["defaults"] = {}
+    gap = ready_gap(data, {})
+    assert any("defaults" in g for g in gap), gap
+    result = validate(data, {})
+    assert result["fail"] == [], result
+
+
+def test_explain_flag_prints_gap():
+    with tempfile.TemporaryDirectory() as td:
+        case = Path(td) / "case"
+        shutil.copytree(ROOT / "examples/case-list-search", case)
+        shutil.rmtree(case / "human")
+        spec = case / "machine" / "spec.yaml"
+        text = spec.read_text(encoding="utf-8")
+        spec.write_text(text.replace("status: ready", "status: draft", 1), encoding="utf-8")
+        p = subprocess.run(
+            ["bash", str(CHECK), str(spec), "--explain"],
+            capture_output=True,
+            text=True,
+        )
+        out = p.stdout + p.stderr
+        assert p.returncode == 0, out
+        assert "READY_GAP_COUNT:" in out
+        assert "READY-GAP:" in out
+
+
+def test_in_scope_required_for_ready():
+    data = load_spec(ROOT / "examples/case-list-search/machine/spec.yaml")
+    data["in_scope"] = []
+    result = validate(data, {})
+    assert any("in_scope" in e for e in result["fail"]), result
+
+
+def test_interaction_broken_link_fail():
+    data = load_spec(RAW)
+    manifest = load_spec(ALIGN)
+    manifest["interactions"][0]["trigger"] = "PROTO-GHOST-TRIGGER"
+    result = validate_prototype(data, manifest, manifest_path=ALIGN)
+    assert any("link broken" in e for e in result["fail"]), result
+
+
+def test_sync_roundtrip():
+    with tempfile.TemporaryDirectory() as td:
+        case = Path(td) / "case"
+        shutil.copytree(ROOT / "examples/case-order-cancel-raw", case)
+        spec = case / "machine" / "spec.yaml"
+        text = spec.read_text(encoding="utf-8")
+        assert "refund_path: original" in text
+        spec.write_text(text.replace("refund_path: original", "refund_path: original_channel", 1), encoding="utf-8")
+        stale_code, stale_out = run(spec)
+        assert stale_code == 1, stale_out
+        assert "stale" in stale_out
+        p = subprocess.run(
+            ["bash", str(ROOT / "cli" / "run-sync.sh"), str(spec)],
+            capture_output=True,
+            text=True,
+        )
+        assert p.returncode == 0, p.stdout + p.stderr
+        code, out = run(spec)
+        assert code == 0, out
+        assert "RESULT: PASS" in out
+
+
+def test_cli_module_entry():
+    env = {**os.environ, "PYTHONPATH": str(ROOT / "src")}
+    p = subprocess.run(
+        [sys.executable, "-m", "specanvil.cli", "check", str(RAW)],
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+    out = p.stdout + p.stderr
+    assert p.returncode == 0, out
+    assert "RESULT: PASS" in out
+    v = subprocess.run(
+        [sys.executable, "-m", "specanvil.cli", "--version"],
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+    assert v.returncode == 0
+    assert v.stdout.strip()
+
+
 if __name__ == "__main__":
     failed = 0
     for t in [
@@ -446,6 +551,14 @@ if __name__ == "__main__":
         test_ready_no_covered_fail,
         test_uncovered_behavior_fail,
         test_node_generate_refuses_hard_stamp,
+        test_template_draft_passes_gate,
+        test_renderer_version_stale,
+        test_explain_ready_gap,
+        test_explain_flag_prints_gap,
+        test_in_scope_required_for_ready,
+        test_interaction_broken_link_fail,
+        test_sync_roundtrip,
+        test_cli_module_entry,
     ]:
         try:
             t()

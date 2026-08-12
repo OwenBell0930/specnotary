@@ -12,9 +12,9 @@ try:
 except ImportError:  # pragma: no cover
     jsonschema = None
 
-from libspec import known_entity_ids, load_spec, spec_hash
+from .libspec import known_entity_ids, load_spec, spec_hash
 
-SCHEMA_PATH = Path(__file__).resolve().parents[2] / "schemas" / "prototype-manifest.schema.json"
+SCHEMA_PATH = Path(__file__).resolve().parent / "schemas" / "prototype-manifest.schema.json"
 EXTRA_EXEMPT_ROLES = {"decoration", "visual"}
 
 
@@ -138,6 +138,19 @@ def validate_prototype(
     mapped_behaviors: set[str] = set()
     proto_ids: set[str] = set()
 
+    declared_ids: set[str] = set()
+    for screen in manifest.get("screens") or []:
+        if not isinstance(screen, dict):
+            continue
+        if screen.get("id"):
+            declared_ids.add(str(screen["id"]))
+        for ctrl in screen.get("controls") or []:
+            if isinstance(ctrl, dict) and ctrl.get("id"):
+                declared_ids.add(str(ctrl["id"]))
+    for item in manifest.get("interactions") or []:
+        if isinstance(item, dict) and item.get("id"):
+            declared_ids.add(str(item["id"]))
+
     for screen in manifest.get("screens") or []:
         if not isinstance(screen, dict):
             continue
@@ -149,6 +162,8 @@ def validate_prototype(
         for ref in screen.get("spec_refs") or []:
             if str(ref) not in entities:
                 fail.append(f"prototype screen {sid}: spec_ref missing: {ref}")
+        if screen.get("required") is True and not screen.get("path"):
+            fail.append(f"prototype screen {sid}: required but has no path")
         html_ids: set[str] = set()
         rel = screen.get("path")
         if rel and manifest_path is not None:
@@ -211,6 +226,10 @@ def validate_prototype(
                 fail.append(f"prototype interaction {iid}: spec_ref missing: {ref}")
             if ref in behavior_ids:
                 mapped_behaviors.add(ref)
+        for link in ("from", "to", "trigger"):
+            target = item.get(link)
+            if target and str(target) not in declared_ids:
+                fail.append(f"prototype link broken: {iid} {link}={target} not declared")
 
     for deco in manifest.get("decorations") or []:
         if not isinstance(deco, dict):
