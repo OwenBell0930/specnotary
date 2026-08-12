@@ -5,6 +5,11 @@ node_modules/
 .venv/
 project.yaml
 
+# Python packaging artifacts
+build/
+dist/
+*.egg-info/
+
 # Local Cursor config — keep only the Hermes pointer rule if present
 .cursor/*
 !.cursor/rules/
