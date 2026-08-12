@@ -499,6 +499,60 @@ def test_quoted_ui_label_not_vague():
     assert any("too vague" in e for e in result2["fail"]), result2
 
 
+def test_dangling_ref_fail_on_ready():
+    data = load_spec(ROOT / "examples/case-list-search/machine/spec.yaml")
+    data["states"]["action_matrix"][0]["zh"] = "可提交关键词（二次确认见 P-99）"
+    result = validate(data, {})
+    assert any("dangling reference: P-99" in e for e in result["fail"]), result
+    data["status"] = "draft"
+    result2 = validate(data, {})
+    assert any("dangling reference: P-99" in w for w in result2["warn"]), result2
+
+
+def test_declared_ref_in_text_ok():
+    data = load_spec(ROOT / "examples/case-list-search/machine/spec.yaml")
+    data["states"]["action_matrix"][0]["zh"] = "可提交关键词（对应 AC-01）"
+    result = validate(data, {})
+    assert not any("dangling" in e for e in result["fail"]), result
+
+
+def test_spa_source_markers_and_comments():
+    from specanvil.libproto import _html_spec_ids
+    from specanvil.markers import scan_markers
+    with tempfile.TemporaryDirectory() as td:
+        src = Path(td) / "Toc.tsx"
+        src.write_text(
+            '// data-spec-id="ghost_line"\n'
+            '/* <button data-spec-id="ghost_block" /> */\n'
+            'export const B = () => (<button data-spec-id="btn_search">搜</button>);\n',
+            encoding="utf-8",
+        )
+        ids = _html_spec_ids(src)
+        assert ids == {"btn_search"}, ids
+        found = scan_markers(Path(td))
+        assert "btn_search" in found and "ghost_line" not in found, found
+
+
+def test_markers_command_reconciles():
+    with tempfile.TemporaryDirectory() as td:
+        (Path(td) / "page.html").write_text(
+            '<button data-spec-id="inp_keyword"></button>'
+            '<div data-spec-id="not_in_spec"></div>',
+            encoding="utf-8",
+        )
+        env = {**os.environ, "PYTHONPATH": str(ROOT / "src")}
+        p = subprocess.run(
+            [sys.executable, "-m", "specanvil.markers",
+             str(ROOT / "examples/case-list-search/machine/spec.yaml"), td],
+            capture_output=True, text=True, env=env,
+        )
+        out = p.stdout + p.stderr
+        assert p.returncode == 0, out
+        assert "ok inp_keyword" in out
+        assert "?? not_in_spec" in out
+        assert "btn_search" in out  # required but unmarked
+
+
 def test_cli_module_entry():
     env = {**os.environ, "PYTHONPATH": str(ROOT / "src")}
     p = subprocess.run(
@@ -569,6 +623,10 @@ if __name__ == "__main__":
         test_interaction_broken_link_fail,
         test_sync_roundtrip,
         test_quoted_ui_label_not_vague,
+        test_dangling_ref_fail_on_ready,
+        test_declared_ref_in_text_ok,
+        test_spa_source_markers_and_comments,
+        test_markers_command_reconciles,
         test_cli_module_entry,
     ]:
         try:

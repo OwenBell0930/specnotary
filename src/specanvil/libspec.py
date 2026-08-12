@@ -63,6 +63,22 @@ def _lang(node: Any, lang: str = "zh") -> str:
     return "" if node is None else str(node)
 
 
+REF_TOKEN = re.compile(r"\b(?:P|AC|SRC)-[A-Za-z0-9][A-Za-z0-9_-]*\b")
+
+
+def dangling_refs(data: dict) -> list[str]:
+    """ID-shaped tokens mentioned anywhere in the spec that are not declared.
+
+    Catches stale free-text cross-references like 「见 P-01」 after P-01 was
+    resolved. Only unambiguous spec-owned prefixes (P- / AC- / SRC-) are
+    scanned; bare B1/C1 style tokens collide with real-world names (区域 C1,
+    型号 B2) and are deliberately left alone.
+    """
+    blob = json.dumps(data, ensure_ascii=False, default=str)
+    known = known_entity_ids(data)
+    return sorted({tok for tok in REF_TOKEN.findall(blob) if tok not in known})
+
+
 def _strip_ui_literals(text: str) -> str:
     """Drop 「…」 spans before the vague-wording scan.
 
@@ -605,6 +621,12 @@ def validate(
 
     _layer_schema(data, fail)
     matrix = _layer_structure(data, fail, warn)
+    for tok in dangling_refs(data):
+        msg = f"dangling reference: {tok} mentioned in text but not declared"
+        if data.get("status") == "ready":
+            fail.append(msg)
+        else:
+            warn.append(msg)
     _layer_ready(data, matrix, fail)
     _layer_quality_warn(data, warn)
     _layer_object_ai(data, project, fail)

@@ -86,7 +86,9 @@
 | Skill 起草 / 降级检查 | **Available** | 降级须标 `degraded` |
 | 原料覆盖（SourceClaim） | **Available** | 原料文件必须存在；必选实体必须被引用；`specanvil report` |
 | 人读哈希 / stale 检测 | **Available** | `spec_hash` + 正文逐字对照 + `renderer_version`；只改正文也 FAIL |
-| 原型 Manifest 一致性 | **Available** | manifest 哈希 + HTML `data-spec-id` 落点；无 manifest 则跳过并 WARN |
+| 原型 Manifest 一致性 | **Available** | manifest 哈希 + `data-spec-id` 落点（HTML/React/Vue 源）；无 manifest 则跳过并 WARN |
+| 存量项目标记对账 | **Available** | `specanvil markers`：列出已标/非法/待回填的 `data-spec-id` |
+| 悬空引用检查 | **Available** | 文本提及 `P-*`/`AC-*`/`SRC-*` 必须真实存在 |
 | pip 安装 | **Available** | `pip install .`（PyPI 发布待九步批准） |
 | 任意原料一键转机读 | **Planned** | Skill + 人工确认 |
 | Node 等价硬门禁 | **Deferred** | stub 直接拒绝，绝不冒充 hard PASS |

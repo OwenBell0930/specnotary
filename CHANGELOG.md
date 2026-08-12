@@ -14,6 +14,7 @@ SpecAnvil 遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)；�
 - **原型一致性硬化**：HTML `data-spec-id` 排除注释；映射控件必须在 HTML 出现；interaction `from/to/trigger` 断链 FAIL；`required` screen 必须有 path；除 `decoration/visual` 外无 `spec_refs` 即 extra。
 - **ready 完备性硬化**：占位 `ui`/`defaults`/`states` 不算数；given/when/then 与 AC 正文非空且禁空话；`in_scope` 非空。
 - 人读正文与按机读重渲染逐字对照（`body_hash`）——只改人读正文也会 FAIL。
+- **实测驱动的三项硬化**（用真实项目文档实测后落地）：`「…」`内字面 UI 文案豁免空话扫描（真实按钮名「智能识别」不再误报）；自由文本悬空引用检查（提及 `P-*`/`AC-*`/`SRC-*` 必须存在，ready FAIL / draft WARN）；`specanvil markers` 存量对账命令 + 原型落点核对支持 React/Vue/Svelte 源文件（注释不算命中）。
 - CI 工作流（GitHub Actions）、LICENSE (MIT)、CONTRIBUTING、SECURITY、发布检查清单。
 
 ### Changed

@@ -18,10 +18,10 @@
 ## 校验分层
 
 1. **JSON Schema**（`src/specanvil/schemas/machine-spec.schema.json`）— 类型、enum、必填  
-2. **确定性规则** — ID 唯一、跨对象引用、ready 完备性（占位 ui/defaults/states 不算数；given/when/then 与 AC 非空且禁空话，`「…」`内的字面 UI 文案豁免；`in_scope` 非空）、Pending 五字段  
+2. **确定性规则** — ID 唯一、跨对象引用、ready 完备性（占位 ui/defaults/states 不算数；given/when/then 与 AC 非空且禁空话，`「…」`内的字面 UI 文案豁免；`in_scope` 非空）、Pending 五字段、自由文本悬空引用（`P-*` / `AC-*` / `SRC-*` 提及即必须存在；ready FAIL，draft WARN）  
 3. **原料覆盖** — `sources[].path` 必须存在；ready 至少 1 条 `covered`；每个必选 behavior/AC/control 须被 claim 引用；`omitted` / 未闭合 `conflict` 在 `ready` 上 FAIL；`assumption` 为 WARN  
 4. **人读 stale** — 人读头 `spec_hash` 必须等于当前机读内容哈希；`renderer_version` 必须等于当前渲染器版本（版本不符给出单条「重新生成」提示）；正文须与按机读重渲染逐字一致（只改正文也 FAIL）  
-5. **原型一致性** — 若存在 `prototype/prototype.manifest.yaml`：manifest 哈希、必需控件/行为映射、禁止无规格业务动作、HTML `data-spec-id` 落点核对（注释不算命中）、interaction `from/to/trigger` 不得断链、`required` screen 必须有 path；`semantic_warnings` 仅为 WARN。无 manifest 时跳过（ready 下 WARN，不挡 PASS）
+5. **原型一致性** — 若存在 `prototype/prototype.manifest.yaml`：manifest 哈希、必需控件/行为映射、禁止无规格业务动作、`data-spec-id` 落点核对（HTML 与 React/Vue/Svelte 源文件均可；注释不算命中）、interaction `from/to/trigger` 不得断链、`required` screen 必须有 path；`semantic_warnings` 仅为 WARN。无 manifest 时跳过（ready 下 WARN，不挡 PASS）
 
 依赖：`pip install .`（或仅 `pip install pyyaml jsonschema` 走 `cli/run-*.sh`）
 
@@ -40,6 +40,14 @@ specanvil sync <machine.yaml>
 ```
 
 改机读之后：重新生成人读、刷新 `prototype.manifest.yaml` 的 `generated_from_spec.hash`、复跑门禁。机读本身有 FAIL 时拒绝同步。
+
+## 存量项目接入（retrofit）
+
+```bash
+specanvil markers <machine.yaml> <前端源码目录>
+```
+
+对账源码里已有的 `data-spec-id`（支持 .html/.tsx/.jsx/.vue/.svelte，注释里的不算）：列出已匹配、非法标记、以及必选控件/行为还缺哪些标记。回填完成后再写 manifest 接入原型门禁。此命令仅对账，不是门禁。
 
 ## 评审就绪报告
 

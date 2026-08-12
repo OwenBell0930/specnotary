@@ -7,6 +7,7 @@ import sys
 from . import __version__
 from .check import main as check_main
 from .generate_human import main as human_main
+from .markers import main as markers_main
 from .report import main as report_main
 from .sync import main as sync_main
 
@@ -15,6 +16,7 @@ COMMANDS = {
     "human": (human_main, "Generate human construction-grade view from machine source"),
     "report": (report_main, "Write review-readiness report (coverage + prototype buckets)"),
     "sync": (sync_main, "Regenerate human + refresh prototype hash after machine edits"),
+    "markers": (markers_main, "Diff data-spec-id markers in a source tree against spec entities (retrofit helper)"),
 }
 
 

@@ -44,10 +44,21 @@ def _iter_controls(manifest: dict) -> list[tuple[dict, dict | None]]:
     return out
 
 
+_CODE_SUFFIXES = {".tsx", ".jsx", ".ts", ".js", ".vue", ".svelte", ".mjs", ".cjs"}
+
+
 def _html_spec_ids(html_path: Path) -> set[str]:
+    """Extract data-spec-id markers, ignoring commented-out ones.
+
+    Works for plain HTML and for SPA sources (React/Vue/Svelte): manifest
+    screen.path may point at a component file when no static HTML exists.
+    """
     if not html_path.is_file():
         return set()
     text = re.sub(r"<!--.*?-->", "", html_path.read_text(encoding="utf-8"), flags=re.DOTALL)
+    if html_path.suffix.lower() in _CODE_SUFFIXES:
+        text = re.sub(r"/\*.*?\*/", "", text, flags=re.DOTALL)
+        text = re.sub(r"^\s*//.*$", "", text, flags=re.MULTILINE)
     return set(re.findall(r'data-spec-id=["\']([^"\']+)["\']', text))
 
 

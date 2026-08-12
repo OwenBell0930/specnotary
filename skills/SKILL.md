@@ -46,7 +46,8 @@ specanvil report <machine.yaml> [report.md]
 
 CLI **不解析任意前端框架**。Agent 生成可演示原型时必须同时写 `prototype/prototype.manifest.yaml`。
 
-- 每个业务控件加稳定标记：`data-spec-id="<机读控件或行为 ID>"`（写进真实 DOM，注释不算）
+- 每个业务控件加稳定标记：`data-spec-id="<机读控件或行为 ID>"`（写进真实 DOM/JSX，注释不算）
+- 存量项目先跑 `specanvil markers <machine.yaml> <源码目录>` 对账缺哪些标记，回填后再写 manifest
 - `generated_from_spec.hash` = 当前机读 `spec_hash`（`specanvil check` 会打印；改机读后用 `specanvil sync` 自动刷新）
 - 规格里未标 `prototype_optional` 的控件 / 行为必须映射
 - 无规格引用的控件/交互 → FAIL（仅 `role: decoration|visual` 豁免）；interaction 的 `from/to/trigger` 必须指向已声明的 id
