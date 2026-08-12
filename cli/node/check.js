@@ -84,16 +84,11 @@ function main() {
     project = { ...project, ...data.project_hint };
   }
   const errors = validate(data, project);
-  console.log("gate_mode: hard");
+  console.log("gate_mode: deferred");
   console.log("runtime: node");
   console.log(`file: ${file}`);
-  if (project.object_ai_weight) console.log(`object_ai_weight: ${project.object_ai_weight}`);
-  if (errors.length) {
-    console.log("RESULT: FAIL");
-    for (const e of errors) console.log(`- ${e}`);
-    process.exit(1);
-  }
-  console.log("RESULT: PASS");
+  console.log("ERROR: Node CLI is Deferred and cannot produce a hard PASS.");
+  process.exit(3);
 }
 
 main();

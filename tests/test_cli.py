@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import os
 import subprocess
 import sys
 import tempfile
@@ -168,11 +169,63 @@ def test_human_stale_after_hand_edit():
         ok = validate(data, {}, human_path=human)
         assert ok["fail"] == [], ok
         human.write_text(human.read_text(encoding="utf-8") + "\n<!-- tamper -->\n", encoding="utf-8")
-        # header hash still matches; stale means machine vs recorded hash
         data2 = dict(data)
         data2["defaults"] = {**(data.get("defaults") or {}), "page_size": 99}
         stale = validate(data2, {}, human_path=human)
         assert any("stale" in e for e in stale["fail"]), stale
+
+
+def test_human_body_edit_fail():
+    data = load_spec(ROOT / "examples/case-list-search/machine/spec.yaml")
+    with tempfile.TemporaryDirectory() as td:
+        human = Path(td) / "spec.md"
+        text = render_human(data, source="mem")
+        human.write_text(text.replace("## 1. 范围", "## 1. 范围（手改）", 1), encoding="utf-8")
+        result = validate(data, {}, human_path=human)
+        assert any("body" in e for e in result["fail"]), result
+
+
+def test_ready_empty_claims_fail():
+    data = load_spec(ROOT / "examples/case-list-search/machine/spec.yaml")
+    data["source_claims"] = []
+    result = validate(data, {})
+    assert any("source_claims missing" in e for e in result["fail"]), result
+
+
+def test_spec_ref_must_be_spec_entity():
+    data = load_spec(ROOT / "examples/case-list-search/machine/spec.yaml")
+    data["source_claims"] = [
+        {
+            "id": "SRC-CLM-BADREF",
+            "source_ref": "SRC-LS-001",
+            "quote_or_summary": "covered via source id",
+            "disposition": "covered",
+            "spec_refs": ["SRC-LS-001"],
+        }
+    ]
+    result = validate(data, {})
+    assert any("not a spec entity" in e for e in result["fail"]), result
+
+
+def test_explicit_missing_human_fail():
+    data = load_spec(ROOT / "examples/case-list-search/machine/spec.yaml")
+    result = validate(data, {}, human_path=Path("/tmp/spec-kit-no-such-human.md"))
+    assert any("human spec missing" in e for e in result["fail"]), result
+
+
+def test_node_runtime_refuses_hard_pass():
+    env = {**os.environ, "SPEC_KIT_RUNTIME": "node"}
+    p = subprocess.run(
+        ["bash", str(CHECK), str(ROOT / "examples/case-list-search/machine/spec.yaml")],
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+    out = p.stdout + p.stderr
+    assert p.returncode == 3, out
+    assert "RESULT: PASS" not in out
+    assert "gate_mode: hard" not in out
+    assert "Deferred" in out or "cannot produce a hard PASS" in out
 
 
 def test_human_missing_hash_fail():
@@ -271,6 +324,87 @@ def test_semantic_warning_is_warn():
     assert buckets["extra"]
 
 
+def test_ready_placeholder_ui_fail():
+    data = load_spec(ROOT / "examples/case-list-search/machine/spec.yaml")
+    data["ui"] = {"_": 1}
+    result = validate(data, {})
+    assert any("ui.wireframe" in e or "ui.controls" in e for e in result["fail"]), result
+
+
+def test_ready_empty_then_fail():
+    data = load_spec(ROOT / "examples/case-list-search/machine/spec.yaml")
+    data["behaviors"][0]["then"] = {"zh": ""}
+    result = validate(data, {})
+    assert any("then is empty" in e for e in result["fail"]), result
+
+
+def test_html_comment_not_a_hit():
+    data = load_spec(RAW)
+    manifest = load_spec(ALIGN)
+    with tempfile.TemporaryDirectory() as td:
+        html = Path(td) / "order-detail.html"
+        html.write_text("<!-- <button data-spec-id='btn_cancel'></button> -->\n<div></div>\n", encoding="utf-8")
+        man = Path(td) / "prototype.manifest.yaml"
+        man.write_text(ALIGN.read_text(encoding="utf-8"), encoding="utf-8")
+        result = validate_prototype(data, manifest, manifest_path=man)
+        assert any("not found in html" in e for e in result["fail"]), result
+
+
+def test_role_escape_extra_fail():
+    data = load_spec(RAW)
+    manifest = load_spec(ALIGN)
+    screens = manifest.get("screens") or []
+    screens[0].setdefault("controls", []).append(
+        {"id": "PROTO-GHOST-BTN", "role": "primary_button", "spec_refs": []}
+    )
+    result = validate_prototype(data, manifest, manifest_path=ALIGN)
+    assert any("PROTO-GHOST-BTN" in e and "extra" in e for e in result["fail"]), result
+
+
+def test_source_path_missing_fail():
+    data = load_spec(ROOT / "examples/case-list-search/machine/spec.yaml")
+    data["sources"][0]["path"] = "../input/no-such-file.txt"
+    result = validate(
+        data, {}, spec_path=ROOT / "examples/case-list-search/machine/spec.yaml"
+    )
+    assert any("path missing" in e for e in result["fail"]), result
+
+
+def test_ready_no_covered_fail():
+    data = load_spec(ROOT / "examples/case-list-search/machine/spec.yaml")
+    data["source_claims"] = [
+        {
+            "id": "SRC-CLM-ONLY-ASSUME",
+            "source_ref": "SRC-LS-001",
+            "quote_or_summary": "先猜一个默认分页",
+            "disposition": "assumption",
+            "spec_refs": ["defaults.page_size"],
+        }
+    ]
+    result = validate(data, {})
+    assert any("at least one covered" in e for e in result["fail"]), result
+
+
+def test_uncovered_behavior_fail():
+    data = load_spec(ROOT / "examples/case-list-search/machine/spec.yaml")
+    for claim in data.get("source_claims") or []:
+        refs = [r for r in (claim.get("spec_refs") or []) if r != "B2"]
+        claim["spec_refs"] = refs
+    result = validate(data, {})
+    assert any("coverage missing for behavior B2" in e for e in result["fail"]), result
+
+
+def test_node_generate_refuses_hard_stamp():
+    p = subprocess.run(
+        ["node", str(ROOT / "cli" / "node" / "generate_human.js"), str(RAW)],
+        capture_output=True,
+        text=True,
+    )
+    out = p.stdout + p.stderr
+    assert p.returncode == 3, out
+    assert "gate_mode: hard" not in out or "cannot stamp" in out
+
+
 if __name__ == "__main__":
     failed = 0
     for t in [
@@ -290,6 +424,11 @@ if __name__ == "__main__":
         test_conflict_unclosed_fail,
         test_covered_without_refs_fail,
         test_human_stale_after_hand_edit,
+        test_human_body_edit_fail,
+        test_ready_empty_claims_fail,
+        test_spec_ref_must_be_spec_entity,
+        test_explicit_missing_human_fail,
+        test_node_runtime_refuses_hard_pass,
         test_human_missing_hash_fail,
         test_report_lists_dispositions,
         test_aligned_prototype_pass,
@@ -299,6 +438,14 @@ if __name__ == "__main__":
         test_drift_extra_business_action,
         test_decoration_without_refs_ok,
         test_semantic_warning_is_warn,
+        test_ready_placeholder_ui_fail,
+        test_ready_empty_then_fail,
+        test_html_comment_not_a_hit,
+        test_role_escape_extra_fail,
+        test_source_path_missing_fail,
+        test_ready_no_covered_fail,
+        test_uncovered_behavior_fail,
+        test_node_generate_refuses_hard_stamp,
     ]:
         try:
             t()

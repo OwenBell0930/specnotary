@@ -5,7 +5,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from libspec import load_project, load_spec, render_human, validate  # noqa: E402
+from libspec import load_project, load_spec, relpath_from_root, render_human, validate  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -33,7 +33,7 @@ def main() -> int:
     project = load_project(ROOT)
     if isinstance(data.get("project_hint"), dict):
         project = {**project, **data["project_hint"]}
-    result = validate(data, project)
+    result = validate(data, project, spec_path=src, check_human=False)
 
     if result["fail"] and not allow_invalid:
         print("FAIL: machine spec has FAIL items — refuse to write human view")
@@ -44,7 +44,7 @@ def main() -> int:
             print(f"WARN: {w}")
         return 1
 
-    md = render_human(data, source=str(src), gate_mode="hard")
+    md = render_human(data, source=relpath_from_root(src, ROOT), gate_mode="hard")
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(md, encoding="utf-8")
     print(f"wrote: {out}")

@@ -5,7 +5,7 @@
 | `hard` | **Python** CLI 已执行（`./cli/run-check.sh`） | 可作为本地「自动测试跑通」依据 |
 | `degraded` | 无 Python，Skill+LLM 代跑 | **仅参考**；不得冒充 hard PASS |
 
-> **Node CLI：Deferred。** `cli/node/` 可能落后于 Python 规则，**不是**等价硬门禁。仅在显式 `SPEC_KIT_RUNTIME=node` 时使用，并会打印 WARN。
+> **Node CLI：Deferred。** `cli/node/` 与 `SPEC_KIT_RUNTIME=node` **拒绝**冒充 hard PASS（退出码 3）。硬门禁只有 Python；无 Python 时用 Skill 并标 `gate_mode: degraded`。
 
 ## hard 结果分层
 
@@ -19,9 +19,9 @@
 
 1. **JSON Schema**（`schemas/machine-spec.schema.json`）— 类型、enum、必填  
 2. **确定性规则** — ID 唯一、跨对象引用、ready 完备性、Pending 四要素  
-3. **原料覆盖（P1）** — SourceClaim 处置与 `spec_refs`；`omitted` / 未闭合 `conflict` 在 `ready` 上 FAIL；`assumption` 为 WARN  
-4. **人读 stale（P1）** — 人读头 `spec_hash` 必须等于当前机读内容哈希  
-5. **原型一致性（P2）** — 若存在 `prototype/prototype.manifest.yaml`：哈希、必需控件/行为映射、禁止无规格业务动作；`semantic_warnings` 仅为 WARN  
+3. **原料覆盖（P1）** — `sources[].path` 必须存在；ready 至少 1 条 `covered`；每个必选 behavior/AC/control 须被 claim 引用；`omitted` / 未闭合 `conflict` 在 `ready` 上 FAIL；`assumption` 为 WARN  
+4. **人读 stale（P1）** — 人读头 `spec_hash` 必须等于当前机读内容哈希；正文须与按机读重渲染一致（只改正文也 FAIL）  
+5. **原型一致性（P2）** — 若存在 `prototype/prototype.manifest.yaml`：哈希、必需控件/行为映射、禁止无规格业务动作、HTML `data-spec-id` 不计注释、映射控件 id 必须出现；`semantic_warnings` 仅为 WARN。无 manifest 时跳过（ready 下 WARN，不挡 PASS）  
 
 依赖：`pip install pyyaml jsonschema`
 

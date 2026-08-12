@@ -1,6 +1,8 @@
 # 可开发的需求规格说明书 — 人读体例（由机读生成；勿长期手改）
 
 <!-- generated_from: templates/machine/... -->
+<!-- spec_hash: … -->
+<!-- body_hash: … -->
 <!-- gate_mode: hard|degraded -->
 
 # {标题}

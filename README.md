@@ -77,8 +77,8 @@
 | 通用 `action_matrix`（非订单域样例） | **Available** | 见 `examples/case-list-search/` |
 | Skill 起草 / 降级检查 | **Available** | 降级须标 `degraded` |
 | 原料覆盖（SourceClaim） | **Available** | `sources` + `source_claims`；`./cli/run-report.sh` |
-| 人读哈希 / stale 检测 | **Available** | 人读头 `spec_hash`；手改/未重生成 → FAIL |
-| 原型 Manifest 一致性 | **Available** | `prototype/prototype.manifest.yaml`；对齐 + 漂移样例 |
+| 人读哈希 / stale 检测 | **Available** | 人读头 `spec_hash` + 正文对照；只改正文也 FAIL |
+| 原型 Manifest 一致性 | **Available** | 有 `prototype.manifest.yaml` 时检查；无则跳过并 WARN |
 | 任意原料一键转机读 | **Planned** | Skill + 人工确认 |
 | Node 等价硬门禁 | **Deferred** | 勿当硬门禁 |
 | Web / MCP | **Deferred** | — |

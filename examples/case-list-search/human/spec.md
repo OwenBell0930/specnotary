@@ -1,15 +1,15 @@
-<!-- generated_from: /Users/zhaosi./Documents/Cursor Projects/spec-kit/examples/case-list-search/machine/spec.yaml -->
+<!-- generated_from: examples/case-list-search/machine/spec.yaml -->
 <!-- spec_id: SPEC-LIST-SEARCH-001 -->
 <!-- spec_version: 0.1 -->
-<!-- spec_hash: 37769eeabaa0e6a92650bc0020ab774c8df9dee8d3dde1e00dd3fa93d01a7922 -->
+<!-- spec_hash: bdd58eafb2f2f61c4c44844f613da83e57b5cfebceda8ecc7f9153822a2d4897 -->
+<!-- body_hash: 635111c645b012954ff826dcb0f2c1d5b9bde66bc0867595d1ab8982d5a040cd -->
 <!-- gate_mode: hard -->
 <!-- 以机读 YAML 为唯一准据；禁止长期只改本文件 -->
-
 # 商品列表 · 标题/ID 搜索
 
 > **文档类型**：可开发的需求规格说明书（人读视图）  
 > **规格 ID**：`SPEC-LIST-SEARCH-001` · **状态**：`ready` · **版本**：`0.1`  
-> **机读哈希**：`37769eeabaa0e6a9…`
+> **机读哈希**：`bdd58eafb2f2f61c…`
 
 **EN title:** Product list · Title/ID search
 
@@ -117,7 +117,7 @@
 
 | ID | 处置 | 摘要 | 规格引用 |
 |----|------|------|----------|
-| `SRC-CLM-LS-01` | `covered` | 按标题模糊搜、按商品 ID 精确搜 | `B1`, `AC-01` |
+| `SRC-CLM-LS-01` | `covered` | 按标题模糊搜、按商品 ID 精确搜 | `B1`, `AC-01`, `inp_keyword`, `btn_search` |
 | `SRC-CLM-LS-02` | `covered` | 无匹配时展示固定空态文案 | `B2`, `AC-02` |
 | `SRC-CLM-LS-03` | `out_of_scope` | 不做语义检索 | — |
 | `SRC-CLM-LS-04` | `assumption` | 默认每页 20 条（原料未写死，产品补默认） | `defaults.page_size` |

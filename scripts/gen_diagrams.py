@@ -163,7 +163,7 @@ def architecture():
     svg += line(640, 240, 640, 300)
     svg += line(1040, 240, 940, 300, color=ORANGE)
 
-    svg += label(640, 530, "Python 与 Node 双运行时 · 优先 YAML · 上传 GitHub 前仍须走九步复核", 15, bold=False, color=TEXT_MUTED)
+    svg += label(640, 530, "Python 硬门禁 · Node Deferred · 优先 YAML · 上传 GitHub 前仍须走九步复核", 15, bold=False, color=TEXT_MUTED)
     svg += footer()
     path = os.path.join(OUT, "architecture.svg")
     with open(path, "w", encoding="utf-8") as f:

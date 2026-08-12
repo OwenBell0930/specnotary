@@ -135,11 +135,54 @@ def parse_human_header(text: str) -> dict[str, str]:
     return meta
 
 
-def default_human_path(spec_path: Path | None) -> Path | None:
+def expected_human_path(spec_path: Path | None) -> Path | None:
     if spec_path is None:
         return None
-    sibling = spec_path.resolve().parent.parent / "human" / "spec.md"
-    return sibling if sibling.is_file() else None
+    return spec_path.resolve().parent.parent / "human" / "spec.md"
+
+
+def default_human_path(spec_path: Path | None) -> Path | None:
+    sibling = expected_human_path(spec_path)
+    return sibling if sibling is not None and sibling.is_file() else None
+
+
+def relpath_from_root(path: Path, root: Path) -> str:
+    try:
+        return str(path.resolve().relative_to(root.resolve()))
+    except ValueError:
+        return path.name
+
+
+def split_human_markdown(text: str) -> tuple[dict[str, str], str]:
+    meta = parse_human_header(text)
+    lines = text.splitlines()
+    i = 0
+    while i < len(lines) and (lines[i].startswith("<!--") or lines[i].strip() == ""):
+        i += 1
+    body = "\n".join(lines[i:]).strip() + "\n"
+    return meta, body
+
+
+def human_body_hash(body: str) -> str:
+    return hashlib.sha256(body.encode("utf-8")).hexdigest()
+
+
+def claim_spec_ref_ids(data: dict) -> set[str]:
+    """Whitelist for SourceClaim.spec_refs — spec entities only, not sources/claims/lifecycle names."""
+    ids: set[str] = set()
+    for items in (
+        data.get("behaviors") or [],
+        data.get("acceptance") or [],
+        (data.get("ui") or {}).get("controls") or [],
+    ):
+        for item in items:
+            if isinstance(item, dict) and item.get("id"):
+                ids.add(str(item.get("id")))
+    for key in data.get("defaults") or {}:
+        ids.add(f"defaults.{key}")
+    for key in data.get("empty_states") or {}:
+        ids.add(f"empty_states.{key}")
+    return ids
 
 
 def known_entity_ids(data: dict) -> set[str]:
@@ -187,25 +230,49 @@ def claim_summary(data: dict) -> dict[str, list[dict]]:
     return buckets
 
 
-def _validate_source_layer(data: dict, fail: list[str], warn: list[str]) -> None:
+def _resolve_source_path(raw: str, spec_path: Path | None) -> Path | None:
+    p = Path(raw)
+    if p.is_absolute():
+        return p
+    if spec_path is None:
+        return None
+    return (spec_path.parent / p).resolve()
+
+
+def _covered_spec_refs(claims: list) -> set[str]:
+    refs: set[str] = set()
+    for claim in claims:
+        if not isinstance(claim, dict):
+            continue
+        if str(claim.get("disposition") or "").strip() != "covered":
+            continue
+        for ref in claim.get("spec_refs") or []:
+            refs.add(str(ref))
+    return refs
+
+
+def _validate_source_layer(
+    data: dict, fail: list[str], warn: list[str], spec_path: Path | None = None
+) -> None:
     sources = data.get("sources") or []
     claims = data.get("source_claims") or []
     source_ids = _collect_ids(fail, sources if isinstance(sources, list) else [], "source")
-    claim_ids = _collect_ids(fail, claims if isinstance(claims, list) else [], "source_claim")
-    del claim_ids
-    entities = known_entity_ids(data)
+    _collect_ids(fail, claims if isinstance(claims, list) else [], "source_claim")
     status = data.get("status")
 
     if status == "ready" and not claims:
-        warn.append("source_claims missing — coverage not proven (review-ready P1)")
+        fail.append("source_claims missing — ready requires coverage evidence")
 
     for src in sources if isinstance(sources, list) else []:
         if not isinstance(src, dict):
             continue
         path = src.get("path")
         if path:
-            # existence is optional (relative to machine file); Skill should fill evidence
-            pass
+            resolved = _resolve_source_path(str(path), spec_path)
+            if resolved is None:
+                warn.append(f"source {src.get('id')}: path not verified (no spec file context)")
+            elif not resolved.is_file():
+                fail.append(f"source {src.get('id')}: path missing: {path}")
         st = src.get("status")
         if st and st not in {"registered", "superseded"}:
             fail.append(f"source {src.get('id')}: status must be registered|superseded")
@@ -224,15 +291,18 @@ def _validate_source_layer(data: dict, fail: list[str], warn: list[str]) -> None
         if not claim.get("quote_or_summary") and not claim.get("evidence"):
             fail.append(f"source_claim {cid}: need quote_or_summary or evidence")
         sref = claim.get("source_ref")
-        if sref and source_ids and str(sref) not in source_ids:
+        if not sref:
+            fail.append(f"source_claim {cid}: source_ref is required")
+        elif str(sref) not in source_ids:
             fail.append(f"source_claim {cid}: source_ref missing: {sref}")
         refs = claim.get("spec_refs") or []
+        allowed_refs = claim_spec_ref_ids(data)
         if disp == "covered":
             if not refs:
                 fail.append(f"source_claim {cid}: covered but spec_refs is empty")
             for ref in refs:
-                if str(ref) not in entities:
-                    fail.append(f"source_claim {cid}: spec_ref missing: {ref}")
+                if str(ref) not in allowed_refs:
+                    fail.append(f"source_claim {cid}: spec_ref not a spec entity: {ref}")
         if disp == "omitted" and status == "ready":
             fail.append(f"source_claim {cid}: omitted — unexplained gap blocks ready")
         if disp == "conflict":
@@ -244,6 +314,27 @@ def _validate_source_layer(data: dict, fail: list[str], warn: list[str]) -> None
         if disp == "assumption":
             warn.append(f"source_claim {cid}: assumption — confirm with product owner")
 
+    if status == "ready" and isinstance(claims, list) and claims:
+        if not any(
+            isinstance(c, dict) and str(c.get("disposition") or "").strip() == "covered"
+            for c in claims
+        ):
+            fail.append("source_claims: ready requires at least one covered claim")
+        covered = _covered_spec_refs(claims)
+        for kind, items in (
+            ("behavior", data.get("behaviors") or []),
+            ("acceptance", data.get("acceptance") or []),
+            ("control", (data.get("ui") or {}).get("controls") or []),
+        ):
+            for item in items if isinstance(items, list) else []:
+                if not isinstance(item, dict) or not item.get("id"):
+                    continue
+                if item.get("coverage_optional") is True:
+                    continue
+                iid = str(item["id"])
+                if iid not in covered:
+                    fail.append(f"source_claim coverage missing for {kind} {iid}")
+
 
 def _validate_human_stale(
     data: dict, human_path: Path, fail: list[str], warn: list[str]
@@ -253,7 +344,7 @@ def _validate_human_stale(
     except OSError as exc:
         fail.append(f"human spec unreadable: {human_path} ({exc})")
         return
-    meta = parse_human_header(text)
+    meta, body = split_human_markdown(text)
     expected = spec_hash(data)
     recorded = (meta.get("spec_hash") or "").replace("sha256:", "").strip()
     if not recorded:
@@ -266,6 +357,9 @@ def _validate_human_stale(
     sid = meta.get("spec_id")
     if sid and sid != str(data.get("id")):
         fail.append(f"human spec id mismatch: {sid} != {data.get('id')}")
+    expected_body = split_human_markdown(render_human(data, source=meta.get("generated_from") or str(human_path)))[1]
+    if human_body_hash(body) != human_body_hash(expected_body):
+        fail.append(f"human spec stale: body edited or not regenerated — {human_path.name}")
 
 
 def validate(
@@ -275,6 +369,7 @@ def validate(
     spec_path: Path | None = None,
     human_path: Path | None = None,
     manifest_path: Path | None = None,
+    check_human: bool = True,
 ) -> dict[str, list[str]]:
     """Return {fail, warn} lists. Pending rules apply when status=ready."""
     fail: list[str] = []
@@ -284,7 +379,7 @@ def validate(
 
     # Layer 1: JSON Schema
     if jsonschema is None:
-        warn.append("jsonschema not installed — schema layer skipped (pip install jsonschema)")
+        fail.append("schema: jsonschema not installed — cannot claim hard gate (pip install jsonschema)")
         for key in REQUIRED_TOP:
             if key not in data:
                 fail.append(f"missing required field: {key}")
@@ -349,26 +444,55 @@ def validate(
             fail.append("status=ready but open_questions is not empty — move to pending with owner or resolve")
         if not data.get("actors"):
             fail.append("status=ready requires actors")
-        if not data.get("defaults"):
-            fail.append("status=ready requires defaults")
-        if not data.get("ui"):
-            fail.append("status=ready requires ui (entry, wireframe or controls)")
-        if not data.get("states"):
+        defaults = data.get("defaults") or {}
+        real_defaults = [
+            k
+            for k in (defaults if isinstance(defaults, dict) else {})
+            if str(k).strip() not in {"_", "-", "todo", "placeholder"}
+            and not str(k).startswith("_")
+        ]
+        if not real_defaults:
+            fail.append("status=ready requires defaults with at least one real key")
+        ui = data.get("ui") if isinstance(data.get("ui"), dict) else {}
+        wire = str((ui or {}).get("wireframe") or "").strip()
+        real_controls = [
+            c
+            for c in ((ui or {}).get("controls") or [])
+            if isinstance(c, dict) and c.get("id")
+        ]
+        if not ui:
+            fail.append("status=ready requires ui (wireframe or non-empty controls)")
+        elif not wire and not real_controls:
+            fail.append("status=ready requires ui.wireframe or non-empty ui.controls")
+        states_obj = data.get("states") if isinstance(data.get("states"), dict) else {}
+        if not states_obj:
             fail.append("status=ready requires states (lifecycle / allowed actions)")
+        elif not matrix:
+            fail.append("status=ready requires states.action_matrix (lifecycle alone is not enough)")
         for b in behaviors if isinstance(behaviors, list) else []:
-            then = (_lang((b or {}).get("then"), "zh") + " " + _lang((b or {}).get("then"), "en")).lower()
-            if any(v in then for v in VAGUE):
-                fail.append(f"behavior {(b or {}).get('id')}: then-clause too vague for ready")
+            if not isinstance(b, dict):
+                continue
+            bid = b.get("id")
+            for field in ("given", "when", "then"):
+                clause = (_lang(b.get(field), "zh") + " " + _lang(b.get(field), "en")).strip()
+                if not clause:
+                    fail.append(f"behavior {bid}: {field} is empty")
+                elif any(v in clause.lower() for v in VAGUE):
+                    fail.append(f"behavior {bid}: {field}-clause too vague for ready")
         for a in acceptance if isinstance(acceptance, list) else []:
-            text = (_lang(a, "zh") + " " + _lang(a, "en")).lower()
-            if any(v in text for v in ("体验好", "功能正常", "good ux", "as fast")):
-                fail.append(f"acceptance {(a or {}).get('id')}: not observable")
+            if not isinstance(a, dict):
+                continue
+            text = (_lang(a, "zh") + " " + _lang(a, "en")).strip()
+            if not text:
+                fail.append(f"acceptance {a.get('id')}: missing observable zh/en text")
+            elif any(v in text.lower() for v in ("体验好", "功能正常", "good ux", "as fast")):
+                fail.append(f"acceptance {a.get('id')}: not observable")
         for p in pending if isinstance(pending, list) else []:
             if not _pending_ok(p):
                 fail.append(
                     "pending item missing four fields: id, missing, impact, owner, status"
                 )
-            elif str((p or {}).get("status", "")).lower() in {"open", "待确认", "tbd"}:
+            elif str((p or {}).get("status", "")).strip().lower() in {"open", "待确认", "tbd"}:
                 fail.append(
                     f"pending {(p or {}).get('id')} still open — cannot mark status=ready"
                 )
@@ -399,21 +523,34 @@ def validate(
                 if not obj.get(key):
                     fail.append(f"object_ai_weight=high requires object_ai.{key}")
 
-    _validate_source_layer(data, fail, warn)
+    _validate_source_layer(data, fail, warn, spec_path=spec_path)
 
-    resolved_human = human_path if human_path is not None else default_human_path(spec_path)
-    if resolved_human is not None and resolved_human.is_file():
-        _validate_human_stale(data, resolved_human, fail, warn)
-    elif spec_path is not None and data.get("status") == "ready":
-        warn.append("human spec not found beside machine/ — skip stale check")
+    if check_human:
+        explicit_human = human_path is not None
+        resolved_human = human_path if explicit_human else expected_human_path(spec_path)
+        if resolved_human is not None and resolved_human.is_file():
+            _validate_human_stale(data, resolved_human, fail, warn)
+        elif resolved_human is not None and (explicit_human or data.get("status") == "ready"):
+            fail.append(f"human spec missing: {resolved_human}")
 
-    from libproto import default_manifest_path, load_and_validate_prototype  # noqa: PLC0415
+    from libproto import default_manifest_path, expected_manifest_path, load_and_validate_prototype  # noqa: PLC0415
 
-    resolved_manifest = manifest_path if manifest_path is not None else default_manifest_path(spec_path)
+    explicit_manifest = manifest_path is not None
+    resolved_manifest = manifest_path if explicit_manifest else default_manifest_path(spec_path)
     if resolved_manifest is not None and resolved_manifest.is_file():
         proto = load_and_validate_prototype(data, resolved_manifest)
         fail.extend(proto["fail"])
         warn.extend(proto["warn"])
+    elif explicit_manifest and resolved_manifest is not None and not resolved_manifest.is_file():
+        fail.append(f"prototype manifest missing: {resolved_manifest}")
+    elif (
+        not explicit_manifest
+        and spec_path is not None
+        and data.get("status") == "ready"
+        and expected_manifest_path(spec_path) is not None
+        and not expected_manifest_path(spec_path).is_file()
+    ):
+        warn.append("prototype manifest not found — prototype consistency skipped")
 
     return {"fail": fail, "warn": warn}
 
@@ -426,13 +563,6 @@ def render_human(data: dict, source: str, gate_mode: str = "hard") -> str:
     states = data.get("states") or {}
     digest = spec_hash(data)
     lines: list[str] = [
-        f"<!-- generated_from: {source} -->",
-        f"<!-- spec_id: {data.get('id')} -->",
-        f"<!-- spec_version: {data.get('spec_version')} -->",
-        f"<!-- spec_hash: {digest} -->",
-        f"<!-- gate_mode: {gate_mode} -->",
-        "<!-- 以机读 YAML 为唯一准据；禁止长期只改本文件 -->",
-        "",
         f"# {title_zh}",
         "",
         f"> **文档类型**：可开发的需求规格说明书（人读视图）  ",
@@ -587,7 +717,20 @@ def render_human(data: dict, source: str, gate_mode: str = "hard") -> str:
                 f"| `{c.get('id')}` | `{c.get('disposition')}` | {c.get('quote_or_summary') or c.get('evidence') or '—'} | {refs} |"
             )
         lines.append("")
-    return "\n".join(lines)
+    body = "\n".join(lines)
+    if not body.endswith("\n"):
+        body += "\n"
+    headers = [
+        f"<!-- generated_from: {source} -->",
+        f"<!-- spec_id: {data.get('id')} -->",
+        f"<!-- spec_version: {data.get('spec_version')} -->",
+        f"<!-- spec_hash: {digest} -->",
+        f"<!-- body_hash: {human_body_hash(body)} -->",
+        f"<!-- gate_mode: {gate_mode} -->",
+        "<!-- 以机读 YAML 为唯一准据；禁止长期只改本文件 -->",
+        "",
+    ]
+    return "\n".join(headers) + body
 
 
 def load_project(root: Path) -> dict:

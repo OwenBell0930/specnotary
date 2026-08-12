@@ -1,15 +1,15 @@
 <!-- generated_from: examples/case-order-cancel-ops-faq/machine/spec.yaml -->
 <!-- spec_id: SPEC-ORDER-CANCEL-002 -->
 <!-- spec_version: 0.1 -->
-<!-- spec_hash: f1536012e4c2a1e115ac1f5c09f49e14ca95faff317e1ebfe4744de29080473a -->
+<!-- spec_hash: 2f40fec7f635ac4c10c0bd3a42d47abc46aedce70c871ba20ab04c7c5f57e365 -->
+<!-- body_hash: 839785f269cdbf968bed9a8bf0750f3342ac252d40f719364284bdf72a2ccf97 -->
 <!-- gate_mode: hard -->
 <!-- 以机读 YAML 为唯一准据；禁止长期只改本文件 -->
-
 # 电商订单 · 未发货取消（客服 FAQ 反推）
 
 > **文档类型**：可开发的需求规格说明书（人读视图）  
 > **规格 ID**：`SPEC-ORDER-CANCEL-002` · **状态**：`ready` · **版本**：`0.1`  
-> **机读哈希**：`f1536012e4c2a1e1…`
+> **机读哈希**：`2f40fec7f635ac4c…`
 
 **EN title:** Order cancel reversed from CS FAQ
 
@@ -159,7 +159,7 @@
 
 | ID | 处置 | 摘要 | 规格引用 |
 |----|------|------|----------|
-| `SRC-CLM-F01` | `covered` | 履约中或已发货隐藏自助取消，走售后或人工 | `B3`, `AC-04` |
-| `SRC-CLM-F02` | `covered` | 已支付未发货取消后原路退回，两小时内可在退款进度看到状态 | `B2`, `AC-03` |
-| `SRC-CLM-F03` | `covered` | 待支付取消释放锁券；已支付取消不自动回券 | `B1`, `B2` |
+| `SRC-CLM-F01` | `covered` | 履约中或已发货隐藏自助取消，走售后或人工 | `B3`, `AC-04`, `btn_cancel_disabled` |
+| `SRC-CLM-F02` | `covered` | 已支付未发货取消后原路退回，两小时内可在退款进度看到状态 | `B2`, `AC-02`, `AC-03`, `btn_cancel` |
+| `SRC-CLM-F03` | `covered` | 待支付取消释放锁券；已支付取消不自动回券 | `B1`, `AC-01`, `dlg_confirm_title`, `dlg_confirm_ok`, `dlg_confirm_cancel` |
 | `SRC-CLM-F04` | `covered` | 命中风控标签禁止自助取消 | `B4`, `AC-05` |

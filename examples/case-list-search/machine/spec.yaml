@@ -122,7 +122,7 @@ source_claims:
     evidence: ops-note.zh.txt:L2
     kind: requirement
     disposition: covered
-    spec_refs: [B1, AC-01]
+    spec_refs: [B1, AC-01, inp_keyword, btn_search]
     confidence: high
   - id: SRC-CLM-LS-02
     source_ref: SRC-LS-001

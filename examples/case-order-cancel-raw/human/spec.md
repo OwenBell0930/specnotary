@@ -1,15 +1,15 @@
-<!-- generated_from: /Users/zhaosi./Documents/Cursor Projects/spec-kit/examples/case-order-cancel-raw/machine/spec.yaml -->
+<!-- generated_from: examples/case-order-cancel-raw/machine/spec.yaml -->
 <!-- spec_id: SPEC-ORDER-CANCEL-001 -->
 <!-- spec_version: 0.1 -->
-<!-- spec_hash: 14a562b5f4e57d6cc93ea17fd42d00fae14dc2590871e0cdf23ff79408e45986 -->
+<!-- spec_hash: e7551ba66d25e4d3d31cac8b19162f54ad9c017d55d5c4c689f99840ddf792a9 -->
+<!-- body_hash: 95798fc298d99c3ee7737839958dcfc169779555c491f15a352f41055a30e884 -->
 <!-- gate_mode: hard -->
 <!-- 以机读 YAML 为唯一准据；禁止长期只改本文件 -->
-
 # 电商订单 · 未发货自助取消
 
 > **文档类型**：可开发的需求规格说明书（人读视图）  
 > **规格 ID**：`SPEC-ORDER-CANCEL-001` · **状态**：`ready` · **版本**：`0.1`  
-> **机读哈希**：`14a562b5f4e57d6c…`
+> **机读哈希**：`e7551ba66d25e4d3…`
 
 **EN title:** Commerce order · Buyer self-cancel before shipment
 
@@ -159,8 +159,8 @@
 
 | ID | 处置 | 摘要 | 规格引用 |
 |----|------|------|----------|
-| `SRC-CLM-001` | `covered` | 待支付订单取消后应关闭，并释放优惠券（若已锁定） | `B1`, `AC-01` |
-| `SRC-CLM-002` | `covered` | 已支付未发货取消后须原路退款、库存回库，2小时内退款状态可查 | `B2`, `AC-02`, `AC-03` |
-| `SRC-CLM-003` | `covered` | 履约中买家不可自助取消，只能联系客服 | `B3`, `AC-04` |
+| `SRC-CLM-001` | `covered` | 待支付订单取消后应关闭，并释放优惠券（若已锁定） | `B1`, `AC-01`, `btn_cancel`, `dlg_confirm_title`, `dlg_confirm_ok`, `dlg_confirm_cancel` |
+| `SRC-CLM-002` | `covered` | 已支付未发货取消后须原路退款、库存回库，2小时内退款状态可查 | `B2`, `AC-02`, `AC-03`, `btn_cancel` |
+| `SRC-CLM-003` | `covered` | 履约中买家不可自助取消，只能联系客服 | `B3`, `AC-04`, `btn_cancel_disabled` |
 | `SRC-CLM-004` | `covered` | 风控命中订单禁止自助取消 | `B4`, `AC-05` |
 | `SRC-CLM-005` | `out_of_scope` | 部分取消、改地址、跨境税、订阅购不在本期 | — |

@@ -35,8 +35,9 @@ case "$runtime" in
     exec python3 "$ROOT/cli/python/check.py" "${args[@]}"
     ;;
   node)
-    echo "WARN: Node CLI is Deferred — rules may lag behind Python. Prefer python3."
-    exec node "$ROOT/cli/node/check.js" "$TARGET"
+    echo "ERROR: Node CLI is Deferred and cannot produce a hard PASS."
+    echo "Use python3 (default) or skills/ with gate_mode: degraded."
+    exit 3
     ;;
-  *) echo "ERROR: SPEC_KIT_RUNTIME must be python (preferred) or node (deferred)"; exit 2 ;;
+  *) echo "ERROR: SPEC_KIT_RUNTIME must be python"; exit 2 ;;
 esac

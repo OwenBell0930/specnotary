@@ -241,7 +241,7 @@ source_claims:
     evidence: ops-request.zh.txt:约束第1条
     kind: requirement
     disposition: covered
-    spec_refs: [B1, AC-01]
+    spec_refs: [B1, AC-01, btn_cancel, dlg_confirm_title, dlg_confirm_ok, dlg_confirm_cancel]
     confidence: high
   - id: SRC-CLM-002
     source_ref: SRC-001
@@ -249,7 +249,7 @@ source_claims:
     evidence: ops-request.zh.txt:约束第2条
     kind: requirement
     disposition: covered
-    spec_refs: [B2, AC-02, AC-03]
+    spec_refs: [B2, AC-02, AC-03, btn_cancel]
     confidence: high
   - id: SRC-CLM-003
     source_ref: SRC-001
@@ -257,7 +257,7 @@ source_claims:
     evidence: ops-request.zh.txt:约束第3条
     kind: requirement
     disposition: covered
-    spec_refs: [B3, AC-04]
+    spec_refs: [B3, AC-04, btn_cancel_disabled]
     confidence: high
   - id: SRC-CLM-004
     source_ref: SRC-001

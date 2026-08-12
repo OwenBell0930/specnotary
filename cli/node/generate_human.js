@@ -58,22 +58,9 @@ function render(data, source) {
 }
 
 function main() {
-  const file = process.argv[2];
-  const out = process.argv[3] || file.replace(/\.(ya?ml|json)$/i, ".human.md");
-  if (!file) {
-    console.log("Usage: generate_human.js <machine-spec> [out.md]");
-    process.exit(2);
-  }
-  try {
-    require("yaml");
-  } catch (e) {
-    console.log("FAIL: cd cli/node && npm i");
-    process.exit(4);
-  }
-  const data = load(file);
-  fs.mkdirSync(path.dirname(out), { recursive: true });
-  fs.writeFileSync(out, render(data, file), "utf8");
-  console.log(`wrote: ${out}`);
+  console.log("ERROR: Node generator is Deferred and cannot stamp gate_mode: hard.");
+  console.log("Use ./cli/run-generate-human.sh (python3).");
+  process.exit(3);
 }
 
 main();

@@ -240,7 +240,7 @@ source_claims:
     evidence: cs-faq.zh.txt:Q1
     kind: requirement
     disposition: covered
-    spec_refs: [B3, AC-04]
+    spec_refs: [B3, AC-04, btn_cancel_disabled]
     confidence: high
   - id: SRC-CLM-F02
     source_ref: SRC-FAQ-001
@@ -248,7 +248,7 @@ source_claims:
     evidence: cs-faq.zh.txt:Q2
     kind: requirement
     disposition: covered
-    spec_refs: [B2, AC-03]
+    spec_refs: [B2, AC-02, AC-03, btn_cancel]
     confidence: high
   - id: SRC-CLM-F03
     source_ref: SRC-FAQ-001
@@ -256,7 +256,7 @@ source_claims:
     evidence: cs-faq.zh.txt:Q3
     kind: requirement
     disposition: covered
-    spec_refs: [B1, B2]
+    spec_refs: [B1, AC-01, dlg_confirm_title, dlg_confirm_ok, dlg_confirm_cancel]
     confidence: high
   - id: SRC-CLM-F04
     source_ref: SRC-FAQ-001

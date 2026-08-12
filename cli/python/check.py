@@ -58,7 +58,7 @@ def main() -> int:
         return 1
     print("RESULT: PASS")
     if warns:
-        print("NOTE: PASS with WARN — resolve or accept explicitly before treating as入库级完成")
+        print("NOTE: PASS with WARN — resolve or accept explicitly before treating as review-ready")
     return 0
 
 

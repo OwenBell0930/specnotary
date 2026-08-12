@@ -15,14 +15,18 @@ except ImportError:  # pragma: no cover
 from libspec import known_entity_ids, load_spec, spec_hash
 
 SCHEMA_PATH = Path(__file__).resolve().parents[2] / "schemas" / "prototype-manifest.schema.json"
-BUSINESS_ROLES = {"business", "action", "flow", "control"}
+EXTRA_EXEMPT_ROLES = {"decoration", "visual"}
+
+
+def expected_manifest_path(spec_path: Path | None) -> Path | None:
+    if spec_path is None:
+        return None
+    return spec_path.resolve().parent.parent / "prototype" / "prototype.manifest.yaml"
 
 
 def default_manifest_path(spec_path: Path | None) -> Path | None:
-    if spec_path is None:
-        return None
-    sibling = spec_path.resolve().parent.parent / "prototype" / "prototype.manifest.yaml"
-    return sibling if sibling.is_file() else None
+    sibling = expected_manifest_path(spec_path)
+    return sibling if sibling is not None and sibling.is_file() else None
 
 
 def _load_schema() -> dict:
@@ -43,7 +47,7 @@ def _iter_controls(manifest: dict) -> list[tuple[dict, dict | None]]:
 def _html_spec_ids(html_path: Path) -> set[str]:
     if not html_path.is_file():
         return set()
-    text = html_path.read_text(encoding="utf-8")
+    text = re.sub(r"<!--.*?-->", "", html_path.read_text(encoding="utf-8"), flags=re.DOTALL)
     return set(re.findall(r'data-spec-id=["\']([^"\']+)["\']', text))
 
 
@@ -72,6 +76,8 @@ def _required_behaviors(data: dict) -> list[str]:
 def classify_proto_issues(fail: list[str], warn: list[str]) -> dict[str, list[str]]:
     buckets = {"missing": [], "extra": [], "stale": [], "mismatch": [], "unverified": []}
     for e in fail:
+        if not str(e).startswith("prototype"):
+            continue
         low = e.lower()
         if "stale" in low or "hash" in low:
             buckets["stale"].append(e)
@@ -84,7 +90,8 @@ def classify_proto_issues(fail: list[str], warn: list[str]) -> dict[str, list[st
         else:
             buckets["mismatch"].append(e)
     for w in warn:
-        buckets["unverified"].append(w)
+        if str(w).startswith("prototype") or "unverified" in str(w).lower():
+            buckets["unverified"].append(w)
     return buckets
 
 
@@ -100,7 +107,7 @@ def validate_prototype(
         return {"fail": ["prototype: manifest root must be an object"], "warn": []}
 
     if jsonschema is None:
-        warn.append("jsonschema not installed — prototype schema layer skipped")
+        fail.append("prototype schema: jsonschema not installed — cannot claim hard gate")
     else:
         try:
             jsonschema.validate(instance=manifest, schema=_load_schema())
@@ -121,6 +128,12 @@ def validate_prototype(
         )
 
     entities = known_entity_ids(data)
+    behavior_ids = {str((b or {}).get("id")) for b in (data.get("behaviors") or []) if (b or {}).get("id")}
+    spec_control_ids = {
+        str(c["id"])
+        for c in ((data.get("ui") or {}).get("controls") or [])
+        if isinstance(c, dict) and c.get("id")
+    }
     mapped_controls: set[str] = set()
     mapped_behaviors: set[str] = set()
     proto_ids: set[str] = set()
@@ -153,25 +166,33 @@ def validate_prototype(
                 proto_ids.add(str(cid))
             refs = [str(r) for r in (ctrl.get("spec_refs") or [])]
             role = str(ctrl.get("role") or "control")
-            if not refs and role in BUSINESS_ROLES:
+            if not refs and role not in EXTRA_EXEMPT_ROLES:
                 fail.append(f"prototype extra: control {cid} has no spec_refs")
             for ref in refs:
                 if ref not in entities:
                     fail.append(f"prototype control {cid}: spec_ref missing: {ref}")
                 mapped_controls.add(ref)
-                if ref.startswith("B") or ref in {str((b or {}).get("id")) for b in (data.get("behaviors") or [])}:
+                if ref in behavior_ids:
                     mapped_behaviors.add(ref)
             selector = str(ctrl.get("selector") or "")
             mark = None
             m = re.search(r"data-spec-id=['\"]([^'\"]+)['\"]", selector)
             if m:
                 mark = m.group(1)
-            elif refs:
-                mark = refs[0]
-            if mark and html_ids and mark not in html_ids:
-                fail.append(
-                    f"prototype mismatch: {cid} data-spec-id={mark} not found in html"
-                )
+            if mark and rel and manifest_path is not None:
+                html_file = (manifest_path.parent / rel).resolve()
+                if html_file.is_file() and mark not in html_ids:
+                    fail.append(
+                        f"prototype mismatch: {cid} data-spec-id={mark} not found in html"
+                    )
+            elif mark and not rel:
+                fail.append(f"prototype mismatch: {cid} has data-spec-id but screen has no path")
+            if rel and html_ids:
+                for ref in refs:
+                    if ref in spec_control_ids and ref not in html_ids:
+                        fail.append(
+                            f"prototype mismatch: mapped control {ref} not found in html"
+                        )
 
     for item in manifest.get("interactions") or []:
         if not isinstance(item, dict):
@@ -183,12 +204,13 @@ def validate_prototype(
             proto_ids.add(str(iid))
         refs = [str(r) for r in (item.get("spec_refs") or [])]
         role = str(item.get("role") or "flow")
-        if not refs and role in BUSINESS_ROLES:
+        if not refs and role not in EXTRA_EXEMPT_ROLES:
             fail.append(f"prototype extra: interaction {iid} has no spec_refs")
         for ref in refs:
             if ref not in entities:
                 fail.append(f"prototype interaction {iid}: spec_ref missing: {ref}")
-            mapped_behaviors.add(ref)
+            if ref in behavior_ids:
+                mapped_behaviors.add(ref)
 
     for deco in manifest.get("decorations") or []:
         if not isinstance(deco, dict):

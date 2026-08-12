@@ -13,6 +13,7 @@ from libspec import (  # noqa: E402
     default_human_path,
     load_project,
     load_spec,
+    relpath_from_root,
     spec_hash,
     validate,
 )
@@ -30,11 +31,11 @@ def render_report(
     lines = [
         "# 评审就绪报告 / Review-readiness report",
         "",
-        f"- 机读：`{spec_path}`",
+        f"- 机读：`{relpath_from_root(spec_path, ROOT)}`",
         f"- 规格 ID：`{data.get('id')}` · 状态：`{data.get('status')}`",
         f"- 机读哈希：`{digest}`",
-        f"- 人读：`{human_path}`" if human_path else "- 人读：未提供",
-        f"- 原型：`{manifest_path}`" if manifest_path else "- 原型：未提供",
+        f"- 人读：`{relpath_from_root(human_path, ROOT)}`" if human_path else "- 人读：未提供",
+        f"- 原型：`{relpath_from_root(manifest_path, ROOT)}`" if manifest_path else "- 原型：未提供",
         f"- FAIL：{len(result['fail'])} · WARN：{len(result['warn'])}",
         "",
         "## 原料覆盖汇总",
@@ -47,7 +48,7 @@ def render_report(
     lines += ["", "## 明细", ""]
     claims = data.get("source_claims") or []
     if not claims:
-        lines.append("无 SourceClaim。覆盖未证明（WARN）。")
+        lines.append("无 SourceClaim。覆盖未证明（`status: ready` 为 FAIL）。")
     else:
         lines.append("| ID | 处置 | 摘要 | 引用 / 闭合 |")
         lines.append("|----|------|------|-------------|")
