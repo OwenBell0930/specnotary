@@ -19,7 +19,23 @@ except ImportError:  # pragma: no cover
     jsonschema = None
 
 REQUIRED_TOP = ["spec_version", "id", "title", "status", "behaviors", "acceptance"]
-VAGUE = ("体验好", "尽量快", "智能", "方便地", "good ux", "quickly", "尽快", "尽量")
+VAGUE = (
+    "体验好",
+    "尽量快",
+    "智能",
+    "方便地",
+    "尽快",
+    "尽量",
+    "good ux",
+    "quickly",
+    "seamless",
+    "intuitive",
+    "user-friendly",
+    "user friendly",
+    "as fast as possible",
+    "blazingly fast",
+    "best-in-class",
+)
 RENDERER_VERSION = "3"
 SCHEMA_PATH = Path(__file__).resolve().parent / "schemas" / "machine-spec.schema.json"
 CLAIM_DISPOSITIONS = {
@@ -95,15 +111,99 @@ def _pending_ok(item: Any) -> bool:
     return all(item.get(k) not in (None, "") for k in ("id", "missing", "impact", "owner", "status"))
 
 
-def _allowed_label(row: dict) -> str:
+def _allowed_label(row: dict, lang: str = "zh") -> str:
     if "allowed" in row:
         val = row.get("allowed")
         if isinstance(val, bool):
+            if lang == "en":
+                return "allowed" if val else "denied"
             return "允许" if val else "禁止"
         return str(val)
     if "buyer_self_cancel" in row:  # legacy cancel_matrix
         return str(row.get("buyer_self_cancel"))
     return "—"
+
+
+# zh literals are canonical (zh output stays byte-identical); en is a lookup layer.
+_EN = {
+    "目录": "Table of Contents",
+    "概览": "Overview",
+    "范围": "Scope",
+    "架构总览": "Architecture",
+    "职责边界": "Responsibilities",
+    "数据契约": "Data Contracts",
+    "角色与权限": "Roles & Permissions",
+    "状态与允许动作": "States & Allowed Actions",
+    "页面与交互": "Pages & Interactions",
+    "主路径（编号）": "Main Path (numbered)",
+    "默认值与提示文案": "Defaults & Copy",
+    "错误码": "Error Codes",
+    "验收标准（AC）": "Acceptance Criteria (AC)",
+    "信息待闭合项（Pending）": "Pending Items",
+    "决策记录": "Decision Log",
+    "对象 AI": "Object AI",
+    "原料覆盖（SourceClaim）": "Source Coverage (SourceClaim)",
+    "> **文档类型**：可开发的需求规格说明书（人读视图）  ": "> **Document type**: dev-ready specification (human view)  ",
+    "> **规格 ID**：`{sid}` · **状态**：`{status}` · **版本**：`{ver}`  ": "> **Spec ID**: `{sid}` · **Status**: `{status}` · **Version**: `{ver}`  ",
+    "> **机读哈希**：`{digest}…`": "> **Machine hash**: `{digest}…`",
+    "**设计原则：**": "**Design principles:**",
+    "**环境与约束：**": "**Environment & constraints:**",
+    "**本期做：**": "**In scope:**",
+    "**本期不做（白名单外，不展开）：**": "**Out of scope (whitelist only, not elaborated):**",
+    "**对照基线：** {baseline}": "**Baseline:** {baseline}",
+    "谁负责什么、明确不负责什么，开工前先对齐边界。": "Who owns what — and explicitly what they do not — settled before work starts.",
+    "| 负责 | 不负责 |": "| Owns | Does not own |",
+    "共 {n} 个数据实体；字段即前后端接口与存储的对齐口径。": "{n} data entities; the fields are the alignment contract between frontend, backend and storage.",
+    "| 字段 | 中文 | 类型 | 说明 |": "| Field | Label | Type | Notes |",
+    "**规则：**": "**Rules:**",
+    "{n} 类角色；可执行动作与状态矩阵联动。": "{n} actor roles; allowed actions tie back to the state matrix.",
+    "| 角色 | 说明 | 可执行动作 |": "| Role | Description | Allowed actions |",
+    "{s} 个状态 × {a} 类动作，其中明确禁止 {d} 项。前端显隐与置灰以下表为唯一准据。": "{s} states × {a} action kinds, {d} explicitly denied. The table below is the single source of truth for enabling/hiding controls.",
+    "生命周期顺序（示意）：": "Lifecycle order (indicative):",
+    "**生命周期（编号供流程对照）：**": "**Lifecycle (numbered for flow reference):**",
+    "| 状态 | 动作 | 是否允许 | 说明 |": "| State | Action | Allowed | Notes |",
+    "| （机读未提供 action_matrix） | — | — | — |": "| (machine source has no action_matrix) | — | — | — |",
+    "**入口：** {entry}": "**Entry:** {entry}",
+    "### 线框": "### Wireframe",
+    "### 控件规格": "### Control Spec",
+    "共 {n} 个控件，其中 {f} 个定义了失败反馈文案。": "{n} controls, {f} of them with explicit failure-feedback copy.",
+    "| 控件 | 文案/占位 | 显示条件 | 交互 | 失败反馈 |": "| Control | Label/placeholder | Visible when | Interaction | Failure feedback |",
+    "共 {n} 步；每步的 Given/When/Then 同时是测试的验收输入。": "{n} steps; every Given/When/Then doubles as test acceptance input.",
+    "### 步骤 {step} · {name}": "### Step {step} · {name}",
+    "- **Given：** {v}": "- **Given:** {v}",
+    "- **When：** {v}": "- **When:** {v}",
+    "- **Then：** {v}": "- **Then:** {v}",
+    "- **连带结果：**": "- **Side effects:**",
+    "### 默认值": "### Defaults",
+    "| 项 | 值 |": "| Key | Value |",
+    "（无）": "(none)",
+    "### 空态 / 拦截文案（须与界面一致）": "### Empty-state / Blocking Copy (must match UI verbatim)",
+    "| 场景 | 文案 |": "| Scenario | Copy |",
+    "开发按码实现分支，测试按码构造用例，客服按文案答复——一张表三方共用。": "Developers branch on the code, testers derive cases from it, support answers with the copy — one table, three consumers.",
+    "| 错误码 | 含义 | 触发场景 | 可重试 | 用户文案 |": "| Code | Meaning | Trigger | Retryable | User copy |",
+    "是": "yes",
+    "否": "no",
+    "共 {n} 条；逐条可执行，不可观察的表述会被门禁否决。": "{n} criteria; each one executable — unobservable wording is rejected by the gate.",
+    "- **{aid}**（行为 `{bid}`）：{text}": "- **{aid}** (behavior `{bid}`): {text}",
+    "无。": "None.",
+    "| ID | 缺失信息 | 影响范围 | 责任人 | 状态 |": "| ID | Missing | Impact | Owner | Status |",
+    "共 {n} 项，已拍板 {d} 项，待定 {u} 项。「为什么是这样」的存档，新人不必考古聊天记录。": "{n} decisions — {d} settled, {u} open. The archive of why things are this way; no chat-log archaeology needed.",
+    "| ID | 问题 | 选定 | 日期 | 备注 |": "| ID | Question | Chosen | Date | Note |",
+    "**待定**": "**undecided**",
+    "- 失败兜底: {v}": "- Failure fallback: {v}",
+    "- 工具边界:": "- Tool boundary:",
+    "- 人工接管:": "- Human takeover:",
+    "覆盖账本（附录）：原料每句话的下落。covered {c} · assumption {a} · out_of_scope {o} · 其他 {r}。": "Coverage ledger (appendix): where every source statement landed. covered {c} · assumption {a} · out_of_scope {o} · other {r}.",
+    "| ID | 处置 | 摘要 | 规格引用 |": "| ID | Disposition | Summary | Spec refs |",
+    "**EN title:** {t}": "**Title (zh):** {t}",
+    "<!-- 以机读 YAML 为唯一准据；禁止长期只改本文件 -->": "<!-- Machine YAML is the single source of truth; do not hand-edit this file long-term -->",
+}
+
+
+def _tt(lang: str):
+    if lang == "en":
+        return lambda s: _EN.get(s, s)
+    return lambda s: s
 
 
 def action_matrix_rows(states: dict) -> list[dict]:
@@ -400,7 +500,10 @@ def _validate_human_stale(
             " — regenerate (spec content unchanged)"
         )
         return
-    expected_body = split_human_markdown(render_human(data, source=meta.get("generated_from") or str(human_path)))[1]
+    recorded_lang = (meta.get("lang") or "zh").strip() or "zh"
+    expected_body = split_human_markdown(
+        render_human(data, source=meta.get("generated_from") or str(human_path), lang=recorded_lang)
+    )[1]
     if human_body_hash(body) != human_body_hash(expected_body):
         fail.append(f"human spec stale: body edited or not regenerated — {human_path.name}")
 
@@ -720,14 +823,14 @@ def mermaid_lifecycle(states: dict) -> str | None:
     return "flowchart LR\n  " + nodes
 
 
-def mermaid_main_path(behaviors: list) -> str | None:
+def mermaid_main_path(behaviors: list, lang: str = "zh") -> str | None:
     """Deterministic step-chain diagram from behaviors order."""
     steps = []
     for b in behaviors or []:
         if not isinstance(b, dict):
             continue
         sid = b.get("step_id") or b.get("id")
-        name = _lang(b.get("name"), "zh") or str(b.get("id") or "")
+        name = _lang(b.get("name"), lang) or str(b.get("id") or "")
         steps.append(f"{sid}. {name}".strip())
     if len(steps) < 2:
         return None
@@ -735,7 +838,7 @@ def mermaid_main_path(behaviors: list) -> str | None:
     return "flowchart TD\n  " + nodes
 
 
-def render_human(data: dict, source: str, gate_mode: str = "hard") -> str:
+def render_human(data: dict, source: str, gate_mode: str = "hard", lang: str = "zh") -> str:
     """Render 可开发的需求规格说明书 (human view) from machine source.
 
     Reading arc (v3): orient first — overview, scope, architecture,
@@ -743,10 +846,14 @@ def render_human(data: dict, source: str, gate_mode: str = "hard") -> str:
     evidence. Sections render only when the machine source holds them, and
     numbering is assigned after selection so the arc stays contiguous.
     Every diagram is either stored in or derived from the machine source;
-    nothing here is authored at render time.
+    nothing here is authored at render time. `lang` swaps chrome strings and
+    field-language preference; zh output is byte-stable.
     """
+    t = _tt(lang)
     title_zh = _lang(data.get("title"), "zh")
     title_en = _lang(data.get("title"), "en")
+    title_main = title_en if lang == "en" and title_en else title_zh
+    title_alt = title_zh if lang == "en" else title_en
     ui = data.get("ui") or {}
     states = data.get("states") or {}
     behaviors = data.get("behaviors") or []
@@ -758,32 +865,32 @@ def render_human(data: dict, source: str, gate_mode: str = "hard") -> str:
     overview = data.get("overview") or {}
     if overview:
         sec: list[str] = []
-        summary = _lang(overview.get("summary"), "zh")
+        summary = _lang(overview.get("summary"), lang)
         if summary:
             sec += [summary, ""]
         principles = overview.get("design_principles") or []
         if principles:
-            sec += ["**设计原则：**", ""]
+            sec += [t("**设计原则：**"), ""]
             for i, p in enumerate(principles, 1):
-                sec.append(f"{i}. {_lang(p, 'zh')}")
+                sec.append(f"{i}. {_lang(p, lang)}")
             sec.append("")
         constraints = overview.get("environment_constraints") or []
         if constraints:
-            sec += ["**环境与约束：**", ""]
+            sec += [t("**环境与约束：**"), ""]
             for c in constraints:
-                sec.append(f"- {_lang(c, 'zh')}")
+                sec.append(f"- {_lang(c, lang)}")
             sec.append("")
         sections.append(("概览", sec))
 
     # ---- 范围 ----
-    sec = ["**本期做：**", ""]
+    sec = [t("**本期做：**"), ""]
     for item in data.get("in_scope") or []:
-        sec.append(f"- {_lang(item, 'zh')}")
-    sec += ["", "**本期不做（白名单外，不展开）：**", ""]
+        sec.append(f"- {_lang(item, lang)}")
+    sec += ["", t("**本期不做（白名单外，不展开）：**"), ""]
     for item in data.get("out_of_scope") or []:
-        sec.append(f"- {_lang(item, 'zh')}")
+        sec.append(f"- {_lang(item, lang)}")
     if data.get("baseline"):
-        sec += ["", f"**对照基线：** {_lang(data.get('baseline'), 'zh')}"]
+        sec += ["", t("**对照基线：** {baseline}").format(baseline=_lang(data.get("baseline"), lang))]
     sec.append("")
     sections.append(("范围", sec))
 
@@ -791,7 +898,7 @@ def render_human(data: dict, source: str, gate_mode: str = "hard") -> str:
     arch = data.get("architecture") or {}
     if arch.get("mermaid"):
         sec = []
-        note = _lang(arch.get("note"), "zh")
+        note = _lang(arch.get("note"), lang)
         if note:
             sec += [note, ""]
         sec += ["```mermaid", str(arch["mermaid"]).rstrip(), "```", ""]
@@ -800,17 +907,17 @@ def render_human(data: dict, source: str, gate_mode: str = "hard") -> str:
     # ---- 职责边界 ----
     resp = [r for r in (data.get("responsibilities") or []) if isinstance(r, dict)]
     if resp:
-        sec = ["谁负责什么、明确不负责什么，开工前先对齐边界。", ""]
+        sec = [t("谁负责什么、明确不负责什么，开工前先对齐边界。"), ""]
         for r in resp:
-            zh = _lang(r, "zh")
+            zh = _lang(r, lang)
             sec.append(f"### {r.get('role')}" + (f" · {zh}" if zh else ""))
             sec.append("")
             owns = r.get("owns") or []
             nots = r.get("not_owns") or []
-            sec += ["| 负责 | 不负责 |", "|------|--------|"]
+            sec += [t("| 负责 | 不负责 |"), "|------|--------|"]
             for i in range(max(len(owns), len(nots), 1)):
-                left = _lang(owns[i], "zh") if i < len(owns) else ""
-                right = _lang(nots[i], "zh") if i < len(nots) else ""
+                left = _lang(owns[i], lang) if i < len(owns) else ""
+                right = _lang(nots[i], lang) if i < len(nots) else ""
                 sec.append(f"| {left or '—'} | {right or '—'} |")
             sec.append("")
         sections.append(("职责边界", sec))
@@ -818,39 +925,39 @@ def render_human(data: dict, source: str, gate_mode: str = "hard") -> str:
     # ---- 数据契约 ----
     contracts = [c for c in (data.get("data_contracts") or []) if isinstance(c, dict)]
     if contracts:
-        sec = [f"共 {len(contracts)} 个数据实体；字段即前后端接口与存储的对齐口径。", ""]
+        sec = [t("共 {n} 个数据实体；字段即前后端接口与存储的对齐口径。").format(n=len(contracts)), ""]
         for dc in contracts:
-            zh = _lang(dc, "zh")
+            zh = _lang(dc, lang)
             sec.append(f"### {dc.get('id')}" + (f" · {zh}" if zh else ""))
             sec.append("")
             fields = [f for f in (dc.get("fields") or []) if isinstance(f, dict)]
             if fields:
-                sec += ["| 字段 | 中文 | 类型 | 说明 |", "|------|------|------|------|"]
+                sec += [t("| 字段 | 中文 | 类型 | 说明 |"), "|------|------|------|------|"]
                 for f in fields:
                     sec.append(
-                        f"| `{f.get('name')}` | {f.get('zh') or '—'} | `{f.get('type') or '—'}` | {_lang(f.get('desc'), 'zh') or '—'} |"
+                        f"| `{f.get('name')}` | {f.get('zh') or '—'} | `{f.get('type') or '—'}` | {_lang(f.get('desc'), lang) or '—'} |"
                     )
                 sec.append("")
             if dc.get("example_json"):
                 sec += ["```json", str(dc["example_json"]).rstrip(), "```", ""]
             rules = dc.get("rules") or []
             if rules:
-                sec.append("**规则：**")
+                sec.append(t("**规则：**"))
                 sec.append("")
                 for rule in rules:
-                    sec.append(f"- {_lang(rule, 'zh')}")
+                    sec.append(f"- {_lang(rule, lang)}")
                 sec.append("")
         sections.append(("数据契约", sec))
 
     # ---- 角色与权限 ----
     actors = data.get("actors") or []
-    sec = [f"{len(actors)} 类角色；可执行动作与状态矩阵联动。", ""]
-    sec += ["| 角色 | 说明 | 可执行动作 |", "|------|------|------------|"]
+    sec = [t("{n} 类角色；可执行动作与状态矩阵联动。").format(n=len(actors)), ""]
+    sec += [t("| 角色 | 说明 | 可执行动作 |"), "|------|------|------------|"]
     perm_map = {(p or {}).get("actor"): (p or {}).get("can") or [] for p in (data.get("permissions") or [])}
     for a in actors:
         aid = (a or {}).get("id")
         cans = ", ".join(perm_map.get(aid) or [])
-        sec.append(f"| `{aid}` | {_lang(a, 'zh')} | {cans or '—'} |")
+        sec.append(f"| `{aid}` | {_lang(a, lang)} | {cans or '—'} |")
     sec.append("")
     sections.append(("角色与权限", sec))
 
@@ -862,98 +969,99 @@ def render_human(data: dict, source: str, gate_mode: str = "hard") -> str:
     sec = []
     if matrix:
         sec += [
-            f"{len(lifecycle)} 个状态 × {action_kinds} 类动作，其中明确禁止 {denied} 项。"
-            "前端显隐与置灰以下表为唯一准据。",
+            t("{s} 个状态 × {a} 类动作，其中明确禁止 {d} 项。前端显隐与置灰以下表为唯一准据。").format(
+                s=len(lifecycle), a=action_kinds, d=denied
+            ),
             "",
         ]
     life_mermaid = mermaid_lifecycle(states)
     if life_mermaid:
-        sec += ["生命周期顺序（示意）：", "", "```mermaid", life_mermaid, "```", ""]
+        sec += [t("生命周期顺序（示意）："), "", "```mermaid", life_mermaid, "```", ""]
     if lifecycle:
-        sec.append("**生命周期（编号供流程对照）：**")
+        sec.append(t("**生命周期（编号供流程对照）：**"))
         for i, s in enumerate(lifecycle, 1):
             sec.append(f"{i}. `{s}`")
         sec.append("")
-    sec += ["| 状态 | 动作 | 是否允许 | 说明 |", "|------|------|----------|------|"]
+    sec += [t("| 状态 | 动作 | 是否允许 | 说明 |"), "|------|------|----------|------|"]
     for row in matrix:
         sec.append(
-            f"| `{(row or {}).get('state')}` | `{(row or {}).get('action')}` | {_allowed_label(row)} | {_lang(row, 'zh')} |"
+            f"| `{(row or {}).get('state')}` | `{(row or {}).get('action')}` | {_allowed_label(row, lang)} | {_lang(row, lang)} |"
         )
     if not matrix:
-        sec.append("| （机读未提供 action_matrix） | — | — | — |")
+        sec.append(t("| （机读未提供 action_matrix） | — | — | — |"))
     sec.append("")
     sections.append(("状态与允许动作", sec))
 
     # ---- 页面与交互 ----
     sec = []
     if ui.get("entry"):
-        sec += [f"**入口：** {_lang(ui.get('entry'), 'zh')}", ""]
+        sec += [t("**入口：** {entry}").format(entry=_lang(ui.get("entry"), lang)), ""]
     if ui.get("wireframe"):
-        sec += ["### 线框", "", "```text", str(ui.get("wireframe")).rstrip(), "```", ""]
+        sec += [t("### 线框"), "", "```text", str(ui.get("wireframe")).rstrip(), "```", ""]
     controls = ui.get("controls") or []
     if controls:
         with_fail = sum(
-            1 for c in controls if isinstance(c, dict) and _lang(c.get("fail_feedback"), "zh") not in ("", "—")
+            1 for c in controls if isinstance(c, dict) and _lang(c.get("fail_feedback"), lang) not in ("", "—")
         )
         sec += [
-            "### 控件规格",
+            t("### 控件规格"),
             "",
-            f"共 {len(controls)} 个控件，其中 {with_fail} 个定义了失败反馈文案。",
+            t("共 {n} 个控件，其中 {f} 个定义了失败反馈文案。").format(n=len(controls), f=with_fail),
             "",
-            "| 控件 | 文案/占位 | 显示条件 | 交互 | 失败反馈 |",
+            t("| 控件 | 文案/占位 | 显示条件 | 交互 | 失败反馈 |"),
             "|------|-----------|----------|------|----------|",
         ]
         for c in controls:
             sec.append(
                 "| {name} | {label} | {when} | {action} | {fail} |".format(
                     name=(c or {}).get("id", ""),
-                    label=_lang(c, "zh"),
-                    when=_lang((c or {}).get("visible_when"), "zh") or "—",
-                    action=_lang((c or {}).get("action"), "zh") or "—",
-                    fail=_lang((c or {}).get("fail_feedback"), "zh") or "—",
+                    label=_lang(c, lang),
+                    when=_lang((c or {}).get("visible_when"), lang) or "—",
+                    action=_lang((c or {}).get("action"), lang) or "—",
+                    fail=_lang((c or {}).get("fail_feedback"), lang) or "—",
                 )
             )
         sec.append("")
     sections.append(("页面与交互", sec))
 
     # ---- 主路径（编号） ----
-    sec = [f"共 {len(behaviors)} 步；每步的 Given/When/Then 同时是测试的验收输入。", ""]
-    path_mermaid = mermaid_main_path(behaviors)
+    sec = [t("共 {n} 步；每步的 Given/When/Then 同时是测试的验收输入。").format(n=len(behaviors)), ""]
+    path_mermaid = mermaid_main_path(behaviors, lang)
     if path_mermaid:
         sec += ["```mermaid", path_mermaid, "```", ""]
     for b in behaviors:
         step = (b or {}).get("step_id") or (b or {}).get("id")
         sec += [
-            f"### 步骤 {step} · {_lang((b or {}).get('name'), 'zh')}",
+            t("### 步骤 {step} · {name}").format(step=step, name=_lang((b or {}).get("name"), lang)),
             "",
-            f"- **Given：** {_lang((b or {}).get('given'), 'zh')}",
-            f"- **When：** {_lang((b or {}).get('when'), 'zh')}",
-            f"- **Then：** {_lang((b or {}).get('then'), 'zh')}",
+            t("- **Given：** {v}").format(v=_lang((b or {}).get("given"), lang)),
+            t("- **When：** {v}").format(v=_lang((b or {}).get("when"), lang)),
+            t("- **Then：** {v}").format(v=_lang((b or {}).get("then"), lang)),
         ]
         if (b or {}).get("side_effects"):
-            sec.append("- **连带结果：**")
+            sec.append(t("- **连带结果：**"))
             for s in (b or {}).get("side_effects") or []:
-                sec.append(f"  - {_lang(s, 'zh')}")
+                sec.append(f"  - {_lang(s, lang)}")
         sec.append("")
     sections.append(("主路径（编号）", sec))
 
     # ---- 默认值与提示文案 ----
-    sec = ["### 默认值", ""]
+    sec = [t("### 默认值"), ""]
     defaults = data.get("defaults") or {}
     if defaults:
-        sec += ["| 项 | 值 |", "|----|----|"]
+        sec += [t("| 项 | 值 |"), "|----|----|"]
         for k, v in defaults.items():
             sec.append(f"| `{k}` | `{v}` |")
     else:
-        sec.append("（无）")
-    sec += ["", "### 空态 / 拦截文案（须与界面一致）", ""]
+        sec.append(t("（无）"))
+    sec += ["", t("### 空态 / 拦截文案（须与界面一致）"), ""]
     empty = data.get("empty_states") or ui.get("empty_states") or {}
     if empty:
-        sec += ["| 场景 | 文案 |", "|------|------|"]
+        sec += [t("| 场景 | 文案 |"), "|------|------|"]
         for k, v in empty.items():
-            sec.append(f"| `{k}` | {_lang(v, 'zh')} |")
+            sec.append(f"| `{k}` | {_lang(v, lang)} |")
     else:
-        sec.append("（无）")
+        sec.append(t("（无）"))
     sec.append("")
     sections.append(("默认值与提示文案", sec))
 
@@ -961,24 +1069,26 @@ def render_human(data: dict, source: str, gate_mode: str = "hard") -> str:
     error_codes = [e for e in (data.get("error_codes") or []) if isinstance(e, dict)]
     if error_codes:
         sec = [
-            "开发按码实现分支，测试按码构造用例，客服按文案答复——一张表三方共用。",
+            t("开发按码实现分支，测试按码构造用例，客服按文案答复——一张表三方共用。"),
             "",
-            "| 错误码 | 含义 | 触发场景 | 可重试 | 用户文案 |",
+            t("| 错误码 | 含义 | 触发场景 | 可重试 | 用户文案 |"),
             "|--------|------|----------|--------|----------|",
         ]
         for e in error_codes:
-            retry = "是" if e.get("retryable") else "否"
+            retry = t("是") if e.get("retryable") else t("否")
             sec.append(
-                f"| `{e.get('code')}` | {e.get('zh') or '—'} | {_lang(e.get('trigger'), 'zh') or '—'} | {retry} | {_lang(e.get('user_copy'), 'zh') or '—'} |"
+                f"| `{e.get('code')}` | {e.get('zh') or '—'} | {_lang(e.get('trigger'), lang) or '—'} | {retry} | {_lang(e.get('user_copy'), lang) or '—'} |"
             )
         sec.append("")
         sections.append(("错误码", sec))
 
     # ---- 验收标准（AC） ----
-    sec = [f"共 {len(acceptance)} 条；逐条可执行，不可观察的表述会被门禁否决。", ""]
+    sec = [t("共 {n} 条；逐条可执行，不可观察的表述会被门禁否决。").format(n=len(acceptance)), ""]
     for a in acceptance:
         sec.append(
-            f"- **{(a or {}).get('id')}**（行为 `{(a or {}).get('behavior')}`）：{_lang(a, 'zh')}"
+            t("- **{aid}**（行为 `{bid}`）：{text}").format(
+                aid=(a or {}).get("id"), bid=(a or {}).get("behavior"), text=_lang(a, lang)
+            )
         )
     sec.append("")
     sections.append(("验收标准（AC）", sec))
@@ -987,9 +1097,9 @@ def render_human(data: dict, source: str, gate_mode: str = "hard") -> str:
     sec = []
     pending = data.get("pending") or []
     if not pending:
-        sec.append("无。")
+        sec.append(t("无。"))
     else:
-        sec += ["| ID | 缺失信息 | 影响范围 | 责任人 | 状态 |", "|----|----------|----------|--------|------|"]
+        sec += [t("| ID | 缺失信息 | 影响范围 | 责任人 | 状态 |"), "|----|----------|----------|--------|------|"]
         for p in pending:
             sec.append(
                 f"| {(p or {}).get('id')} | {(p or {}).get('missing')} | {(p or {}).get('impact')} | {(p or {}).get('owner')} | {(p or {}).get('status')} |"
@@ -1006,16 +1116,17 @@ def render_human(data: dict, source: str, gate_mode: str = "hard") -> str:
             if str(d.get("status") or "") == "pending" or (not d.get("chosen") and str(d.get("status") or "") != "decided")
         )
         sec = [
-            f"共 {len(decisions)} 项，已拍板 {len(decisions) - undecided} 项，待定 {undecided} 项。"
-            "「为什么是这样」的存档，新人不必考古聊天记录。",
+            t("共 {n} 项，已拍板 {d} 项，待定 {u} 项。「为什么是这样」的存档，新人不必考古聊天记录。").format(
+                n=len(decisions), d=len(decisions) - undecided, u=undecided
+            ),
             "",
-            "| ID | 问题 | 选定 | 日期 | 备注 |",
+            t("| ID | 问题 | 选定 | 日期 | 备注 |"),
             "|----|------|------|------|------|",
         ]
         for d in decisions:
-            chosen = d.get("chosen") or "**待定**"
+            chosen = d.get("chosen") or t("**待定**")
             sec.append(
-                f"| {d.get('id')} | {_lang(d.get('question'), 'zh')} | {chosen} | {d.get('date') or '—'} | {_lang(d.get('note'), 'zh') or '—'} |"
+                f"| {d.get('id')} | {_lang(d.get('question'), lang)} | {chosen} | {d.get('date') or '—'} | {_lang(d.get('note'), lang) or '—'} |"
             )
         sec.append("")
         sections.append(("决策记录", sec))
@@ -1024,13 +1135,13 @@ def render_human(data: dict, source: str, gate_mode: str = "hard") -> str:
     obj = data.get("object_ai") or {}
     sec = [f"- enabled: `{obj.get('enabled', False)}`"]
     if obj.get("enabled"):
-        sec.append(f"- 失败兜底: {_lang(obj.get('failure_fallback'), 'zh')}")
-        sec.append("- 工具边界:")
-        for t in obj.get("tools_boundary") or []:
-            sec.append(f"  - {_lang(t, 'zh')}")
-        sec.append("- 人工接管:")
-        for t in obj.get("human_takeover_when") or []:
-            sec.append(f"  - {_lang(t, 'zh')}")
+        sec.append(t("- 失败兜底: {v}").format(v=_lang(obj.get("failure_fallback"), lang)))
+        sec.append(t("- 工具边界:"))
+        for item in obj.get("tools_boundary") or []:
+            sec.append(f"  - {_lang(item, lang)}")
+        sec.append(t("- 人工接管:"))
+        for item in obj.get("human_takeover_when") or []:
+            sec.append(f"  - {_lang(item, lang)}")
     sec.append("")
     sections.append(("对象 AI", sec))
 
@@ -1039,7 +1150,7 @@ def render_human(data: dict, source: str, gate_mode: str = "hard") -> str:
     if claims:
         buckets = claim_summary(data)
         sec = [
-            "覆盖账本（附录）：原料每句话的下落。covered {c} · assumption {a} · out_of_scope {o} · 其他 {r}。".format(
+            t("覆盖账本（附录）：原料每句话的下落。covered {c} · assumption {a} · out_of_scope {o} · 其他 {r}。").format(
                 c=len(buckets.get("covered") or []),
                 a=len(buckets.get("assumption") or []),
                 o=len(buckets.get("out_of_scope") or []),
@@ -1049,7 +1160,7 @@ def render_human(data: dict, source: str, gate_mode: str = "hard") -> str:
                 - len(buckets.get("out_of_scope") or []),
             ),
             "",
-            "| ID | 处置 | 摘要 | 规格引用 |",
+            t("| ID | 处置 | 摘要 | 规格引用 |"),
             "|----|------|------|----------|",
         ]
         for c in claims:
@@ -1063,18 +1174,20 @@ def render_human(data: dict, source: str, gate_mode: str = "hard") -> str:
         sections.append(("原料覆盖（SourceClaim）", sec))
 
     # ---- 组装：标题块 → 目录 → 编号章节 ----
-    numbered = [(f"{i}. {title}", body) for i, (title, body) in enumerate(sections, 1)]
+    numbered = [(f"{i}. {t(title)}", body) for i, (title, body) in enumerate(sections, 1)]
     lines: list[str] = [
-        f"# {title_zh}",
+        f"# {title_main}",
         "",
-        f"> **文档类型**：可开发的需求规格说明书（人读视图）  ",
-        f"> **规格 ID**：`{data.get('id')}` · **状态**：`{data.get('status')}` · **版本**：`{data.get('spec_version')}`  ",
-        f"> **机读哈希**：`{digest[:16]}…`",
+        t("> **文档类型**：可开发的需求规格说明书（人读视图）  "),
+        t("> **规格 ID**：`{sid}` · **状态**：`{status}` · **版本**：`{ver}`  ").format(
+            sid=data.get("id"), status=data.get("status"), ver=data.get("spec_version")
+        ),
+        t("> **机读哈希**：`{digest}…`").format(digest=digest[:16]),
         "",
     ]
-    if title_en and title_en != title_zh:
-        lines += [f"**EN title:** {title_en}", ""]
-    lines += ["## 目录", ""]
+    if title_alt and title_alt != title_main:
+        lines += [t("**EN title:** {t}").format(t=title_alt), ""]
+    lines += [f"## {t('目录')}", ""]
     for heading, _body in numbered:
         lines.append(f"- [{heading}](#{_anchor(heading)})")
     lines.append("")
@@ -1092,8 +1205,9 @@ def render_human(data: dict, source: str, gate_mode: str = "hard") -> str:
         f"<!-- spec_hash: {digest} -->",
         f"<!-- body_hash: {human_body_hash(body_text)} -->",
         f"<!-- renderer_version: {RENDERER_VERSION} -->",
+        f"<!-- lang: {lang} -->",
         f"<!-- gate_mode: {gate_mode} -->",
-        "<!-- 以机读 YAML 为唯一准据；禁止长期只改本文件 -->",
+        t("<!-- 以机读 YAML 为唯一准据；禁止长期只改本文件 -->"),
         "",
     ]
     return "\n".join(headers) + body_text

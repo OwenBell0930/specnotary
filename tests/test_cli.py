@@ -606,6 +606,82 @@ def test_data_contract_claimable():
     assert not any("not a spec entity" in e for e in result["fail"]), result
 
 
+def test_json_output():
+    import json as _json
+    env = {**os.environ, "PYTHONPATH": str(ROOT / "src")}
+    p = subprocess.run(
+        [sys.executable, "-m", "specanvil.cli", "check", str(RAW), "--json"],
+        capture_output=True, text=True, env=env,
+    )
+    assert p.returncode == 0, p.stdout + p.stderr
+    verdict = _json.loads(p.stdout)
+    assert verdict["result"] == "PASS" and verdict["fail"] == []
+    assert verdict["summary"]["behaviors"] >= 4
+    assert "spec_hash" in verdict
+
+
+def test_precommit_multi():
+    env = {**os.environ, "PYTHONPATH": str(ROOT / "src")}
+    p = subprocess.run(
+        [sys.executable, "-m", "specanvil.cli", "precommit",
+         str(RAW), str(ROOT / "examples/case-list-search/machine/spec.yaml")],
+        capture_output=True, text=True, env=env,
+    )
+    assert p.returncode == 0, p.stdout + p.stderr
+    assert p.stdout.count("PASS ") == 2
+    bad = subprocess.run(
+        [sys.executable, "-m", "specanvil.cli", "precommit",
+         str(ROOT / "examples/case-order-cancel-bad/machine/spec.yaml")],
+        capture_output=True, text=True, env=env,
+    )
+    assert bad.returncode == 1
+
+
+def test_en_human_roundtrip():
+    data = load_spec(RAW)
+    md = render_human(data, source="mem", lang="en")
+    assert "Table of Contents" in md
+    assert "States & Allowed Actions" in md
+    assert "Decision Log" in md and "| Owns | Does not own |" in md
+    assert "<!-- lang: en -->" in md
+    with tempfile.TemporaryDirectory() as td:
+        human = Path(td) / "spec.md"
+        human.write_text(md, encoding="utf-8")
+        result = validate(data, {}, human_path=human)
+        assert not any("stale" in e for e in result["fail"]), result
+
+
+def test_en_vague_calibration():
+    data = load_spec(ROOT / "examples/case-list-search/machine/spec.yaml")
+    data["behaviors"][0]["then"] = {"zh": "点击后返回结果", "en": "Clicking Search returns items whose title contains the keyword, newest first"}
+    result = validate(data, {})
+    assert not any("too vague" in e for e in result["fail"]), result
+    data["behaviors"][0]["then"] = {"en": "The experience is seamless and intuitive"}
+    result2 = validate(data, {})
+    assert any("too vague" in e for e in result2["fail"]), result2
+
+
+def test_mcp_server_smoke():
+    import json as _json
+    env = {**os.environ, "PYTHONPATH": str(ROOT / "src")}
+    reqs = "\n".join([
+        _json.dumps({"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}}),
+        _json.dumps({"jsonrpc": "2.0", "id": 2, "method": "tools/list"}),
+        _json.dumps({"jsonrpc": "2.0", "id": 3, "method": "tools/call", "params": {
+            "name": "check_spec", "arguments": {"path": str(RAW)}}}),
+    ]) + "\n"
+    p = subprocess.run(
+        [sys.executable, "-m", "specanvil.cli", "mcp"],
+        input=reqs, capture_output=True, text=True, env=env, timeout=60,
+    )
+    lines = [_json.loads(x) for x in p.stdout.splitlines() if x.strip()]
+    by_id = {o["id"]: o for o in lines}
+    assert by_id[1]["result"]["serverInfo"]["name"] == "specanvil"
+    names = [t["name"] for t in by_id[2]["result"]["tools"]]
+    assert names == ["check_spec", "ready_gap", "review_report"]
+    assert "PASS" in by_id[3]["result"]["content"][0]["text"]
+
+
 def test_cli_module_entry():
     env = {**os.environ, "PYTHONPATH": str(ROOT / "src")}
     p = subprocess.run(
@@ -686,6 +762,11 @@ if __name__ == "__main__":
         test_decision_decided_passes,
         test_overview_missing_warns_on_ready,
         test_data_contract_claimable,
+        test_json_output,
+        test_precommit_multi,
+        test_en_human_roundtrip,
+        test_en_vague_calibration,
+        test_mcp_server_smoke,
         test_cli_module_entry,
     ]:
         try:

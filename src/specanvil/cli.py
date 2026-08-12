@@ -5,18 +5,43 @@ from __future__ import annotations
 import sys
 
 from . import __version__
+from .check import gate
 from .check import main as check_main
 from .generate_human import main as human_main
 from .markers import main as markers_main
+from .mcp import main as mcp_main
 from .report import main as report_main
 from .sync import main as sync_main
 
+
+def precommit_main(argv: list[str] | None = None) -> int:
+    """pre-commit entry: every argument is a machine spec; aggregate verdicts."""
+    import sys as _sys
+    from pathlib import Path
+
+    argv = list(_sys.argv[1:] if argv is None else argv)
+    if not argv:
+        print("Usage: specanvil precommit <machine-spec> [...]")
+        return 2
+    worst = 0
+    for raw in argv:
+        verdict = gate(Path(raw))
+        mark = "PASS" if verdict["result"] == "PASS" else "FAIL"
+        print(f"{mark} {raw} (FAIL {len(verdict['fail'])} / WARN {len(verdict['warn'])})")
+        for e in verdict["fail"]:
+            print(f"  FAIL: {e}")
+        worst = max(worst, int(verdict["exit_code"]))
+    return worst
+
+
 COMMANDS = {
-    "check": (check_main, "Hard gate: schema + rules + evidence chain (--explain for ready gap)"),
-    "human": (human_main, "Generate human construction-grade view from machine source"),
+    "check": (check_main, "Hard gate: schema + rules + evidence chain (--explain, --json)"),
+    "human": (human_main, "Generate human construction-grade view (--lang zh|en)"),
     "report": (report_main, "Write review-readiness report (coverage + prototype buckets)"),
     "sync": (sync_main, "Regenerate human + refresh prototype hash after machine edits"),
     "markers": (markers_main, "Diff data-spec-id markers in a source tree against spec entities (retrofit helper)"),
+    "precommit": (precommit_main, "Gate multiple specs at once (pre-commit hook entry)"),
+    "mcp": (mcp_main, "Run the stdio MCP server exposing check/gap/report to agents"),
 }
 
 

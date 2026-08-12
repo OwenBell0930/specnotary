@@ -14,11 +14,32 @@ from .libspec import (
     validate,
 )
 
-USAGE = "Usage: specanvil human <machine-spec> [out.md] [--allow-invalid]"
+USAGE = "Usage: specanvil human <machine-spec> [out.md] [--allow-invalid] [--lang zh|en]"
+
+
+def _pop_lang(argv: list[str]) -> tuple[list[str], str]:
+    lang = "zh"
+    out: list[str] = []
+    i = 0
+    while i < len(argv):
+        a = argv[i]
+        if a.startswith("--lang="):
+            lang = a.split("=", 1)[1].strip() or "zh"
+        elif a == "--lang" and i + 1 < len(argv):
+            lang = argv[i + 1].strip() or "zh"
+            i += 1
+        else:
+            out.append(a)
+        i += 1
+    return out, lang
 
 
 def main(argv: list[str] | None = None) -> int:
     argv = list(sys.argv[1:] if argv is None else argv)
+    argv, lang = _pop_lang(argv)
+    if lang not in {"zh", "en"}:
+        print(f"FAIL: unsupported lang {lang!r} (zh|en)")
+        return 2
     allow_invalid = "--allow-invalid" in argv
     args = [a for a in argv if a != "--allow-invalid"]
     if len(args) not in {1, 2}:
@@ -52,7 +73,7 @@ def main(argv: list[str] | None = None) -> int:
             print(f"WARN: {w}")
         return 1
 
-    md = render_human(data, source=relpath_from_root(src, find_repo_root(src)), gate_mode="hard")
+    md = render_human(data, source=relpath_from_root(src, find_repo_root(src)), gate_mode="hard", lang=lang)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(md, encoding="utf-8")
     print(f"wrote: {out}")

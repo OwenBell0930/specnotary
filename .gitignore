@@ -10,6 +10,9 @@ build/
 dist/
 *.egg-info/
 
+# Local launch drafts — never ship marketing drafts in the public tree
+launch/
+
 # Local Cursor config — keep only the Hermes pointer rule if present
 .cursor/*
 !.cursor/rules/

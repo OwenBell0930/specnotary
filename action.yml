@@ -1,0 +1,29 @@
+name: "SpecAnvil Gate"
+description: "Deterministic hard gate for machine-first specs: FAIL/WARN/Pending, source coverage, human-view and prototype drift"
+author: "OwenBell"
+branding:
+  icon: "check-square"
+  color: "blue"
+
+inputs:
+  specs:
+    description: "Glob of machine spec files to gate"
+    required: false
+    default: "**/machine/spec.yaml"
+  explain:
+    description: "Also print the READY-GAP for draft specs (true/false)"
+    required: false
+    default: "false"
+
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+    - name: Install SpecAnvil
+      shell: bash
+      run: pip install --quiet "${{ github.action_path }}"
+    - name: Gate specs
+      shell: bash
+      run: python3 "${{ github.action_path }}/scripts/action_gate.py" "${{ inputs.specs }}" "${{ inputs.explain }}"

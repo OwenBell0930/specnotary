@@ -4,6 +4,7 @@
 <!-- spec_hash: d1bf34901759f8f687e9751b0190ca86ebc3c0fd1ef500165792e30b34ba9dc9 -->
 <!-- body_hash: 749e3759f9de69f9c7371dfb3363d75cad2ab18997be0e4ebd6b1a6d4e82ac36 -->
 <!-- renderer_version: 3 -->
+<!-- lang: zh -->
 <!-- gate_mode: hard -->
 <!-- 以机读 YAML 为唯一准据；禁止长期只改本文件 -->
 # 电商订单 · 未发货取消（客服 FAQ 反推）

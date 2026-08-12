@@ -17,11 +17,26 @@
 | 8 | 无真实公司资料 / 未脱敏内容 | 人工复查 examples/ docs/ | 发布前复查 |
 | 9 | 名称无混淆 | SpecAnvil（GitHub/npm/PyPI 检索无同名活跃项目，2026-08-12 核查） | ✅ |
 
+## 增长面就绪（本地已实现，发布后生效）
+
+| 项 | 位置 | 状态 |
+|----|------|------|
+| 机读判定 `--json` | `specanvil check --json` | ✅ 有测试 |
+| 英文 README + 英文人读 | `README.en.md` · `--lang en` | ✅ 有测试 |
+| pre-commit 钩子 | `.pre-commit-hooks.yaml` | ✅ |
+| GitHub Action | `action.yml` + `scripts/action_gate.py` | ✅（Marketplace 发布后实测） |
+| MCP server | `specanvil mcp` | ✅ 冒烟测试 |
+| Playground | `playground/index.html` | ✅ 本地浏览器实测（坏稿 FAIL / 修好稿 PASS） |
+| 终端动图脚本 | `scripts/demo.tape` | 待 `brew install vhs` 后生成 gif |
+| 发布物料 | `launch/`（不入库） | ✅ 草稿齐 |
+
 ## 发布时才执行（勿提前）
 
-- 创建 GitHub 仓库（名称 `specanvil`），推送 `main` 与 tag `v0.2.0`。
-- PyPI 发布 `specanvil`（`python -m build && twine upload`）。
-- README 徽章从静态改为 CI 实时徽章。
+- 创建 GitHub 仓库（名称 `specanvil`），推送 `main` 与 tag `v0.3.0`；按 `launch/repo-metadata.md` 填 description/topics/social preview。
+- `vhs scripts/demo.tape` 生成 `docs/assets/demo.gif` 并接入 README 首屏。
+- PyPI 发布 `specanvil`（`python -m build && twine upload`）；验证 `uvx specanvil --version`。
+- 开 GitHub Pages（root），线上验证 `playground/`。
+- README 徽章从静态改为 CI 实时徽章；预埋 good first issues；执行 `launch/launch-checklist-48h.md`。
 
 ## 明确不做
 

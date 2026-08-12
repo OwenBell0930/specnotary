@@ -78,7 +78,15 @@ def main(argv: list[str] | None = None) -> int:
     if human is None:
         print("FAIL: cannot resolve human path (machine file not under machine/)")
         return 1
-    rc = generate_human_main([str(src), str(human)])
+    gen_args = [str(src), str(human)]
+    if human.is_file():
+        # Preserve the language the human view was generated with.
+        from .libspec import parse_human_header  # noqa: PLC0415
+
+        lang = (parse_human_header(human.read_text(encoding="utf-8")).get("lang") or "zh").strip()
+        if lang and lang != "zh":
+            gen_args += ["--lang", lang]
+    rc = generate_human_main(gen_args)
     if rc != 0:
         return rc
 

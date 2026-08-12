@@ -1,0 +1,12 @@
+# Consume from another repo:
+#   repos:
+#     - repo: https://github.com/OwenBell0930/specanvil   # after publication
+#       rev: v0.2.0
+#       hooks:
+#         - id: specanvil-check
+- id: specanvil-check
+  name: SpecAnvil hard gate
+  description: Deterministic FAIL/WARN gate for machine-first specs
+  entry: specanvil precommit
+  language: python
+  files: 'machine/.*\.(ya?ml|json)$'

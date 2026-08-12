@@ -4,6 +4,7 @@
 <!-- spec_hash: 7af9b6454b4b33d735e23adc27b37fbbc44ce0757c54f7c28b2a747ee55808c1 -->
 <!-- body_hash: e54452daba1855f8fd38326bc782c9188c7d343f944eaffa6d86da1547d95cde -->
 <!-- renderer_version: 3 -->
+<!-- lang: zh -->
 <!-- gate_mode: hard -->
 <!-- 以机读 YAML 为唯一准据；禁止长期只改本文件 -->
 # 商品列表 · 标题/ID 搜索

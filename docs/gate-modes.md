@@ -25,6 +25,15 @@
 
 依赖：`pip install .`（或仅 `pip install pyyaml jsonschema` 走 `cli/run-*.sh`）
 
+## 集成出口
+
+- **`specanvil check --json`**：机读判定（fail/warn/ready_gap/exit_code），CI、编辑器、Action 共用一个语义源。
+- **`specanvil precommit <spec...>`**：多文件聚合门禁，配 `.pre-commit-hooks.yaml` 一行接入。
+- **GitHub Action**（根目录 `action.yml`）：PR 上按文件产出 error/warning 标注。
+- **`specanvil mcp`**：stdio MCP server，暴露 `check_spec` / `ready_gap` / `review_report` 三个工具给 Agent（Experimental）。
+- **`specanvil human --lang en`**：英文人读视图；语言记录在头部，防漂校验按记录语言重渲染。
+- **Playground**（`playground/index.html`）：Pyodide 浏览器端跑门禁，零安装零上传；属降级环境，完整 hard 判定仍以 CLI 为准。
+
 ## draft 差距报告
 
 ```bash

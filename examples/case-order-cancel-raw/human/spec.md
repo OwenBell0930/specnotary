@@ -4,6 +4,7 @@
 <!-- spec_hash: 94fe38439128d7e8a84f09bdc6571c9b0b96bbeff2729f91751020bcf9b15330 -->
 <!-- body_hash: c147d9db56aa540b7ec228c941872d2346f3280c5f10e1b088df99c5a7bf6070 -->
 <!-- renderer_version: 3 -->
+<!-- lang: zh -->
 <!-- gate_mode: hard -->
 <!-- 以机读 YAML 为唯一准据；禁止长期只改本文件 -->
 # 电商订单 · 未发货自助取消

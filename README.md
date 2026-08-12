@@ -5,10 +5,14 @@
 <h1 align="center">SpecAnvil</h1>
 
 <p align="center">
-  <strong>把含糊需求锻成可开发规格的硬门禁。</strong><br/>
+  <strong>需求规格的 ESLint——把含糊需求锻成可开发规格的硬门禁。</strong><br/>
   CLI 工具包 + 模板脚手架（辅：Cursor Skill）<br/>
   产出：<strong>可开发的需求规格说明书</strong> · 兼做<strong>需求评审就绪</strong>收口<br/>
-  机读 YAML 为准据 · 人读施工图 · 确定性门禁（FAIL / WARN / Pending）
+  机读 YAML 为准据 · 人读施工图 · 确定性门禁（FAIL / WARN / Pending）· 门禁零 LLM
+</p>
+
+<p align="center">
+  简体中文 · <a href="README.en.md">English</a>
 </p>
 
 <p align="center">
@@ -92,9 +96,15 @@
 | 存量项目标记对账 | **Available** | `specanvil markers`：列出已标/非法/待回填的 `data-spec-id` |
 | 悬空引用检查 | **Available** | 文本提及 `P-*`/`AC-*`/`SRC-*` 必须真实存在 |
 | pip 安装 | **Available** | `pip install .`（PyPI 发布待九步批准） |
+| 机读判定输出 | **Available** | `specanvil check --json`；CI/编辑器集成的地基 |
+| 英文人读视图 | **Available** | `specanvil human --lang en`；中文输出逐字节不变 |
+| pre-commit 钩子 | **Available** | `.pre-commit-hooks.yaml`，`specanvil precommit` 多文件门禁 |
+| GitHub Action | **Experimental** | `action.yml`：PR 上按文件标注 FAIL/WARN（发布后生效） |
+| MCP server | **Experimental** | `specanvil mcp`：stdio 协议，Agent 可把门禁当工具调用 |
+| 浏览器 Playground | **Experimental** | `playground/`：Pyodide 零安装试用 |
 | 任意原料一键转机读 | **Planned** | Skill + 人工确认 |
 | Node 等价硬门禁 | **Deferred** | stub 直接拒绝，绝不冒充 hard PASS |
-| Web / MCP | **Deferred** | — |
+| Web 服务端 | **Deferred** | — |
 
 ---
 
