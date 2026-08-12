@@ -13,6 +13,6 @@ if ! command -v python3 >/dev/null 2>&1; then
   exit 3
 fi
 
-echo "specanvil generate-human: runtime=python"
+echo "specnotary generate-human: runtime=python"
 export PYTHONPATH="$ROOT/src${PYTHONPATH:+:$PYTHONPATH}"
-exec python3 -m specanvil.generate_human "$@"
+exec python3 -m specnotary.generate_human "$@"

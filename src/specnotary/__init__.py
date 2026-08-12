@@ -1,4 +1,4 @@
-"""SpecAnvil — forge dev-ready specs on a hard gate.
+"""SpecNotary — forge dev-ready specs on a hard gate.
 
 Machine YAML is the single source of truth; the human construction-grade
 view, source coverage, and prototype manifests are all verified against it

@@ -15,7 +15,7 @@ from .libspec import (
     validate,
 )
 
-USAGE = "Usage: specanvil human <machine-spec> [out.md] [--allow-invalid] [--lang zh|en]"
+USAGE = "Usage: specnotary human <machine-spec> [out.md] [--allow-invalid] [--lang zh|en]"
 
 
 def _pop_lang(argv: list[str]) -> tuple[list[str], str]:

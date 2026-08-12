@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://owenbell.local/specanvil/machine-spec.schema.json",
-  "title": "SpecAnvil machine spec",
+  "$id": "https://owenbell.local/specnotary/machine-spec.schema.json",
+  "title": "SpecNotary machine spec",
   "type": "object",
   "required": ["spec_version", "id", "title", "status", "behaviors", "acceptance"],
   "additionalProperties": true,

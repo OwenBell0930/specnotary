@@ -17,7 +17,7 @@ from .libspec import (
     validate,
 )
 
-USAGE = "Usage: specanvil report <machine-spec> [out.md]"
+USAGE = "Usage: specnotary report <machine-spec> [out.md]"
 
 
 def render_report(

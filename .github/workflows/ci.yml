@@ -27,5 +27,5 @@ jobs:
           ./cli/run-check.sh templates/machine/spec.template.yaml
       - name: Installed console script works
         run: |
-          specanvil --version
-          specanvil check examples/case-order-cancel-raw/machine/spec.yaml
+          specnotary --version
+          specnotary check examples/case-order-cancel-raw/machine/spec.yaml

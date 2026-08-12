@@ -11,8 +11,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 CHECK = ROOT / "cli" / "run-check.sh"
 sys.path.insert(0, str(ROOT / "src"))
-from specanvil.libproto import classify_proto_issues, validate_prototype  # noqa: E402
-from specanvil.libspec import load_spec, ready_gap, render_human, spec_hash, validate  # noqa: E402
+from specnotary.libproto import classify_proto_issues, validate_prototype  # noqa: E402
+from specnotary.libspec import load_spec, ready_gap, render_human, spec_hash, validate  # noqa: E402
 
 
 def run(path: Path) -> tuple[int, str]:
@@ -211,12 +211,12 @@ def test_spec_ref_must_be_spec_entity():
 
 def test_explicit_missing_human_fail():
     data = load_spec(ROOT / "examples/case-list-search/machine/spec.yaml")
-    result = validate(data, {}, human_path=Path("/tmp/specanvil-no-such-human.md"))
+    result = validate(data, {}, human_path=Path("/tmp/specnotary-no-such-human.md"))
     assert any("human spec missing" in e for e in result["fail"]), result
 
 
 def test_node_runtime_refuses_hard_pass():
-    env = {**os.environ, "SPECANVIL_RUNTIME": "node"}
+    env = {**os.environ, "SPECNOTARY_RUNTIME": "node"}
     p = subprocess.run(
         ["bash", str(CHECK), str(ROOT / "examples/case-list-search/machine/spec.yaml")],
         capture_output=True,
@@ -531,8 +531,8 @@ def test_declared_ref_in_text_ok():
 
 
 def test_spa_source_markers_and_comments():
-    from specanvil.libproto import _html_spec_ids
-    from specanvil.markers import scan_markers
+    from specnotary.libproto import _html_spec_ids
+    from specnotary.markers import scan_markers
     with tempfile.TemporaryDirectory() as td:
         src = Path(td) / "Toc.tsx"
         src.write_text(
@@ -556,7 +556,7 @@ def test_markers_command_reconciles():
         )
         env = {**os.environ, "PYTHONPATH": str(ROOT / "src")}
         p = subprocess.run(
-            [sys.executable, "-m", "specanvil.markers",
+            [sys.executable, "-m", "specnotary.markers",
              str(ROOT / "examples/case-list-search/machine/spec.yaml"), td],
             capture_output=True, text=True, env=env,
         )
@@ -703,7 +703,7 @@ def test_human_default_out_standard_layout():
         shutil.rmtree(case / "human")
         env = {**os.environ, "PYTHONPATH": str(ROOT / "src")}
         p = subprocess.run(
-            [sys.executable, "-m", "specanvil.generate_human", str(case / "machine" / "spec.yaml")],
+            [sys.executable, "-m", "specnotary.generate_human", str(case / "machine" / "spec.yaml")],
             capture_output=True, text=True, env=env,
         )
         assert p.returncode == 0, p.stdout + p.stderr
@@ -721,14 +721,14 @@ def test_mcp_report_matches_cli():
         spec.write_text(text + "\nproject_hint:\n  object_ai_weight: high\n", encoding="utf-8")
         env = {**os.environ, "PYTHONPATH": str(ROOT / "src")}
         cli = subprocess.run(
-            [sys.executable, "-m", "specanvil.cli", "check", str(spec)],
+            [sys.executable, "-m", "specnotary.cli", "check", str(spec)],
             capture_output=True, text=True, env=env,
         )
         assert cli.returncode == 1, cli.stdout
         req = _json.dumps({"jsonrpc": "2.0", "id": 1, "method": "tools/call", "params": {
             "name": "review_report", "arguments": {"path": str(spec)}}}) + "\n"
         mcp = subprocess.run(
-            [sys.executable, "-m", "specanvil.cli", "mcp"],
+            [sys.executable, "-m", "specnotary.cli", "mcp"],
             input=req, capture_output=True, text=True, env=env, timeout=60,
         )
         body = _json.loads(mcp.stdout.splitlines()[0])["result"]["content"][0]["text"]
@@ -740,7 +740,7 @@ def test_json_output():
     import json as _json
     env = {**os.environ, "PYTHONPATH": str(ROOT / "src")}
     p = subprocess.run(
-        [sys.executable, "-m", "specanvil.cli", "check", str(RAW), "--json"],
+        [sys.executable, "-m", "specnotary.cli", "check", str(RAW), "--json"],
         capture_output=True, text=True, env=env,
     )
     assert p.returncode == 0, p.stdout + p.stderr
@@ -753,14 +753,14 @@ def test_json_output():
 def test_precommit_multi():
     env = {**os.environ, "PYTHONPATH": str(ROOT / "src")}
     p = subprocess.run(
-        [sys.executable, "-m", "specanvil.cli", "precommit",
+        [sys.executable, "-m", "specnotary.cli", "precommit",
          str(RAW), str(ROOT / "examples/case-list-search/machine/spec.yaml")],
         capture_output=True, text=True, env=env,
     )
     assert p.returncode == 0, p.stdout + p.stderr
     assert p.stdout.count("PASS ") == 2
     bad = subprocess.run(
-        [sys.executable, "-m", "specanvil.cli", "precommit",
+        [sys.executable, "-m", "specnotary.cli", "precommit",
          str(ROOT / "examples/case-order-cancel-bad/machine/spec.yaml")],
         capture_output=True, text=True, env=env,
     )
@@ -801,12 +801,12 @@ def test_mcp_server_smoke():
             "name": "check_spec", "arguments": {"path": str(RAW)}}}),
     ]) + "\n"
     p = subprocess.run(
-        [sys.executable, "-m", "specanvil.cli", "mcp"],
+        [sys.executable, "-m", "specnotary.cli", "mcp"],
         input=reqs, capture_output=True, text=True, env=env, timeout=60,
     )
     lines = [_json.loads(x) for x in p.stdout.splitlines() if x.strip()]
     by_id = {o["id"]: o for o in lines}
-    assert by_id[1]["result"]["serverInfo"]["name"] == "specanvil"
+    assert by_id[1]["result"]["serverInfo"]["name"] == "specnotary"
     names = [t["name"] for t in by_id[2]["result"]["tools"]]
     assert names == ["check_spec", "ready_gap", "review_report"]
     assert "PASS" in by_id[3]["result"]["content"][0]["text"]
@@ -815,7 +815,7 @@ def test_mcp_server_smoke():
 def test_cli_module_entry():
     env = {**os.environ, "PYTHONPATH": str(ROOT / "src")}
     p = subprocess.run(
-        [sys.executable, "-m", "specanvil.cli", "check", str(RAW)],
+        [sys.executable, "-m", "specnotary.cli", "check", str(RAW)],
         capture_output=True,
         text=True,
         env=env,
@@ -824,7 +824,7 @@ def test_cli_module_entry():
     assert p.returncode == 0, out
     assert "RESULT: PASS" in out
     v = subprocess.run(
-        [sys.executable, "-m", "specanvil.cli", "--version"],
+        [sys.executable, "-m", "specnotary.cli", "--version"],
         capture_output=True,
         text=True,
         env=env,

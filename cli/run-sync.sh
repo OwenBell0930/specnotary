@@ -13,6 +13,6 @@ if ! command -v python3 >/dev/null 2>&1; then
   exit 3
 fi
 
-echo "specanvil sync: runtime=python"
+echo "specnotary sync: runtime=python"
 export PYTHONPATH="$ROOT/src${PYTHONPATH:+:$PYTHONPATH}"
-exec python3 -m specanvil.sync "$@"
+exec python3 -m specnotary.sync "$@"

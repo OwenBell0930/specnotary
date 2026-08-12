@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""SpecAnvil unified CLI: check / human / report / sync."""
+"""SpecNotary unified CLI: check / human / report / sync."""
 from __future__ import annotations
 
 import sys
@@ -21,7 +21,7 @@ def precommit_main(argv: list[str] | None = None) -> int:
 
     argv = list(_sys.argv[1:] if argv is None else argv)
     if not argv:
-        print("Usage: specanvil precommit <machine-spec> [...]")
+        print("Usage: specnotary precommit <machine-spec> [...]")
         return 2
     worst = 0
     for raw in argv:
@@ -46,11 +46,11 @@ COMMANDS = {
 
 
 def _usage() -> str:
-    lines = [f"specanvil {__version__} — forge dev-ready specs on a hard gate", "", "Commands:"]
+    lines = [f"specnotary {__version__} — forge dev-ready specs on a hard gate", "", "Commands:"]
     for name, (_fn, help_text) in COMMANDS.items():
-        lines.append(f"  specanvil {name:<8} {help_text}")
+        lines.append(f"  specnotary {name:<8} {help_text}")
     lines.append("")
-    lines.append("Run `specanvil <command>` with no args for per-command usage.")
+    lines.append("Run `specnotary <command>` with no args for per-command usage.")
     return "\n".join(lines)
 
 

@@ -16,7 +16,7 @@ from .libspec import (
     validate,
 )
 
-USAGE = "Usage: specanvil check <machine-spec.yaml|json> [human.md] [prototype.manifest.yaml] [--explain] [--json]"
+USAGE = "Usage: specnotary check <machine-spec.yaml|json> [human.md] [prototype.manifest.yaml] [--explain] [--json]"
 
 
 def gate(

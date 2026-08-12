@@ -16,7 +16,7 @@ from pathlib import Path
 from .libproto import _CODE_SUFFIXES, _html_spec_ids, _required_behaviors, _required_spec_controls
 from .libspec import known_entity_ids, load_spec
 
-USAGE = "Usage: specanvil markers <machine-spec.yaml|json> <source-dir>"
+USAGE = "Usage: specnotary markers <machine-spec.yaml|json> <source-dir>"
 SCAN_SUFFIXES = {".html", ".htm"} | _CODE_SUFFIXES
 SKIP_DIRS = {"node_modules", ".git", "dist", "build", ".next", "coverage", "__pycache__"}
 

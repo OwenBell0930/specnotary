@@ -12,6 +12,6 @@ if ! command -v python3 >/dev/null 2>&1; then
   exit 3
 fi
 
-echo "specanvil report: runtime=python"
+echo "specnotary report: runtime=python"
 export PYTHONPATH="$ROOT/src${PYTHONPATH:+:$PYTHONPATH}"
-exec python3 -m specanvil.report "$@"
+exec python3 -m specnotary.report "$@"

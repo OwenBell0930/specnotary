@@ -90,7 +90,7 @@ def _handle(req: dict) -> dict | None:
             "result": {
                 "protocolVersion": PROTOCOL_VERSION,
                 "capabilities": {"tools": {}},
-                "serverInfo": {"name": "specanvil", "version": __version__},
+                "serverInfo": {"name": "specnotary", "version": __version__},
             },
         }
     if method in {"notifications/initialized", "initialized"}:

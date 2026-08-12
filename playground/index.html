@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>SpecAnvil Playground — 需求规格的 ESLint，浏览器直接跑</title>
+<title>SpecNotary Playground — 需求规格的 ESLint，浏览器直接跑</title>
 <style>
   :root{--bg:#0b1220;--panel:#0f172a;--line:#1e293b;--text:#e2e8f0;--muted:#94a3b8;
         --red:#f87171;--amber:#fbbf24;--green:#4ade80;--blue:#60a5fa;}
@@ -36,7 +36,7 @@
 </head>
 <body>
 <header>
-  <h1>SpecAnvil Playground</h1>
+  <h1>SpecNotary Playground</h1>
   <span class="tag">确定性门禁在你的浏览器里跑（Pyodide）· 零安装 · 不上传任何内容</span>
   <a href="../README.md">← 回 README</a>
 </header>
@@ -82,19 +82,19 @@ async function boot(){
     pyodide = await loadPyodide();
     show('<span class="mut">运行时就绪，加载依赖（pyyaml / jsonschema）…</span>');
     await pyodide.loadPackage(["pyyaml","jsonschema"]);
-    show('<span class="mut">加载 SpecAnvil 源码…</span>');
-    pyodide.FS.mkdirTree("/lib/specanvil/schemas");
+    show('<span class="mut">加载 SpecNotary 源码…</span>');
+    pyodide.FS.mkdirTree("/lib/specnotary/schemas");
     for(const f of SOURCES){
-      pyodide.FS.writeFile(`/lib/specanvil/${f}`, await fetchText(`../src/specanvil/${f}`));
+      pyodide.FS.writeFile(`/lib/specnotary/${f}`, await fetchText(`../src/specnotary/${f}`));
     }
     for(const f of SCHEMAS){
-      pyodide.FS.writeFile(`/lib/specanvil/schemas/${f}`, await fetchText(`../src/specanvil/schemas/${f}`));
+      pyodide.FS.writeFile(`/lib/specnotary/schemas/${f}`, await fetchText(`../src/specnotary/schemas/${f}`));
     }
     pyodide.runPython(`
 import sys
 sys.path.insert(0, "/lib")
 import yaml, json
-from specanvil.libspec import validate, ready_gap, render_human
+from specnotary.libspec import validate, ready_gap, render_human
 
 def _load(text):
     return yaml.safe_load(text)

@@ -24,7 +24,7 @@ from .libspec import (
     validate,
 )
 
-USAGE = "Usage: specanvil sync <machine-spec.yaml|json> [--attest-prototype]"
+USAGE = "Usage: specnotary sync <machine-spec.yaml|json> [--attest-prototype]"
 _HASH_LINE = re.compile(r"^(\s*hash:\s*).+$", re.MULTILINE)
 
 
@@ -82,7 +82,7 @@ def main(argv: list[str] | None = None) -> int:
                 print(f"WARN: no hash line found in {manifest} — update manually")
         else:
             print("NOTE: prototype hash NOT refreshed — sync does not regenerate the prototype.")
-            print("      Re-verify the prototype, then run: specanvil sync <spec> --attest-prototype")
+            print("      Re-verify the prototype, then run: specnotary sync <spec> --attest-prototype")
 
     human = expected_human_path(src)
     if human is None:

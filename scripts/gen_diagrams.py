@@ -67,7 +67,7 @@ def line(x1, y1, x2, y2, marker="arrow", color=BLUE):
 
 def flow():
     svg = header(1280, 560)
-    svg += label(640, 42, "SpecAnvil Flow / 规格工程主流程", 26)
+    svg += label(640, 42, "SpecNotary Flow / 规格工程主流程", 26)
     svg += label(640, 72, "Machine-first · Generate human view · Hard gate (CLI) or degraded Skill", 14, bold=False, color=TEXT_MUTED)
 
     y = 130
@@ -176,12 +176,12 @@ def terminal_mock():
     svg += label(640, 36, "CLI preview / 命令行预览", 22, color=WHITE)
     svg += f'<rect x="80" y="70" width="1120" height="300" rx="14" fill="#020617" stroke="#334155" stroke-width="2"/>'
     lines = [
-        ("$ specanvil check examples/case-order-cancel-bad/machine/spec.yaml", "#93C5FD"),
+        ("$ specnotary check examples/case-order-cancel-bad/machine/spec.yaml", "#93C5FD"),
         ("gate_mode: hard", "#FBBF24"),
         ("FAIL: behavior B1: then-clause too vague for ready", "#FCA5A5"),
         ("FAIL: acceptance AC-01: not observable", "#FCA5A5"),
         ("RESULT: FAIL", "#F87171"),
-        ("$ specanvil check examples/case-order-cancel-bad/machine/spec.fixed.yaml", "#93C5FD"),
+        ("$ specnotary check examples/case-order-cancel-bad/machine/spec.fixed.yaml", "#93C5FD"),
         ("FAIL_COUNT: 0", "#94A3B8"),
         ("RESULT: PASS", "#4ADE80"),
     ]

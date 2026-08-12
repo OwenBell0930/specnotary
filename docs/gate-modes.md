@@ -2,10 +2,10 @@
 
 | 模式 | 何时 | 效力 |
 |------|------|------|
-| `hard` | **Python** CLI 已执行（`specanvil check` / `./cli/run-check.sh`） | 可作为本地「自动测试跑通」依据 |
+| `hard` | **Python** CLI 已执行（`specnotary check` / `./cli/run-check.sh`） | 可作为本地「自动测试跑通」依据 |
 | `degraded` | 无 Python，Skill+LLM 代跑 | **仅参考**；不得冒充 hard PASS |
 
-> **Node CLI：Deferred。** `cli/node/` 与 `SPECANVIL_RUNTIME=node` **拒绝**冒充 hard PASS（退出码 3），且不携带任何影子规则集。硬门禁只有 Python；无 Python 时用 Skill 并标 `gate_mode: degraded`。
+> **Node CLI：Deferred。** `cli/node/` 与 `SPECNOTARY_RUNTIME=node` **拒绝**冒充 hard PASS（退出码 3），且不携带任何影子规则集。硬门禁只有 Python；无 Python 时用 Skill 并标 `gate_mode: degraded`。
 
 ## hard 结果分层
 
@@ -17,7 +17,7 @@
 
 ## 校验分层
 
-1. **JSON Schema**（`src/specanvil/schemas/machine-spec.schema.json`）— 类型、enum、必填  
+1. **JSON Schema**（`src/specnotary/schemas/machine-spec.schema.json`）— 类型、enum、必填  
 2. **确定性规则** — ID 唯一、跨对象引用、ready 完备性（占位 ui/defaults/states 不算数；given/when/then 与 AC 非空且禁空话，`「…」`内的字面 UI 文案豁免；`in_scope` 非空）、Pending 五字段、**决策记录未拍板（`decisions` 无 `chosen`）在 ready 上 FAIL**、自由文本悬空引用（`P-*` / `AC-*` / `SRC-*` / `D-*` 提及即必须存在；ready FAIL，draft WARN）；ready 缺 `overview` 为 WARN  
 3. **原料覆盖** — `sources[].path` 必须存在；`content_hash` 钉死原料内容快照（原料一变全体 claims stale FAIL；ready 未钉为 WARN）；ready 至少 1 条 `covered`；每个必选 behavior/AC/control 须被 claim 引用；`omitted` / 未闭合 `conflict` 在 `ready` 上 FAIL；`assumption` 为 WARN  
 4. **人读 stale** — 人读头 `spec_hash` 必须等于当前机读内容哈希；`renderer_version` 必须等于当前渲染器版本（版本不符给出单条「重新生成」提示）；正文须与按机读重渲染逐字一致（只改正文也 FAIL）  
@@ -27,17 +27,17 @@
 
 ## 集成出口
 
-- **`specanvil check --json`**：机读判定（fail/warn/ready_gap/exit_code），CI、编辑器、Action 共用一个语义源。
-- **`specanvil precommit <spec...>`**：多文件聚合门禁，配 `.pre-commit-hooks.yaml` 一行接入。
+- **`specnotary check --json`**：机读判定（fail/warn/ready_gap/exit_code），CI、编辑器、Action 共用一个语义源。
+- **`specnotary precommit <spec...>`**：多文件聚合门禁，配 `.pre-commit-hooks.yaml` 一行接入。
 - **GitHub Action**（根目录 `action.yml`）：PR 上按文件产出 error/warning 标注。
-- **`specanvil mcp`**：stdio MCP server，暴露 `check_spec` / `ready_gap` / `review_report` 三个工具给 Agent（Experimental）。
-- **`specanvil human --lang en`**：英文人读视图；语言记录在头部，防漂校验按记录语言重渲染。
+- **`specnotary mcp`**：stdio MCP server，暴露 `check_spec` / `ready_gap` / `review_report` 三个工具给 Agent（Experimental）。
+- **`specnotary human --lang en`**：英文人读视图；语言记录在头部，防漂校验按记录语言重渲染。
 - **Playground**（`playground/index.html`）：Pyodide 浏览器端跑门禁，零安装零上传；属降级环境，完整 hard 判定仍以 CLI 为准。
 
 ## draft 差距报告
 
 ```bash
-specanvil check <machine.yaml> --explain
+specnotary check <machine.yaml> --explain
 ```
 
 对 draft 规格额外打印 `READY-GAP`：若现在把 `status` 翻成 `ready` 会新增哪些 FAIL。确定性 dry-run，判定零 LLM。
@@ -45,8 +45,8 @@ specanvil check <machine.yaml> --explain
 ## 一键同步派生物（背书须显式）
 
 ```bash
-specanvil sync <machine.yaml>                      # 重新生成人读 + 复跑门禁
-specanvil sync <machine.yaml> --attest-prototype   # 复核原型后，显式背书刷新 manifest 哈希
+specnotary sync <machine.yaml>                      # 重新生成人读 + 复跑门禁
+specnotary sync <machine.yaml> --attest-prototype   # 复核原型后，显式背书刷新 manifest 哈希
 ```
 
 人读是**派生物**（真的被重新渲染），sync 直接重生成；原型**不是**（sync 不重新生成原型），所以默认不刷新 `generated_from_spec.hash`——机读变更后原型保持 stale FAIL，直到人/Agent 复核原型并显式 `--attest-prototype`。背书是动作，不是副作用。两类哈希效力差异详见 [`proof-boundary.md`](proof-boundary.md)。机读本身有 FAIL 时拒绝同步。
@@ -54,7 +54,7 @@ specanvil sync <machine.yaml> --attest-prototype   # 复核原型后，显式背
 ## 存量项目接入（retrofit）
 
 ```bash
-specanvil markers <machine.yaml> <前端源码目录>
+specnotary markers <machine.yaml> <前端源码目录>
 ```
 
 对账源码里已有的 `data-spec-id`（支持 .html/.tsx/.jsx/.vue/.svelte，注释里的不算）：列出已匹配、非法标记、以及必选控件/行为还缺哪些标记。回填完成后再写 manifest 接入原型门禁。此命令仅对账，不是门禁。
@@ -62,10 +62,10 @@ specanvil markers <machine.yaml> <前端源码目录>
 ## 评审就绪报告
 
 ```bash
-specanvil report examples/case-order-cancel-raw/machine/spec.yaml
+specnotary report examples/case-order-cancel-raw/machine/spec.yaml
 ```
 
-输出 omitted / assumption / conflict / pending / out_of_scope 汇总与原型问题归桶。报告不是硬门禁本体；门禁仍以 `specanvil check` 为准。
+输出 omitted / assumption / conflict / pending / out_of_scope 汇总与原型问题归桶。报告不是硬门禁本体；门禁仍以 `specnotary check` 为准。
 
 ## Pending 五字段（status=ready 时）
 
@@ -74,7 +74,7 @@ specanvil report examples/case-order-cancel-raw/machine/spec.yaml
 
 ## 生成人读
 
-`specanvil human`（或 `./cli/run-generate-human.sh`）在机读仍有 FAIL 时**拒绝写入**，除非传入 `--allow-invalid`。
+`specnotary human`（或 `./cli/run-generate-human.sh`）在机读仍有 FAIL 时**拒绝写入**，除非传入 `--allow-invalid`。
 
 ### 人读阅读动线（渲染器 v3）
 

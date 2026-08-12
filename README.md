@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="docs/assets/hero-banner.svg" alt="SpecAnvil — 可开发的需求规格说明书" width="100%"/>
+  <img src="docs/assets/hero-banner.svg" alt="SpecNotary — 可开发的需求规格说明书" width="100%"/>
 </p>
 
-<h1 align="center">SpecAnvil</h1>
+<h1 align="center">SpecNotary</h1>
 
 <p align="center">
   <strong>需求规格的 ESLint——把含糊需求锻成可开发规格的硬门禁。</strong><br/>
@@ -35,7 +35,7 @@
   <img alt="author" src="https://img.shields.io/badge/by-OwenBell-0F172A"/>
 </p>
 
-> 原工作名 Spec Kit；为免与 GitHub 官方 spec-kit 混淆而更名。与工作流类 SDD 工具的关系见 [`docs/positioning.md`](docs/positioning.md)。
+> 曾用名 Spec Kit、SpecAnvil，均因与现有项目撞名而更名（github/spec-kit、specanvil.com）。与工作流类 SDD 工具的关系见 [`docs/positioning.md`](docs/positioning.md)；与 CNCF Notary Project（OCI 制品签名）无关。
 
 ---
 
@@ -52,7 +52,7 @@
 
 > 门禁能证明什么、不能证明什么，唯一口径见 [`docs/proof-boundary.md`](docs/proof-boundary.md)——PASS ≠ 业务正确，PASS = 结构与证据链闭合。
 
-| 痛点 | SpecAnvil 怎么处理 |
+| 痛点 | SpecNotary 怎么处理 |
 |------|-------------------|
 | 需求写了很长，研发仍要猜显隐、文案、默认值 | 人读视图强制线框 · 控件表 · 状态/动作矩阵 · 编号主路径 |
 | 「智能 / 尽快 / 体验好」冒充可开发 | 硬门禁 `FAIL`：空话 given/when/then、不可观察 AC、占位 ui/defaults 直接否决 |
@@ -71,7 +71,7 @@
 | 场景 | 做什么 |
 |------|--------|
 | 产品 / BA 收口需求 | 从原料起草机读 YAML，`--explain` 看差距，跑门禁，生成人读施工图 |
-| 需求评审前 | 用 `specanvil report` 确认原料覆盖、Pending 闭合、假详细被拦下 |
+| 需求评审前 | 用 `specnotary report` 确认原料覆盖、Pending 闭合、假详细被拦下 |
 | 研发开工前 | 用控件表与状态/动作矩阵对齐「能不能做、做到哪」 |
 | 测试写用例前 | 用 AC 与空态文案当验收输入 |
 | Agent / Skill 协作 | Skill 起草机读；CLI 当确定性验收，可挂 CI |
@@ -83,26 +83,26 @@
 
 | 能力 | 状态 | 说明 |
 |------|------|------|
-| YAML/JSON 机读校验（Schema + 规则） | **Available** | `specanvil check` / `./cli/run-check.sh` |
-| ready 差距报告 | **Available** | `specanvil check --explain` 打印 `READY-GAP` |
-| 人读施工图生成 | **Available** | `specanvil human`（FAIL 时拒绝写入） |
-| 一键同步哈希链 | **Available** | `specanvil sync`：重生成人读 + 刷新原型哈希 + 复跑门禁 |
+| YAML/JSON 机读校验（Schema + 规则） | **Available** | `specnotary check` / `./cli/run-check.sh` |
+| ready 差距报告 | **Available** | `specnotary check --explain` 打印 `READY-GAP` |
+| 人读施工图生成 | **Available** | `specnotary human`（FAIL 时拒绝写入） |
+| 一键同步哈希链 | **Available** | `specnotary sync`：重生成人读 + 刷新原型哈希 + 复跑门禁 |
 | FAIL / WARN / Pending 分层 | **Available** | 见 `docs/gate-modes.md` |
 | 通用 `action_matrix`（非订单域样例） | **Available** | 见 `examples/case-list-search/` |
 | Skill 起草 / 降级检查 | **Available** | 降级须标 `degraded` |
-| 原料覆盖（SourceClaim） | **Available** | 原料文件必须存在；必选实体必须被引用；`specanvil report` |
+| 原料覆盖（SourceClaim） | **Available** | 原料文件必须存在；必选实体必须被引用；`specnotary report` |
 | 全局视角人读（目录/概览/架构图/职责/数据契约/错误码/决策记录） | **Available** | 渲染器 v3；mermaid 图确定性生成或随机读防漂 |
 | 决策记录门禁 | **Available** | `decisions` 未拍板在 `ready` 上 FAIL |
 | 人读哈希 / stale 检测 | **Available** | `spec_hash` + 正文逐字对照 + `renderer_version`；只改正文也 FAIL |
 | 原型 Manifest 一致性 | **Available** | manifest 哈希 + `data-spec-id` 落点（HTML/React/Vue 源）；无 manifest 则跳过并 WARN |
-| 存量项目标记对账 | **Available** | `specanvil markers`：列出已标/非法/待回填的 `data-spec-id` |
+| 存量项目标记对账 | **Available** | `specnotary markers`：列出已标/非法/待回填的 `data-spec-id` |
 | 悬空引用检查 | **Available** | 文本提及 `P-*`/`AC-*`/`SRC-*` 必须真实存在 |
 | pip 安装 | **Available** | `pip install .`（PyPI 发布待九步批准） |
-| 机读判定输出 | **Available** | `specanvil check --json`；CI/编辑器集成的地基 |
-| 英文人读视图 | **Available** | `specanvil human --lang en`；中文输出逐字节不变 |
-| pre-commit 钩子 | **Available** | `.pre-commit-hooks.yaml`，`specanvil precommit` 多文件门禁 |
+| 机读判定输出 | **Available** | `specnotary check --json`；CI/编辑器集成的地基 |
+| 英文人读视图 | **Available** | `specnotary human --lang en`；中文输出逐字节不变 |
+| pre-commit 钩子 | **Available** | `.pre-commit-hooks.yaml`，`specnotary precommit` 多文件门禁 |
 | GitHub Action | **Experimental** | `action.yml`：PR 上按文件标注 FAIL/WARN（发布后生效） |
-| MCP server | **Experimental** | `specanvil mcp`：stdio 协议，Agent 可把门禁当工具调用 |
+| MCP server | **Experimental** | `specnotary mcp`：stdio 协议，Agent 可把门禁当工具调用 |
 | 浏览器 Playground | **Experimental** | `playground/`：Pyodide 零安装试用 |
 | 任意原料一键转机读 | **Planned** | Skill + 人工确认 |
 | Node 等价硬门禁 | **Deferred** | stub 直接拒绝，绝不冒充 hard PASS |
@@ -118,12 +118,12 @@
 
 | 层 | 是什么 | 职责 |
 |----|--------|------|
-| **CLI**（主 · Python） | `specanvil check / human / report / sync`（或 `cli/run-*.sh` 免安装） | 硬门禁；机读 → 人读；覆盖报告；哈希链同步 |
+| **CLI**（主 · Python） | `specnotary check / human / report / sync`（或 `cli/run-*.sh` 免安装） | 硬门禁；机读 → 人读；覆盖报告；哈希链同步 |
 | **Scaffold**（主） | `templates/` · `examples/` | 字段体例与施工图级样例 |
 | **Skill**（辅） | `skills/` | 起草机读；无运行时的降级检查 |
 
 <p align="center">
-  <img src="docs/assets/flow.svg" alt="SpecAnvil 主流程" width="100%"/>
+  <img src="docs/assets/flow.svg" alt="SpecNotary 主流程" width="100%"/>
 </p>
 
 **能力一览（Available）**
@@ -178,7 +178,7 @@
 **安装（二选一）：**
 
 ```bash
-pip install .                     # 得到 specanvil 命令
+pip install .                     # 得到 specnotary 命令
 # 或零安装：pip install pyyaml jsonschema 后直接用 ./cli/run-*.sh
 ```
 
@@ -186,25 +186,25 @@ pip install .                     # 得到 specanvil 命令
 
 ```bash
 # 1) 硬门禁 — FAIL 必须清零（自动核对人读与原型）
-specanvil check examples/case-order-cancel-raw/machine/spec.yaml
+specnotary check examples/case-order-cancel-raw/machine/spec.yaml
 
 # 2) 看假详细如何被拦下
-specanvil check examples/case-order-cancel-bad/machine/spec.yaml
+specnotary check examples/case-order-cancel-bad/machine/spec.yaml
 
 # 3) 非订单域样例（通用 action_matrix）
-specanvil check examples/case-list-search/machine/spec.yaml
+specnotary check examples/case-list-search/machine/spec.yaml
 
 # 4) 评审就绪报告（原料覆盖 + 原型归桶）
-specanvil report examples/case-order-cancel-raw/machine/spec.yaml
+specnotary report examples/case-order-cancel-raw/machine/spec.yaml
 ```
 
 **开一个新规格：**
 
 ```bash
 mkdir -p my-feature/machine && cp templates/machine/spec.template.yaml my-feature/machine/spec.yaml
-specanvil check my-feature/machine/spec.yaml --explain   # draft 即 PASS；READY-GAP 告诉你距 ready 差什么
+specnotary check my-feature/machine/spec.yaml --explain   # draft 即 PASS；READY-GAP 告诉你距 ready 差什么
 # ……填内容；改完机读后一条命令同步人读与原型哈希：
-specanvil sync my-feature/machine/spec.yaml
+specnotary sync my-feature/machine/spec.yaml
 ```
 
 **回归：**
@@ -269,7 +269,7 @@ python3 tests/test_cli.py
 
 | 路径 | 作用 |
 |------|------|
-| [`src/specanvil/`](src/specanvil/) | Python 包：门禁规则、渲染器、Schema（pip 安装的主体） |
+| [`src/specnotary/`](src/specnotary/) | Python 包：门禁规则、渲染器、Schema（pip 安装的主体） |
 | [`cli/`](cli/) | 免安装包装：`run-check.sh` · `run-generate-human.sh` · `run-report.sh` · `run-sync.sh` |
 | [`templates/`](templates/) | 机读 / 人读 / 原型 manifest 体例（模板本身过门禁） |
 | [`examples/`](examples/) | 施工图级样例（含对齐与漂移双原型） |
@@ -282,7 +282,7 @@ python3 tests/test_cli.py
 |------|------|
 | 机读 YAML/JSON | **唯一准据**（改这里） |
 | 人读 Markdown | 同一规格的说明书 / 施工图视图（由 CLI 生成） |
-| 上游 PRD / 工单 / FAQ | **原料**，不是 SpecAnvil 的正式产出名 |
+| 上游 PRD / 工单 / FAQ | **原料**，不是 SpecNotary 的正式产出名 |
 
 **纪律：** 外部 PRD 脚手架仅作只读灵感；业务母版不写入本工具目录。
 
@@ -307,4 +307,4 @@ python3 tests/test_cli.py
 
 ## Status
 
-OwenBell · SpecAnvil 本地建设中 · 上传 GitHub 前走九步复核（**上传即公开**）
+OwenBell · SpecNotary 本地建设中 · 上传 GitHub 前走九步复核（**上传即公开**）

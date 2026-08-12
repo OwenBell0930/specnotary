@@ -11,7 +11,7 @@ import glob
 import sys
 from pathlib import Path
 
-from specanvil.check import gate
+from specnotary.check import gate
 
 
 def main() -> int:
@@ -19,13 +19,13 @@ def main() -> int:
     explain = len(sys.argv) > 2 and sys.argv[2].lower() == "true"
     files = sorted(glob.glob(pattern, recursive=True))
     if not files:
-        print(f"::notice::SpecAnvil: no spec files matched {pattern!r}")
+        print(f"::notice::SpecNotary: no spec files matched {pattern!r}")
         return 0
     worst = 0
     for raw in files:
         verdict = gate(Path(raw), explain=explain)
         fails, warns = verdict["fail"], verdict["warn"]
-        print(f"::group::SpecAnvil {raw} — {verdict['result']} (FAIL {len(fails)} / WARN {len(warns)})")
+        print(f"::group::SpecNotary {raw} — {verdict['result']} (FAIL {len(fails)} / WARN {len(warns)})")
         for e in fails:
             print(f"::error file={raw},line=1::{e}")
         for w in warns:
@@ -34,7 +34,7 @@ def main() -> int:
             print(f"::notice file={raw},line=1::READY-GAP: {g}")
         print("::endgroup::")
         worst = max(worst, 1 if fails else 0)
-    print(f"SpecAnvil gated {len(files)} spec(s); result: {'FAIL' if worst else 'PASS'}")
+    print(f"SpecNotary gated {len(files)} spec(s); result: {'FAIL' if worst else 'PASS'}")
     return worst
 
 

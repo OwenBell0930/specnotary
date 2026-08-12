@@ -2,7 +2,7 @@
 
 ## 范围
 
-SpecAnvil 是本地 CLI：读取 YAML/JSON/Markdown/HTML，写 Markdown。它不发起网络请求、不执行被检查的文件内容、不上传任何数据。
+SpecNotary 是本地 CLI：读取 YAML/JSON/Markdown/HTML，写 Markdown。它不发起网络请求、不执行被检查的文件内容、不上传任何数据。
 
 ## 报告漏洞
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""SpecAnvil shared load / validate (FAIL|WARN|Pending) / render human spec."""
+"""SpecNotary shared load / validate (FAIL|WARN|Pending) / render human spec."""
 from __future__ import annotations
 
 import hashlib

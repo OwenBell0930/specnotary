@@ -1,4 +1,4 @@
-name: "SpecAnvil Gate"
+name: "SpecNotary Gate"
 description: "Deterministic hard gate for machine-first specs: FAIL/WARN/Pending, source coverage, human-view and prototype drift"
 author: "OwenBell"
 branding:
@@ -21,7 +21,7 @@ runs:
     - uses: actions/setup-python@v5
       with:
         python-version: "3.12"
-    - name: Install SpecAnvil
+    - name: Install SpecNotary
       shell: bash
       run: pip install --quiet "${{ github.action_path }}"
     - name: Gate specs

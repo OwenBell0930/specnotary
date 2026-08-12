@@ -1,10 +1,10 @@
-# 定位 · SpecAnvil 与相邻工具的关系
+# 定位 · SpecNotary 与相邻工具的关系
 
-一句话：**SpecAnvil 判定「规格本身是否可开发、评审是否有证据」；工作流类 SDD 工具解决「怎么让人和 Agent 按规格干活」。二者互补，不互替。**
+一句话：**SpecNotary 判定「规格本身是否可开发、评审是否有证据」；工作流类 SDD 工具解决「怎么让人和 Agent 按规格干活」。二者互补，不互替。**
 
 ## 对照
 
-| | SpecAnvil | GitHub spec-kit (specify) | OpenSpec 类 | 传统 PRD 模板 |
+| | SpecNotary | GitHub spec-kit (specify) | OpenSpec 类 | 传统 PRD 模板 |
 |---|---|---|---|---|
 | 核心物 | 机读 YAML 唯一准据 + 确定性门禁 | 工作流命令 + 提示词编排 | 规格目录与变更流程 | 文档模板 |
 | 判定方式 | **确定性规则**（Schema/引用/哈希/覆盖），零 LLM | LLM 按阶段产出与自查 | 约定 + 人审 | 人审 |
@@ -16,13 +16,13 @@
 
 ## 怎么搭配用
 
-- **上游**：用 GitHub spec-kit / OpenSpec / 任意 PRD 流程产出原料——它们的输出就是 SpecAnvil 的 `sources`。
-- **中游**：Skill/LLM 起草机读 YAML（SpecAnvil 的 CLI 不解析自然语言，判定与理解分层）。
-- **下游**：`specanvil check` 挂进 CI 或 Agent 验收环，PASS 才算规格完成；`specanvil report` 给评审会当证据。
+- **上游**：用 GitHub spec-kit / OpenSpec / 任意 PRD 流程产出原料——它们的输出就是 SpecNotary 的 `sources`。
+- **中游**：Skill/LLM 起草机读 YAML（SpecNotary 的 CLI 不解析自然语言，判定与理解分层）。
+- **下游**：`specnotary check` 挂进 CI 或 Agent 验收环，PASS 才算规格完成；`specnotary report` 给评审会当证据。
 
 ## 名称由来
 
-原工作名 Spec Kit 与 GitHub 官方 spec-kit 同名，检索上等于不存在，故更名。Anvil（铁砧）取「硬门禁上锻出施工图」：原料是软的，砸过门禁才算成形。
+曾用名 Spec Kit（与 GitHub 官方 spec-kit 同名，检索上等于不存在）、SpecAnvil（与 specanvil.com 的同定位产品撞名，外部审计发现后弃用）。Notary（公证人）与产品本质精确同构：**不创作内容，只钉快照、验签章、出证明**——原料内容哈希是公证存档，`--attest-prototype` 是公证背书，PASS 是限定范围内的公证书。与 CNCF Notary Project（OCI 容器制品签名规范）无关联，领域不同。
 
 ## 边界（不做什么）
 

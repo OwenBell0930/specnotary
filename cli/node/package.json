@@ -1,5 +1,5 @@
 {
-  "name": "specanvil-node-cli",
+  "name": "specnotary-node-cli",
   "private": true,
   "version": "0.1.0",
   "dependencies": {
