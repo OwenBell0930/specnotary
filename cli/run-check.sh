@@ -8,7 +8,7 @@ if [[ -z "$TARGET" ]]; then
   exit 2
 fi
 
-runtime="${SPEC_KIT_RUNTIME:-}"
+runtime="${SPECANVIL_RUNTIME:-${SPEC_KIT_RUNTIME:-}}"
 if [[ -z "$runtime" ]]; then
   if command -v python3 >/dev/null 2>&1; then
     runtime=python
@@ -31,5 +31,5 @@ case "$runtime" in
     echo "Use python3 (default) or skills/ with gate_mode: degraded."
     exit 3
     ;;
-  *) echo "ERROR: SPEC_KIT_RUNTIME must be python"; exit 2 ;;
+  *) echo "ERROR: SPECANVIL_RUNTIME must be python"; exit 2 ;;
 esac

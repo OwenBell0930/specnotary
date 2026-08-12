@@ -210,12 +210,12 @@ def test_spec_ref_must_be_spec_entity():
 
 def test_explicit_missing_human_fail():
     data = load_spec(ROOT / "examples/case-list-search/machine/spec.yaml")
-    result = validate(data, {}, human_path=Path("/tmp/spec-kit-no-such-human.md"))
+    result = validate(data, {}, human_path=Path("/tmp/specanvil-no-such-human.md"))
     assert any("human spec missing" in e for e in result["fail"]), result
 
 
 def test_node_runtime_refuses_hard_pass():
-    env = {**os.environ, "SPEC_KIT_RUNTIME": "node"}
+    env = {**os.environ, "SPECANVIL_RUNTIME": "node"}
     p = subprocess.run(
         ["bash", str(CHECK), str(ROOT / "examples/case-list-search/machine/spec.yaml")],
         capture_output=True,

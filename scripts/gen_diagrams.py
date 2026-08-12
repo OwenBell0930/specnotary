@@ -67,7 +67,7 @@ def line(x1, y1, x2, y2, marker="arrow", color=BLUE):
 
 def flow():
     svg = header(1280, 560)
-    svg += label(640, 42, "Spec Kit Flow / 规格工程主流程", 26)
+    svg += label(640, 42, "SpecAnvil Flow / 规格工程主流程", 26)
     svg += label(640, 72, "Machine-first · Generate human view · Hard gate (CLI) or degraded Skill", 14, bold=False, color=TEXT_MUTED)
 
     y = 130

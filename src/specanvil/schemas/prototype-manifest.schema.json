@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://owenbell.local/spec-kit/prototype-manifest.schema.json",
-  "title": "Spec Kit prototype manifest",
+  "$id": "https://owenbell.local/specanvil/prototype-manifest.schema.json",
+  "title": "SpecAnvil prototype manifest",
   "type": "object",
   "required": ["prototype_version", "generated_from_spec"],
   "additionalProperties": true,
