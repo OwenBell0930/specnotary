@@ -73,8 +73,8 @@ def flow():
     y = 130
     items = [
         (40, "1. Inputs", "原料 / 坏稿 / 反推"),
-        (300, "2. Machine YAML", "机读主源 · Source of truth"),
-        (560, "3. Human MD", "人读投影 · Generated"),
+        (300, "2. Machine YAML", "机读唯一准据 · SSOT"),
+        (560, "3. Human MD", "人读施工图 · Generated"),
         (820, "4. CLI Gate", "hard PASS/FAIL"),
         (1040, "5. Ready", "可开发 · Dev-ready"),
     ]
@@ -90,7 +90,7 @@ def flow():
 
     # secondary row
     svg += box(300, 320, 280, 90, "Skill (optional)", "起草机读 / 无运行时降级检查", fill="#FFF7ED", stroke=ORANGE)
-    svg += box(700, 320, 280, 90, "Runtime detect", "python3 或 node；都没有→降级", fill=WHITE, stroke=GRAY)
+    svg += box(700, 320, 280, 90, "Runtime", "python3 唯一硬门禁 · Node Deferred", fill=WHITE, stroke=GRAY)
     svg += line(440, 230, 440, 320, marker="arrow", color=ORANGE)
     svg += line(840, 230, 840, 320, marker="arrow", color=GRAY)
 
@@ -153,10 +153,10 @@ def architecture():
     svg += label(640, 40, "What's in the box / 仓库里有什么", 26)
 
     svg += box(60, 100, 360, 140, "Scaffold 脚手架", "templates · examples · docs", fill=BLUE_LIGHT)
-    svg += box(460, 100, 360, 140, "CLI 硬门禁", "run-check · generate-human", fill=WHITE)
+    svg += box(460, 100, 360, 140, "CLI 硬门禁", "check · human · report · sync", fill=WHITE)
     svg += box(860, 100, 360, 140, "Skill 辅", "起草 / 降级检查", fill="#FFF7ED", stroke=ORANGE)
 
-    svg += box(60, 300, 560, 160, "Machine source (YAML/JSON)", "唯一真相源 · object_ai 权重可声明", fill=WHITE, stroke=BLUE_DARK)
+    svg += box(60, 300, 560, 160, "Machine source (YAML/JSON)", "唯一准据 · object_ai 权重可声明", fill=WHITE, stroke=BLUE_DARK)
     svg += box(660, 300, 560, 160, "Human view (Markdown)", "由机读生成 · 中英可工作", fill=WHITE)
 
     svg += line(240, 240, 240, 300)
@@ -176,13 +176,13 @@ def terminal_mock():
     svg += label(640, 36, "CLI preview / 命令行预览", 22, color=WHITE)
     svg += f'<rect x="80" y="70" width="1120" height="300" rx="14" fill="#020617" stroke="#334155" stroke-width="2"/>'
     lines = [
-        ("$ ./cli/run-check.sh examples/case-02-bad-prd/machine/spec.yaml", "#93C5FD"),
-        ("spec-kit: using runtime=python", "#94A3B8"),
+        ("$ specanvil check examples/case-order-cancel-bad/machine/spec.yaml", "#93C5FD"),
         ("gate_mode: hard", "#FBBF24"),
+        ("FAIL: behavior B1: then-clause too vague for ready", "#FCA5A5"),
+        ("FAIL: acceptance AC-01: not observable", "#FCA5A5"),
         ("RESULT: FAIL", "#F87171"),
-        ("- missing defaults for behavior B1", "#FCA5A5"),
-        ("- empty_state not defined", "#FCA5A5"),
-        ("$ ./cli/run-check.sh examples/case-02-bad-prd/machine/spec.fixed.yaml", "#93C5FD"),
+        ("$ specanvil check examples/case-order-cancel-bad/machine/spec.fixed.yaml", "#93C5FD"),
+        ("FAIL_COUNT: 0", "#94A3B8"),
         ("RESULT: PASS", "#4ADE80"),
     ]
     y = 110
@@ -196,8 +196,33 @@ def terminal_mock():
     print(path)
 
 
+def gate_layers():
+    svg = header(1280, 460)
+    svg += label(640, 42, "Gate Layers · FAIL / WARN / Pending", 26)
+    svg += label(640, 72, "任意 1 条 FAIL → RESULT: FAIL；WARN 不否决但须清零或显式接受", 14, bold=False, color=TEXT_MUTED)
+
+    svg += f'<rect x="60" y="110" width="1160" height="86" rx="12" fill="#FEF2F2" stroke="{RED}" stroke-width="2" filter="url(#shadow)"/>'
+    svg += label(120, 146, "FAIL", 20, color=RED, anchor="start")
+    svg += label(120, 176, "Schema 非法 · 引用断裂 · 空话 then/AC · 占位 ui/defaults · 原料缺失 · 人读/原型漂移", 15, bold=False, anchor="start", color=TEXT)
+
+    svg += f'<rect x="60" y="216" width="1160" height="86" rx="12" fill="#FFFBEB" stroke="{ORANGE}" stroke-width="2" filter="url(#shadow)"/>'
+    svg += label(120, 252, "WARN", 20, color=ORANGE, anchor="start")
+    svg += label(120, 282, "缺 empty_states · 缺 step_id · legacy cancel_matrix · assumption 待确认", 15, bold=False, anchor="start", color=TEXT)
+
+    svg += f'<rect x="60" y="322" width="1160" height="86" rx="12" fill="#EFF6FF" stroke="{BLUE}" stroke-width="2" filter="url(#shadow)"/>'
+    svg += label(120, 358, "Pending", 20, color=BLUE, anchor="start")
+    svg += label(120, 388, "五字段 id/missing/impact/owner/status · 挂在 ready 上未闭合 → FAIL", 15, bold=False, anchor="start", color=TEXT)
+
+    svg += footer()
+    path = os.path.join(OUT, "gate-layers.svg")
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(svg)
+    print(path)
+
+
 if __name__ == "__main__":
     flow()
     before_after()
     architecture()
     terminal_mock()
+    gate_layers()
