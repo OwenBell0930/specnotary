@@ -223,6 +223,11 @@ acceptance:
   behavior: B4
   zh: Given 风控拦截单 When 点击取消 Then 展示 risk_blocked 原文且无退款单创建
 pending: []
+overview:
+  summary:
+    zh: 从客服 FAQ 反推出的订单自助取消规格：FAQ 里「怎么答用户」的口径被还原成状态矩阵与文案原文，演示非 PRD 原料同样能收口成可开发规格。
+  design_principles:
+    - zh: FAQ 口径与规格冲突时以规格为准，FAQ 回填更新
 project_hint:
   object_ai_weight: low
   object_ai_notes:

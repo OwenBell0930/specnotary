@@ -44,6 +44,23 @@ acceptance:
     behavior: B1
     zh: 「占位」Given…When…Then… 可验收表述
 pending: []   # {id, missing, impact, owner, status}
+overview:
+  summary:
+    zh: 「占位」一段话说清：谁在什么场景做什么，本规格覆盖到哪条边界
+  design_principles:
+    - zh: 「占位」为什么这样设计（评审时最常被问的取舍写在这里）
+  environment_constraints: []   # 部署/依赖/合规等硬约束
+# architecture:                 # 架构图（mermaid 源码入机读，随规格防漂）
+#   note:
+#     zh: 一句话说明调用关系
+#   mermaid: |-
+#     flowchart LR
+#       A["调用方"] --> B["本模块"]
+# responsibilities: []          # [{role, zh, owns: [zh], not_owns: [zh]}] 负责/不负责
+# data_contracts: []            # [{id, zh, fields: [{name, zh, type, desc}], rules}] 前后端对齐口径
+# error_codes: []               # [{code, zh, trigger, retryable, user_copy}] 开发/测试/客服共用
+# decisions: []                 # [{id: D-01, question, options, chosen, status: decided|pending, date, note}]
+#                               # 未拍板的 decision 在 status=ready 时 FAIL
 sources: []   # {id, kind, path, status: registered|superseded}
 source_claims: []
   # {id, source_ref, quote_or_summary, evidence, kind, disposition, spec_refs, confidence}

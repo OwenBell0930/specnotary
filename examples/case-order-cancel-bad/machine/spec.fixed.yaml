@@ -224,6 +224,9 @@ acceptance:
   behavior: B4
   zh: Given 风控拦截单 When 点击取消 Then 展示 risk_blocked 原文且无退款单创建
 pending: []
+overview:
+  summary:
+    zh: 坏稿修复版：把「智能取消、体验好」式假详细，改写为状态矩阵 + 文案原文 + 可观察 AC 的可开发规格，与坏稿逐条对照用于教学。
 project_hint:
   object_ai_weight: low
   object_ai_notes:

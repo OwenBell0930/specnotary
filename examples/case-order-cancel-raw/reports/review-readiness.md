@@ -2,7 +2,7 @@
 
 - 机读：`examples/case-order-cancel-raw/machine/spec.yaml`
 - 规格 ID：`SPEC-ORDER-CANCEL-001` · 状态：`ready`
-- 机读哈希：`e7551ba66d25e4d3d31cac8b19162f54ad9c017d55d5c4c689f99840ddf792a9`
+- 机读哈希：`94fe38439128d7e8a84f09bdc6571c9b0b96bbeff2729f91751020bcf9b15330`
 - 人读：`examples/case-order-cancel-raw/human/spec.md`
 - 原型：`examples/case-order-cancel-raw/prototype/prototype.manifest.yaml`
 - FAIL：0 · WARN：0

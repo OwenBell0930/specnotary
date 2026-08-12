@@ -20,7 +20,7 @@ except ImportError:  # pragma: no cover
 
 REQUIRED_TOP = ["spec_version", "id", "title", "status", "behaviors", "acceptance"]
 VAGUE = ("体验好", "尽量快", "智能", "方便地", "good ux", "quickly", "尽快", "尽量")
-RENDERER_VERSION = "2"
+RENDERER_VERSION = "3"
 SCHEMA_PATH = Path(__file__).resolve().parent / "schemas" / "machine-spec.schema.json"
 CLAIM_DISPOSITIONS = {
     "covered",
@@ -63,7 +63,7 @@ def _lang(node: Any, lang: str = "zh") -> str:
     return "" if node is None else str(node)
 
 
-REF_TOKEN = re.compile(r"\b(?:P|AC|SRC)-[A-Za-z0-9][A-Za-z0-9_-]*\b")
+REF_TOKEN = re.compile(r"\b(?:P|AC|SRC|D)-[A-Za-z0-9][A-Za-z0-9_-]*\b")
 
 
 def dangling_refs(data: dict) -> list[str]:
@@ -201,6 +201,8 @@ def claim_spec_ref_ids(data: dict) -> set[str]:
         data.get("behaviors") or [],
         data.get("acceptance") or [],
         (data.get("ui") or {}).get("controls") or [],
+        data.get("data_contracts") or [],
+        data.get("decisions") or [],
     ):
         for item in items:
             if isinstance(item, dict) and item.get("id"):
@@ -222,6 +224,8 @@ def known_entity_ids(data: dict) -> set[str]:
         ("control", (data.get("ui") or {}).get("controls") or []),
         ("source", data.get("sources") or []),
         ("claim", data.get("source_claims") or []),
+        ("data_contract", data.get("data_contracts") or []),
+        ("decision", data.get("decisions") or []),
     ):
         del kind
         for item in items:
@@ -234,6 +238,9 @@ def known_entity_ids(data: dict) -> set[str]:
         for row in action_matrix_rows(states):
             if row.get("action"):
                 ids.add(str(row.get("action")))
+    for ec in data.get("error_codes") or []:
+        if isinstance(ec, dict) and ec.get("code"):
+            ids.add(str(ec["code"]))
     for key in data.get("defaults") or {}:
         ids.add(f"defaults.{key}")
         ids.add(str(key))
@@ -527,12 +534,24 @@ def _layer_ready(data: dict, matrix: list[dict], fail: list[str]) -> None:
             fail.append(
                 f"pending {(p or {}).get('id')} still open — cannot mark status=ready"
             )
+    for d in data.get("decisions") or []:
+        if not isinstance(d, dict):
+            continue
+        undecided = str(d.get("status") or "").strip() == "pending" or (
+            not d.get("chosen") and str(d.get("status") or "") != "decided"
+        )
+        if undecided:
+            fail.append(
+                f"decision {d.get('id')} undecided — decide it or move to pending with owner"
+            )
 
 
 def _layer_quality_warn(data: dict, warn: list[str]) -> None:
     """Layer 4 — quality debt that does not block PASS."""
     behaviors = data.get("behaviors") or []
     pending = data.get("pending") or []
+    if data.get("status") == "ready" and not data.get("overview"):
+        warn.append("overview missing — readers get no orientation before detail sections")
     if not data.get("ui"):
         warn.append("ui block missing — human spec will lack wireframe/controls")
     if not data.get("states"):
@@ -682,13 +701,369 @@ def ready_gap(
     return gap
 
 
+def _anchor(title: str) -> str:
+    """Markdown heading anchor (GitHub-style: lowercase, punctuation dropped, CJK kept)."""
+    t = re.sub(r"[^\w\- ]", "", title.strip().lower(), flags=re.UNICODE)
+    return t.replace(" ", "-")
+
+
+def _mermaid_label(text: str) -> str:
+    return str(text).replace('"', "'").replace("\n", " ").strip()
+
+
+def mermaid_lifecycle(states: dict) -> str | None:
+    """Deterministic lifecycle-order diagram from states.lifecycle."""
+    chain = [str(s) for s in (states.get("lifecycle") or []) if s]
+    if len(chain) < 2:
+        return None
+    nodes = " --> ".join(f'S{i}["{_mermaid_label(s)}"]' for i, s in enumerate(chain))
+    return "flowchart LR\n  " + nodes
+
+
+def mermaid_main_path(behaviors: list) -> str | None:
+    """Deterministic step-chain diagram from behaviors order."""
+    steps = []
+    for b in behaviors or []:
+        if not isinstance(b, dict):
+            continue
+        sid = b.get("step_id") or b.get("id")
+        name = _lang(b.get("name"), "zh") or str(b.get("id") or "")
+        steps.append(f"{sid}. {name}".strip())
+    if len(steps) < 2:
+        return None
+    nodes = " --> ".join(f'B{i}["{_mermaid_label(s)}"]' for i, s in enumerate(steps))
+    return "flowchart TD\n  " + nodes
+
+
 def render_human(data: dict, source: str, gate_mode: str = "hard") -> str:
-    """Render 可开发的需求规格说明书 (human view) from machine source."""
+    """Render 可开发的需求规格说明书 (human view) from machine source.
+
+    Reading arc (v3): orient first — overview, scope, architecture,
+    responsibilities, data contracts — then zoom into rules, interactions and
+    evidence. Sections render only when the machine source holds them, and
+    numbering is assigned after selection so the arc stays contiguous.
+    Every diagram is either stored in or derived from the machine source;
+    nothing here is authored at render time.
+    """
     title_zh = _lang(data.get("title"), "zh")
     title_en = _lang(data.get("title"), "en")
     ui = data.get("ui") or {}
     states = data.get("states") or {}
+    behaviors = data.get("behaviors") or []
+    acceptance = data.get("acceptance") or []
     digest = spec_hash(data)
+    sections: list[tuple[str, list[str]]] = []
+
+    # ---- 概览（作者在机读里写的全局视角；渲染器只摆放） ----
+    overview = data.get("overview") or {}
+    if overview:
+        sec: list[str] = []
+        summary = _lang(overview.get("summary"), "zh")
+        if summary:
+            sec += [summary, ""]
+        principles = overview.get("design_principles") or []
+        if principles:
+            sec += ["**设计原则：**", ""]
+            for i, p in enumerate(principles, 1):
+                sec.append(f"{i}. {_lang(p, 'zh')}")
+            sec.append("")
+        constraints = overview.get("environment_constraints") or []
+        if constraints:
+            sec += ["**环境与约束：**", ""]
+            for c in constraints:
+                sec.append(f"- {_lang(c, 'zh')}")
+            sec.append("")
+        sections.append(("概览", sec))
+
+    # ---- 范围 ----
+    sec = ["**本期做：**", ""]
+    for item in data.get("in_scope") or []:
+        sec.append(f"- {_lang(item, 'zh')}")
+    sec += ["", "**本期不做（白名单外，不展开）：**", ""]
+    for item in data.get("out_of_scope") or []:
+        sec.append(f"- {_lang(item, 'zh')}")
+    if data.get("baseline"):
+        sec += ["", f"**对照基线：** {_lang(data.get('baseline'), 'zh')}"]
+    sec.append("")
+    sections.append(("范围", sec))
+
+    # ---- 架构总览（机读持有 mermaid 源码） ----
+    arch = data.get("architecture") or {}
+    if arch.get("mermaid"):
+        sec = []
+        note = _lang(arch.get("note"), "zh")
+        if note:
+            sec += [note, ""]
+        sec += ["```mermaid", str(arch["mermaid"]).rstrip(), "```", ""]
+        sections.append(("架构总览", sec))
+
+    # ---- 职责边界 ----
+    resp = [r for r in (data.get("responsibilities") or []) if isinstance(r, dict)]
+    if resp:
+        sec = ["谁负责什么、明确不负责什么，开工前先对齐边界。", ""]
+        for r in resp:
+            zh = _lang(r, "zh")
+            sec.append(f"### {r.get('role')}" + (f" · {zh}" if zh else ""))
+            sec.append("")
+            owns = r.get("owns") or []
+            nots = r.get("not_owns") or []
+            sec += ["| 负责 | 不负责 |", "|------|--------|"]
+            for i in range(max(len(owns), len(nots), 1)):
+                left = _lang(owns[i], "zh") if i < len(owns) else ""
+                right = _lang(nots[i], "zh") if i < len(nots) else ""
+                sec.append(f"| {left or '—'} | {right or '—'} |")
+            sec.append("")
+        sections.append(("职责边界", sec))
+
+    # ---- 数据契约 ----
+    contracts = [c for c in (data.get("data_contracts") or []) if isinstance(c, dict)]
+    if contracts:
+        sec = [f"共 {len(contracts)} 个数据实体；字段即前后端接口与存储的对齐口径。", ""]
+        for dc in contracts:
+            zh = _lang(dc, "zh")
+            sec.append(f"### {dc.get('id')}" + (f" · {zh}" if zh else ""))
+            sec.append("")
+            fields = [f for f in (dc.get("fields") or []) if isinstance(f, dict)]
+            if fields:
+                sec += ["| 字段 | 中文 | 类型 | 说明 |", "|------|------|------|------|"]
+                for f in fields:
+                    sec.append(
+                        f"| `{f.get('name')}` | {f.get('zh') or '—'} | `{f.get('type') or '—'}` | {_lang(f.get('desc'), 'zh') or '—'} |"
+                    )
+                sec.append("")
+            if dc.get("example_json"):
+                sec += ["```json", str(dc["example_json"]).rstrip(), "```", ""]
+            rules = dc.get("rules") or []
+            if rules:
+                sec.append("**规则：**")
+                sec.append("")
+                for rule in rules:
+                    sec.append(f"- {_lang(rule, 'zh')}")
+                sec.append("")
+        sections.append(("数据契约", sec))
+
+    # ---- 角色与权限 ----
+    actors = data.get("actors") or []
+    sec = [f"{len(actors)} 类角色；可执行动作与状态矩阵联动。", ""]
+    sec += ["| 角色 | 说明 | 可执行动作 |", "|------|------|------------|"]
+    perm_map = {(p or {}).get("actor"): (p or {}).get("can") or [] for p in (data.get("permissions") or [])}
+    for a in actors:
+        aid = (a or {}).get("id")
+        cans = ", ".join(perm_map.get(aid) or [])
+        sec.append(f"| `{aid}` | {_lang(a, 'zh')} | {cans or '—'} |")
+    sec.append("")
+    sections.append(("角色与权限", sec))
+
+    # ---- 状态与允许动作 ----
+    matrix = action_matrix_rows(states)
+    lifecycle = states.get("lifecycle") or []
+    denied = sum(1 for r in matrix if r.get("allowed") is False)
+    action_kinds = len({str(r.get("action")) for r in matrix if r.get("action")})
+    sec = []
+    if matrix:
+        sec += [
+            f"{len(lifecycle)} 个状态 × {action_kinds} 类动作，其中明确禁止 {denied} 项。"
+            "前端显隐与置灰以下表为唯一准据。",
+            "",
+        ]
+    life_mermaid = mermaid_lifecycle(states)
+    if life_mermaid:
+        sec += ["生命周期顺序（示意）：", "", "```mermaid", life_mermaid, "```", ""]
+    if lifecycle:
+        sec.append("**生命周期（编号供流程对照）：**")
+        for i, s in enumerate(lifecycle, 1):
+            sec.append(f"{i}. `{s}`")
+        sec.append("")
+    sec += ["| 状态 | 动作 | 是否允许 | 说明 |", "|------|------|----------|------|"]
+    for row in matrix:
+        sec.append(
+            f"| `{(row or {}).get('state')}` | `{(row or {}).get('action')}` | {_allowed_label(row)} | {_lang(row, 'zh')} |"
+        )
+    if not matrix:
+        sec.append("| （机读未提供 action_matrix） | — | — | — |")
+    sec.append("")
+    sections.append(("状态与允许动作", sec))
+
+    # ---- 页面与交互 ----
+    sec = []
+    if ui.get("entry"):
+        sec += [f"**入口：** {_lang(ui.get('entry'), 'zh')}", ""]
+    if ui.get("wireframe"):
+        sec += ["### 线框", "", "```text", str(ui.get("wireframe")).rstrip(), "```", ""]
+    controls = ui.get("controls") or []
+    if controls:
+        with_fail = sum(
+            1 for c in controls if isinstance(c, dict) and _lang(c.get("fail_feedback"), "zh") not in ("", "—")
+        )
+        sec += [
+            "### 控件规格",
+            "",
+            f"共 {len(controls)} 个控件，其中 {with_fail} 个定义了失败反馈文案。",
+            "",
+            "| 控件 | 文案/占位 | 显示条件 | 交互 | 失败反馈 |",
+            "|------|-----------|----------|------|----------|",
+        ]
+        for c in controls:
+            sec.append(
+                "| {name} | {label} | {when} | {action} | {fail} |".format(
+                    name=(c or {}).get("id", ""),
+                    label=_lang(c, "zh"),
+                    when=_lang((c or {}).get("visible_when"), "zh") or "—",
+                    action=_lang((c or {}).get("action"), "zh") or "—",
+                    fail=_lang((c or {}).get("fail_feedback"), "zh") or "—",
+                )
+            )
+        sec.append("")
+    sections.append(("页面与交互", sec))
+
+    # ---- 主路径（编号） ----
+    sec = [f"共 {len(behaviors)} 步；每步的 Given/When/Then 同时是测试的验收输入。", ""]
+    path_mermaid = mermaid_main_path(behaviors)
+    if path_mermaid:
+        sec += ["```mermaid", path_mermaid, "```", ""]
+    for b in behaviors:
+        step = (b or {}).get("step_id") or (b or {}).get("id")
+        sec += [
+            f"### 步骤 {step} · {_lang((b or {}).get('name'), 'zh')}",
+            "",
+            f"- **Given：** {_lang((b or {}).get('given'), 'zh')}",
+            f"- **When：** {_lang((b or {}).get('when'), 'zh')}",
+            f"- **Then：** {_lang((b or {}).get('then'), 'zh')}",
+        ]
+        if (b or {}).get("side_effects"):
+            sec.append("- **连带结果：**")
+            for s in (b or {}).get("side_effects") or []:
+                sec.append(f"  - {_lang(s, 'zh')}")
+        sec.append("")
+    sections.append(("主路径（编号）", sec))
+
+    # ---- 默认值与提示文案 ----
+    sec = ["### 默认值", ""]
+    defaults = data.get("defaults") or {}
+    if defaults:
+        sec += ["| 项 | 值 |", "|----|----|"]
+        for k, v in defaults.items():
+            sec.append(f"| `{k}` | `{v}` |")
+    else:
+        sec.append("（无）")
+    sec += ["", "### 空态 / 拦截文案（须与界面一致）", ""]
+    empty = data.get("empty_states") or ui.get("empty_states") or {}
+    if empty:
+        sec += ["| 场景 | 文案 |", "|------|------|"]
+        for k, v in empty.items():
+            sec.append(f"| `{k}` | {_lang(v, 'zh')} |")
+    else:
+        sec.append("（无）")
+    sec.append("")
+    sections.append(("默认值与提示文案", sec))
+
+    # ---- 错误码 ----
+    error_codes = [e for e in (data.get("error_codes") or []) if isinstance(e, dict)]
+    if error_codes:
+        sec = [
+            "开发按码实现分支，测试按码构造用例，客服按文案答复——一张表三方共用。",
+            "",
+            "| 错误码 | 含义 | 触发场景 | 可重试 | 用户文案 |",
+            "|--------|------|----------|--------|----------|",
+        ]
+        for e in error_codes:
+            retry = "是" if e.get("retryable") else "否"
+            sec.append(
+                f"| `{e.get('code')}` | {e.get('zh') or '—'} | {_lang(e.get('trigger'), 'zh') or '—'} | {retry} | {_lang(e.get('user_copy'), 'zh') or '—'} |"
+            )
+        sec.append("")
+        sections.append(("错误码", sec))
+
+    # ---- 验收标准（AC） ----
+    sec = [f"共 {len(acceptance)} 条；逐条可执行，不可观察的表述会被门禁否决。", ""]
+    for a in acceptance:
+        sec.append(
+            f"- **{(a or {}).get('id')}**（行为 `{(a or {}).get('behavior')}`）：{_lang(a, 'zh')}"
+        )
+    sec.append("")
+    sections.append(("验收标准（AC）", sec))
+
+    # ---- Pending ----
+    sec = []
+    pending = data.get("pending") or []
+    if not pending:
+        sec.append("无。")
+    else:
+        sec += ["| ID | 缺失信息 | 影响范围 | 责任人 | 状态 |", "|----|----------|----------|--------|------|"]
+        for p in pending:
+            sec.append(
+                f"| {(p or {}).get('id')} | {(p or {}).get('missing')} | {(p or {}).get('impact')} | {(p or {}).get('owner')} | {(p or {}).get('status')} |"
+            )
+    sec.append("")
+    sections.append(("信息待闭合项（Pending）", sec))
+
+    # ---- 决策记录 ----
+    decisions = [d for d in (data.get("decisions") or []) if isinstance(d, dict)]
+    if decisions:
+        undecided = sum(
+            1
+            for d in decisions
+            if str(d.get("status") or "") == "pending" or (not d.get("chosen") and str(d.get("status") or "") != "decided")
+        )
+        sec = [
+            f"共 {len(decisions)} 项，已拍板 {len(decisions) - undecided} 项，待定 {undecided} 项。"
+            "「为什么是这样」的存档，新人不必考古聊天记录。",
+            "",
+            "| ID | 问题 | 选定 | 日期 | 备注 |",
+            "|----|------|------|------|------|",
+        ]
+        for d in decisions:
+            chosen = d.get("chosen") or "**待定**"
+            sec.append(
+                f"| {d.get('id')} | {_lang(d.get('question'), 'zh')} | {chosen} | {d.get('date') or '—'} | {_lang(d.get('note'), 'zh') or '—'} |"
+            )
+        sec.append("")
+        sections.append(("决策记录", sec))
+
+    # ---- 对象 AI ----
+    obj = data.get("object_ai") or {}
+    sec = [f"- enabled: `{obj.get('enabled', False)}`"]
+    if obj.get("enabled"):
+        sec.append(f"- 失败兜底: {_lang(obj.get('failure_fallback'), 'zh')}")
+        sec.append("- 工具边界:")
+        for t in obj.get("tools_boundary") or []:
+            sec.append(f"  - {_lang(t, 'zh')}")
+        sec.append("- 人工接管:")
+        for t in obj.get("human_takeover_when") or []:
+            sec.append(f"  - {_lang(t, 'zh')}")
+    sec.append("")
+    sections.append(("对象 AI", sec))
+
+    # ---- 原料覆盖（附录） ----
+    claims = data.get("source_claims") or []
+    if claims:
+        buckets = claim_summary(data)
+        sec = [
+            "覆盖账本（附录）：原料每句话的下落。covered {c} · assumption {a} · out_of_scope {o} · 其他 {r}。".format(
+                c=len(buckets.get("covered") or []),
+                a=len(buckets.get("assumption") or []),
+                o=len(buckets.get("out_of_scope") or []),
+                r=len(claims)
+                - len(buckets.get("covered") or [])
+                - len(buckets.get("assumption") or [])
+                - len(buckets.get("out_of_scope") or []),
+            ),
+            "",
+            "| ID | 处置 | 摘要 | 规格引用 |",
+            "|----|------|------|----------|",
+        ]
+        for c in claims:
+            if not isinstance(c, dict):
+                continue
+            refs = ", ".join(f"`{r}`" for r in (c.get("spec_refs") or [])) or "—"
+            sec.append(
+                f"| `{c.get('id')}` | `{c.get('disposition')}` | {c.get('quote_or_summary') or c.get('evidence') or '—'} | {refs} |"
+            )
+        sec.append("")
+        sections.append(("原料覆盖（SourceClaim）", sec))
+
+    # ---- 组装：标题块 → 目录 → 编号章节 ----
+    numbered = [(f"{i}. {title}", body) for i, (title, body) in enumerate(sections, 1)]
     lines: list[str] = [
         f"# {title_zh}",
         "",
@@ -699,166 +1074,29 @@ def render_human(data: dict, source: str, gate_mode: str = "hard") -> str:
     ]
     if title_en and title_en != title_zh:
         lines += [f"**EN title:** {title_en}", ""]
-
-    lines += ["## 1. 范围", "", "### 1.1 本期做", ""]
-    for item in data.get("in_scope") or []:
-        lines.append(f"- {_lang(item, 'zh')}")
-    lines += ["", "### 1.2 本期不做（白名单外，不展开）", ""]
-    for item in data.get("out_of_scope") or []:
-        lines.append(f"- {_lang(item, 'zh')}")
-    if data.get("baseline"):
-        lines += ["", f"**对照基线：** {_lang(data.get('baseline'), 'zh')}", ""]
-
-    lines += ["## 2. 角色与权限", "", "| 角色 | 说明 | 可执行动作 |", "|------|------|------------|"]
-    perm_map = {(p or {}).get("actor"): (p or {}).get("can") or [] for p in (data.get("permissions") or [])}
-    for a in data.get("actors") or []:
-        aid = (a or {}).get("id")
-        cans = ", ".join(perm_map.get(aid) or [])
-        lines.append(f"| `{aid}` | {_lang(a, 'zh')} | {cans or '—'} |")
+    lines += ["## 目录", ""]
+    for heading, _body in numbered:
+        lines.append(f"- [{heading}](#{_anchor(heading)})")
     lines.append("")
+    for heading, body in numbered:
+        lines += [f"## {heading}", ""]
+        lines += body
 
-    lines += ["## 3. 状态与允许动作", ""]
-    if states.get("lifecycle"):
-        lines.append("**生命周期（编号供流程对照）：**")
-        for i, s in enumerate(states.get("lifecycle") or [], 1):
-            lines.append(f"{i}. `{s}`")
-        lines.append("")
-    lines += [
-        "| 状态 | 动作 | 是否允许 | 说明 |",
-        "|------|------|----------|------|",
-    ]
-    matrix = action_matrix_rows(states)
-    for row in matrix:
-        lines.append(
-            f"| `{(row or {}).get('state')}` | `{(row or {}).get('action')}` | {_allowed_label(row)} | {_lang(row, 'zh')} |"
-        )
-    if not matrix:
-        lines.append("| （机读未提供 action_matrix） | — | — | — |")
-    lines.append("")
-
-    lines += ["## 4. 页面与交互", ""]
-    if ui.get("entry"):
-        lines.append(f"**入口：** {_lang(ui.get('entry'), 'zh')}")
-        lines.append("")
-    if ui.get("wireframe"):
-        lines.append("### 4.1 线框")
-        lines.append("")
-        lines.append("```text")
-        lines.append(str(ui.get("wireframe")).rstrip())
-        lines.append("```")
-        lines.append("")
-    controls = ui.get("controls") or []
-    if controls:
-        lines.append("### 4.2 控件规格")
-        lines.append("")
-        lines.append("| 控件 | 文案/占位 | 显示条件 | 交互 | 失败反馈 |")
-        lines.append("|------|-----------|----------|------|----------|")
-        for c in controls:
-            lines.append(
-                "| {name} | {label} | {when} | {action} | {fail} |".format(
-                    name=(c or {}).get("id", ""),
-                    label=_lang(c, "zh"),
-                    when=_lang((c or {}).get("visible_when"), "zh") or "—",
-                    action=_lang((c or {}).get("action"), "zh") or "—",
-                    fail=_lang((c or {}).get("fail_feedback"), "zh") or "—",
-                )
-            )
-        lines.append("")
-
-    lines += ["## 5. 主路径（编号）", ""]
-    for b in data.get("behaviors") or []:
-        step = (b or {}).get("step_id") or (b or {}).get("id")
-        lines.append(f"### 步骤 {step} · {_lang((b or {}).get('name'), 'zh')}")
-        lines.append("")
-        lines.append(f"- **Given：** {_lang((b or {}).get('given'), 'zh')}")
-        lines.append(f"- **When：** {_lang((b or {}).get('when'), 'zh')}")
-        lines.append(f"- **Then：** {_lang((b or {}).get('then'), 'zh')}")
-        if (b or {}).get("side_effects"):
-            lines.append("- **连带结果：**")
-            for s in (b or {}).get("side_effects") or []:
-                lines.append(f"  - {_lang(s, 'zh')}")
-        lines.append("")
-
-    lines += ["## 6. 默认值与提示文案", "", "### 6.1 默认值", ""]
-    defaults = data.get("defaults") or {}
-    if defaults:
-        lines.append("| 项 | 值 |")
-        lines.append("|----|----|")
-        for k, v in defaults.items():
-            lines.append(f"| `{k}` | `{v}` |")
-    else:
-        lines.append("（无）")
-    lines += ["", "### 6.2 空态 / 拦截文案（须与界面一致）", ""]
-    empty = data.get("empty_states") or ui.get("empty_states") or {}
-    if empty:
-        lines.append("| 场景 | 文案 |")
-        lines.append("|------|------|")
-        for k, v in empty.items():
-            lines.append(f"| `{k}` | {_lang(v, 'zh')} |")
-    else:
-        lines.append("（无）")
-    lines.append("")
-
-    lines += ["## 7. 验收标准（AC）", ""]
-    for a in data.get("acceptance") or []:
-        lines.append(
-            f"- **{(a or {}).get('id')}**（行为 `{(a or {}).get('behavior')}`）：{_lang(a, 'zh')}"
-        )
-    lines.append("")
-
-    lines += ["## 8. 信息待闭合项（Pending）", ""]
-    pending = data.get("pending") or []
-    if not pending:
-        lines.append("无。")
-    else:
-        lines.append("| ID | 缺失信息 | 影响范围 | 责任人 | 状态 |")
-        lines.append("|----|----------|----------|--------|------|")
-        for p in pending:
-            lines.append(
-                f"| {(p or {}).get('id')} | {(p or {}).get('missing')} | {(p or {}).get('impact')} | {(p or {}).get('owner')} | {(p or {}).get('status')} |"
-            )
-    lines.append("")
-
-    obj = data.get("object_ai") or {}
-    lines += ["## 9. 对象 AI", "", f"- enabled: `{obj.get('enabled', False)}`"]
-    if obj.get("enabled"):
-        lines.append(f"- 失败兜底: {_lang(obj.get('failure_fallback'), 'zh')}")
-        lines.append("- 工具边界:")
-        for t in obj.get("tools_boundary") or []:
-            lines.append(f"  - {_lang(t, 'zh')}")
-        lines.append("- 人工接管:")
-        for t in obj.get("human_takeover_when") or []:
-            lines.append(f"  - {_lang(t, 'zh')}")
-    lines.append("")
-
-    claims = data.get("source_claims") or []
-    if claims:
-        lines += ["## 10. 原料覆盖（SourceClaim）", ""]
-        lines.append("| ID | 处置 | 摘要 | 规格引用 |")
-        lines.append("|----|------|------|----------|")
-        for c in claims:
-            if not isinstance(c, dict):
-                continue
-            refs = ", ".join(f"`{r}`" for r in (c.get("spec_refs") or [])) or "—"
-            lines.append(
-                f"| `{c.get('id')}` | `{c.get('disposition')}` | {c.get('quote_or_summary') or c.get('evidence') or '—'} | {refs} |"
-            )
-        lines.append("")
-    body = "\n".join(lines)
-    if not body.endswith("\n"):
-        body += "\n"
+    body_text = "\n".join(lines)
+    if not body_text.endswith("\n"):
+        body_text += "\n"
     headers = [
         f"<!-- generated_from: {source} -->",
         f"<!-- spec_id: {data.get('id')} -->",
         f"<!-- spec_version: {data.get('spec_version')} -->",
         f"<!-- spec_hash: {digest} -->",
-        f"<!-- body_hash: {human_body_hash(body)} -->",
+        f"<!-- body_hash: {human_body_hash(body_text)} -->",
         f"<!-- renderer_version: {RENDERER_VERSION} -->",
         f"<!-- gate_mode: {gate_mode} -->",
         "<!-- 以机读 YAML 为唯一准据；禁止长期只改本文件 -->",
         "",
     ]
-    return "\n".join(headers) + body
+    return "\n".join(headers) + body_text
 
 
 def load_project(root: Path) -> dict:

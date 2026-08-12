@@ -21,6 +21,17 @@ description: >
 9. Dual goals: **dev-ready** specs + **review-ready** intake. Prototype check runs only when a manifest exists; otherwise WARN and skip.
 10. For drafts, use `specanvil check --explain` to enumerate the READY-GAP instead of guessing.
 
+## 起草全局视角（Skill 职责 · 写作前移）
+
+判断性文字不在渲染期创作，而在起草期写进机读字段——渲染器只摆放：
+
+- `overview`：summary（谁在什么场景做什么）+ design_principles（评审最常问的取舍）+ environment_constraints
+- `architecture.mermaid`：调用关系图源码（进哈希链防漂）
+- `responsibilities`：每个角色 owns / not_owns（防边界扯皮）
+- `data_contracts`：实体字段表 + 规则（前后端对齐口径）
+- `error_codes`：code / 触发 / 可重试 / 用户文案
+- `decisions`：分歧点 + 选项 + 拍板结果；**未拍板不得标 ready**
+
 ## 提取 SourceClaim（Skill 职责）
 
 CLI **不读懂**任意自然语言。Skill 从 `inputs/` 拆原子项，写入机读 `sources` + `source_claims`。

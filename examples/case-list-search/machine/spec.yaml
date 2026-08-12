@@ -110,6 +110,12 @@ acceptance:
     behavior: B2
     zh: 输入不存在关键词时页面展示固定空态文案
 pending: []
+overview:
+  summary:
+    zh: 商城后台商品列表新增标题模糊 / ID 精确搜索：默认每页 20 条、按更新时间倒序，空结果与超长关键词均有固定文案。不做语义检索。
+  design_principles:
+    - zh: 匹配模式与分页参数全部落 defaults，不留口头约定
+    - zh: 空态文案原文入库，界面逐字使用
 sources:
   - id: SRC-LS-001
     kind: ops_note

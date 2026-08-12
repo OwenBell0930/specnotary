@@ -85,6 +85,8 @@
 | 通用 `action_matrix`（非订单域样例） | **Available** | 见 `examples/case-list-search/` |
 | Skill 起草 / 降级检查 | **Available** | 降级须标 `degraded` |
 | 原料覆盖（SourceClaim） | **Available** | 原料文件必须存在；必选实体必须被引用；`specanvil report` |
+| 全局视角人读（目录/概览/架构图/职责/数据契约/错误码/决策记录） | **Available** | 渲染器 v3；mermaid 图确定性生成或随机读防漂 |
+| 决策记录门禁 | **Available** | `decisions` 未拍板在 `ready` 上 FAIL |
 | 人读哈希 / stale 检测 | **Available** | `spec_hash` + 正文逐字对照 + `renderer_version`；只改正文也 FAIL |
 | 原型 Manifest 一致性 | **Available** | manifest 哈希 + `data-spec-id` 落点（HTML/React/Vue 源）；无 manifest 则跳过并 WARN |
 | 存量项目标记对账 | **Available** | `specanvil markers`：列出已标/非法/待回填的 `data-spec-id` |

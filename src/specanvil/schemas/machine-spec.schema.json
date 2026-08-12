@@ -185,6 +185,100 @@
         },
         "additionalProperties": true
       }
+    },
+    "overview": {
+      "type": "object",
+      "description": "Global orientation prose, written at authoring time (Skill-assisted), rendered before any detail section",
+      "properties": {
+        "summary": { "type": ["object", "string"] },
+        "design_principles": { "type": "array" },
+        "environment_constraints": { "type": "array" }
+      },
+      "additionalProperties": true
+    },
+    "architecture": {
+      "type": "object",
+      "description": "Deterministic diagram source held in the machine spec; renderer embeds it verbatim",
+      "properties": {
+        "mermaid": { "type": "string", "minLength": 1 },
+        "note": { "type": ["object", "string"] }
+      },
+      "additionalProperties": true
+    },
+    "responsibilities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["role"],
+        "properties": {
+          "role": { "type": "string", "minLength": 1 },
+          "zh": { "type": "string" },
+          "owns": { "type": "array" },
+          "not_owns": { "type": "array" }
+        },
+        "additionalProperties": true
+      }
+    },
+    "data_contracts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "zh": { "type": "string" },
+          "fields": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["name"],
+              "properties": {
+                "name": { "type": "string", "minLength": 1 },
+                "zh": { "type": "string" },
+                "type": { "type": "string" },
+                "desc": { "type": ["object", "string"] },
+                "example": {}
+              },
+              "additionalProperties": true
+            }
+          },
+          "example_json": { "type": "string" },
+          "rules": { "type": "array" }
+        },
+        "additionalProperties": true
+      }
+    },
+    "error_codes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["code"],
+        "properties": {
+          "code": { "type": "string", "minLength": 1 },
+          "zh": { "type": "string" },
+          "trigger": { "type": ["object", "string"] },
+          "retryable": { "type": "boolean" },
+          "user_copy": { "type": ["object", "string"] }
+        },
+        "additionalProperties": true
+      }
+    },
+    "decisions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "question"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "question": { "type": ["object", "string"] },
+          "options": { "type": "array" },
+          "chosen": { "type": ["string", "null"] },
+          "status": { "type": "string", "enum": ["decided", "pending"] },
+          "date": { "type": "string" },
+          "note": { "type": ["object", "string"] }
+        },
+        "additionalProperties": true
+      }
     }
   }
 }

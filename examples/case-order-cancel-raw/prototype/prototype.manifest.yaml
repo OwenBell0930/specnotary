@@ -1,7 +1,7 @@
 prototype_version: "0.1"
 generated_from_spec:
   id: SPEC-ORDER-CANCEL-001
-  hash: e7551ba66d25e4d3d31cac8b19162f54ad9c017d55d5c4c689f99840ddf792a9
+  hash: 94fe38439128d7e8a84f09bdc6571c9b0b96bbeff2729f91751020bcf9b15330
 screens:
   - id: SCREEN-ORDER-DETAIL
     path: order-detail.html

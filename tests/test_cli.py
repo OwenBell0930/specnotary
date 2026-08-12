@@ -181,7 +181,8 @@ def test_human_body_edit_fail():
     with tempfile.TemporaryDirectory() as td:
         human = Path(td) / "spec.md"
         text = render_human(data, source="mem")
-        human.write_text(text.replace("## 1. 范围", "## 1. 范围（手改）", 1), encoding="utf-8")
+        assert "本期做" in text
+        human.write_text(text.replace("本期做", "本期做（手改）", 1), encoding="utf-8")
         result = validate(data, {}, human_path=human)
         assert any("body" in e for e in result["fail"]), result
 
@@ -553,6 +554,58 @@ def test_markers_command_reconciles():
         assert "btn_search" in out  # required but unmarked
 
 
+def test_v3_toc_overview_and_diagrams():
+    text = (ROOT / "examples/case-order-cancel-raw/human/spec.md").read_text(encoding="utf-8")
+    assert "## 目录" in text
+    assert "概览" in text and "设计原则" in text
+    assert text.count("```mermaid") >= 3  # architecture + lifecycle + main path
+    assert "职责边界" in text and "不负责" in text
+
+
+def test_v3_data_contract_error_codes_decisions():
+    text = (ROOT / "examples/case-order-cancel-raw/human/spec.md").read_text(encoding="utf-8")
+    assert "CancelRequest" in text and "数据契约" in text
+    assert "CANCEL_NOT_ALLOWED" in text and "错误码" in text
+    assert "决策记录" in text and "D-01" in text
+
+
+def test_decision_undecided_blocks_ready():
+    data = load_spec(RAW)
+    data["decisions"] = list(data.get("decisions") or []) + [
+        {"id": "D-99", "question": {"zh": "还没拍板的问题"}, "status": "pending"}
+    ]
+    result = validate(data, {})
+    assert any("D-99 undecided" in e for e in result["fail"]), result
+
+
+def test_decision_decided_passes():
+    data = load_spec(RAW)
+    result = validate(data, {})
+    assert not any("undecided" in e for e in result["fail"]), result
+
+
+def test_overview_missing_warns_on_ready():
+    data = load_spec(ROOT / "examples/case-list-search/machine/spec.yaml")
+    data.pop("overview", None)
+    result = validate(data, {})
+    assert any("overview missing" in w for w in result["warn"]), result
+
+
+def test_data_contract_claimable():
+    data = load_spec(RAW)
+    data["source_claims"] = list(data.get("source_claims") or []) + [
+        {
+            "id": "SRC-CLM-DC",
+            "source_ref": "SRC-001",
+            "quote_or_summary": "取消请求需幂等",
+            "disposition": "covered",
+            "spec_refs": ["CancelRequest"],
+        }
+    ]
+    result = validate(data, {})
+    assert not any("not a spec entity" in e for e in result["fail"]), result
+
+
 def test_cli_module_entry():
     env = {**os.environ, "PYTHONPATH": str(ROOT / "src")}
     p = subprocess.run(
@@ -627,6 +680,12 @@ if __name__ == "__main__":
         test_declared_ref_in_text_ok,
         test_spa_source_markers_and_comments,
         test_markers_command_reconciles,
+        test_v3_toc_overview_and_diagrams,
+        test_v3_data_contract_error_codes_decisions,
+        test_decision_undecided_blocks_ready,
+        test_decision_decided_passes,
+        test_overview_missing_warns_on_ready,
+        test_data_contract_claimable,
         test_cli_module_entry,
     ]:
         try:

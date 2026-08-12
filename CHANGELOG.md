@@ -6,6 +6,7 @@ SpecAnvil 遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)；�
 
 ### Added
 
+- **全局视角人读（渲染器 v3）**：对照优秀解决方案说明书的阅读动线重建——目录、概览（叙述/设计原则/环境约束）、架构总览、职责边界（负责/不负责）、数据契约（字段表+规则+示例）、错误码、决策记录（未拍板在 ready 上 FAIL）；生命周期图与主路径图由机读**确定性生成**，架构图 mermaid 源码入机读随规格防漂；判断性文字在起草期写入机读字段，渲染器不创作。
 - **可安装包 `specanvil`**：`pip install .` 后获得统一命令 `specanvil check|human|report|sync`。
 - **`specanvil sync`**：改机读后一条命令重生成人读并刷新原型 manifest 哈希，再复跑门禁。
 - **`specanvil check --explain`**：draft 规格打印 `READY-GAP`——距 `ready` 还差哪些硬项（确定性 dry-run，无须先翻状态再逐条读 FAIL）。

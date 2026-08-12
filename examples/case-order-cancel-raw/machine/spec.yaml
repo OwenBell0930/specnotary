@@ -224,6 +224,141 @@ acceptance:
   behavior: B4
   zh: Given 风控拦截单 When 点击取消 Then 展示 risk_blocked 原文且无退款单创建
 pending: []
+overview:
+  summary:
+    zh: 买家在订单详情页自助取消订单：待支付直接关单释券；已支付未发货原路退款回库；履约中与风控命中一律拦截并给出原文文案。本规格覆盖取消入口的显隐、确认弹窗、四条状态分支与退款可查性。
+  design_principles:
+    - zh: 状态×动作矩阵是唯一准据；前端显隐置灰不得自行发明规则
+    - zh: 拦截与失败文案原文入库，界面逐字使用，不得二次创作
+    - zh: 退款异步执行，但两小时内必须可查到进度
+  environment_constraints:
+    - zh: 本期不接人工客服链路；拦截场景仅提示文案引导
+    - zh: 优惠券释放依赖营销服务回调，超时按未释放告警处理
+architecture:
+  note:
+    zh: 取消动作由订单服务编排；支付、库存、优惠券、风控均为被调用方。
+  mermaid: |-
+    flowchart LR
+      Buyer["买家 · 订单详情页"] --> OrderSvc["订单服务（状态机 + 编排）"]
+      OrderSvc --> Pay["支付服务：原路退款"]
+      OrderSvc --> Stock["库存服务：回库"]
+      OrderSvc --> Coupon["营销服务：释券"]
+      OrderSvc --> Risk["风控服务：拦截判定"]
+      OrderSvc --> Copy["文案库：拦截/失败原文"]
+responsibilities:
+  - role: order_service
+    zh: 订单服务
+    owns:
+      - zh: 取消状态机与动作矩阵判定
+      - zh: 退款单/回库/释券的编排与补偿
+      - zh: 拦截与失败文案聚合下发
+    not_owns:
+      - zh: 支付通道内部实现
+      - zh: 风控命中与否的判定逻辑
+  - role: risk_service
+    zh: 风控服务
+    owns:
+      - zh: 取消前拦截判定（同步接口）
+    not_owns:
+      - zh: 拦截后的用户提示文案
+  - role: frontend
+    zh: 买家端前端
+    owns:
+      - zh: 按矩阵实现按钮显隐/置灰与弹窗
+      - zh: 逐字展示 empty_states 文案
+    not_owns:
+      - zh: 任何状态判定与重试策略
+data_contracts:
+  - id: CancelRequest
+    zh: 取消请求
+    fields:
+      - name: order_id
+        zh: 订单号
+        type: string
+        desc:
+          zh: 待取消订单
+      - name: buyer_id
+        zh: 买家标识
+        type: string
+        desc:
+          zh: 必须与订单归属一致，否则拒绝
+      - name: reason_code
+        zh: 取消原因码
+        type: string
+        desc:
+          zh: 枚举见运营配置；可空
+    rules:
+      - zh: 幂等：同一 order_id 重复提交返回首次结果
+      - zh: 服务端以状态矩阵二次校验，不信任前端判定
+  - id: CancelResult
+    zh: 取消结果
+    fields:
+      - name: status
+        zh: 结果状态
+        type: enum
+        desc:
+          zh: closed / refund_pending / rejected
+      - name: refund_eta_hours
+        zh: 退款可查时限
+        type: number
+        desc:
+          zh: 已支付场景固定 2
+      - name: message_key
+        zh: 文案键
+        type: string
+        desc:
+          zh: 指向 empty_states 键名，前端取原文展示
+    rules:
+      - zh: rejected 时 message_key 必填且必须命中已入库文案
+error_codes:
+  - code: CANCEL_NOT_ALLOWED
+    zh: 当前状态不可自助取消
+    trigger:
+      zh: 状态 ∈ {fulfilling, shipped} 时提交取消
+    retryable: false
+    user_copy:
+      zh: 当前订单状态不支持自助取消，请联系客服或去售后中心
+  - code: RISK_BLOCKED
+    zh: 风控拦截
+    trigger:
+      zh: 风控服务返回命中
+    retryable: false
+    user_copy:
+      zh: 订单存在风险控制，暂不可自助取消
+  - code: CANCEL_FAILED
+    zh: 取消执行失败
+    trigger:
+      zh: 支付通道或网络异常
+    retryable: true
+    user_copy:
+      zh: 取消失败，请稍后重试
+decisions:
+  - id: D-01
+    question:
+      zh: 已支付订单取消后，锁定的优惠券是否自动回券？
+    options:
+      - id: A
+        zh: 自动回券
+      - id: B
+        zh: 不自动回券，走客服申诉
+    chosen: B
+    status: decided
+    date: "2026-08-07"
+    note:
+      zh: 与运营约束第 2 条一致；回券涉及营销预算，本期不自动化
+  - id: D-02
+    question:
+      zh: 履约中订单是否开放自助取消？
+    options:
+      - id: A
+        zh: 开放，走拦截确认
+      - id: B
+        zh: 不开放，仅文案引导联系客服
+    chosen: B
+    status: decided
+    date: "2026-08-07"
+    note:
+      zh: 履约成本与逆向物流复杂度高，本期锁死
 project_hint:
   object_ai_weight: low
   object_ai_notes:
