@@ -489,6 +489,16 @@ def test_sync_roundtrip():
         assert "RESULT: PASS" in out
 
 
+def test_quoted_ui_label_not_vague():
+    data = load_spec(ROOT / "examples/case-list-search/machine/spec.yaml")
+    data["behaviors"][0]["when"] = {"zh": "点击「智能识别」按钮"}
+    result = validate(data, {})
+    assert not any("too vague" in e for e in result["fail"]), result
+    data["behaviors"][0]["when"] = {"zh": "智能地快速搜索"}
+    result2 = validate(data, {})
+    assert any("too vague" in e for e in result2["fail"]), result2
+
+
 def test_cli_module_entry():
     env = {**os.environ, "PYTHONPATH": str(ROOT / "src")}
     p = subprocess.run(
@@ -558,6 +568,7 @@ if __name__ == "__main__":
         test_in_scope_required_for_ready,
         test_interaction_broken_link_fail,
         test_sync_roundtrip,
+        test_quoted_ui_label_not_vague,
         test_cli_module_entry,
     ]:
         try:

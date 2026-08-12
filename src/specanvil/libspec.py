@@ -63,6 +63,16 @@ def _lang(node: Any, lang: str = "zh") -> str:
     return "" if node is None else str(node)
 
 
+def _strip_ui_literals(text: str) -> str:
+    """Drop 「…」 spans before the vague-wording scan.
+
+    CJK corner brackets mark literal UI copy (button labels, toast text).
+    A real feature named 「智能识别」 must not trip the 智能 empty-talk rule;
+    unquoted slogans like 支持智能搜索 still fail.
+    """
+    return re.sub(r"「[^」]*」", "", text)
+
+
 def _pending_ok(item: Any) -> bool:
     if not isinstance(item, dict):
         return False
@@ -479,7 +489,7 @@ def _layer_ready(data: dict, matrix: list[dict], fail: list[str]) -> None:
             clause = (_lang(b.get(field), "zh") + " " + _lang(b.get(field), "en")).strip()
             if not clause:
                 fail.append(f"behavior {bid}: {field} is empty")
-            elif any(v in clause.lower() for v in VAGUE):
+            elif any(v in _strip_ui_literals(clause).lower() for v in VAGUE):
                 fail.append(f"behavior {bid}: {field}-clause too vague for ready")
     for a in acceptance if isinstance(acceptance, list) else []:
         if not isinstance(a, dict):
@@ -487,7 +497,10 @@ def _layer_ready(data: dict, matrix: list[dict], fail: list[str]) -> None:
         text = (_lang(a, "zh") + " " + _lang(a, "en")).strip()
         if not text:
             fail.append(f"acceptance {a.get('id')}: missing observable zh/en text")
-        elif any(v in text.lower() for v in ("体验好", "功能正常", "good ux", "as fast")):
+        elif any(
+            v in _strip_ui_literals(text).lower()
+            for v in ("体验好", "功能正常", "good ux", "as fast")
+        ):
             fail.append(f"acceptance {a.get('id')}: not observable")
     for p in pending if isinstance(pending, list) else []:
         if not _pending_ok(p):
