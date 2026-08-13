@@ -119,12 +119,56 @@ _AUTO_REFRESH_CLAIMS = (
     re.compile(r"refresh(?:es|ing)?\s+(?:the\s+)?prototype", re.IGNORECASE),
     re.compile(r"prototype\s+hash.{0,20}refresh", re.IGNORECASE),
 )
-# A line that *discusses* the forbidden phrasing (a changelog entry about the
-# rule, a doc explaining what is not allowed) is not itself a false promise.
-_DISCUSSING_THE_RULE = (
-    "不", "no longer", "not ", "须", "必须", "改为", "曾", "盲区", "误判",
-    "「自动刷新」", "措辞变体", "NOT refreshed",
-)
+# Distinguishing "discussing the phrasing" from "promising the behavior" needs
+# structure, not a keyword list: an earlier version exempted any line containing
+# 不, which is so common in Chinese that a promise like
+# 「一条命令刷新原型哈希，不必手动改」 slipped straight through. Two structural
+# signals only: the phrase is quoted (being cited), or a negation sits
+# immediately against it.
+_QUOTED = (("「", "」"), ("“", "”"), ("`", "`"), ('"', '"'))
+_NEGATORS = ("不会", "不再", "不自动", "不是", "并不", "从不", "never", "no longer",
+             "does not", "do not", "doesn't", "don't", "without", "NOT")
+
+
+def _is_cited(line: str, start: int, end: int) -> bool:
+    """The match lies inside a quoted span — the text names the phrase.
+
+    Span containment, not adjacency: a doc may quote a whole sentence as a
+    counter-example (「刷新原型哈希，不必手动改」), and the offending words sit
+    in the middle of it.
+    """
+    for open_q, close_q in _QUOTED:
+        cursor = 0
+        while True:
+            open_at = line.find(open_q, cursor)
+            if open_at == -1:
+                break
+            close_at = line.find(close_q, open_at + len(open_q))
+            if close_at == -1:
+                break
+            if open_at < start and end <= close_at:
+                return True
+            cursor = close_at + len(close_q)
+    return False
+
+
+def _strip_emphasis(text: str) -> str:
+    """Drop markdown emphasis so `**不**自动刷新` reads as `不自动刷新`."""
+    return re.sub(r"[*_`]+", "", text)
+
+
+def _is_negated(line: str, start: int, end: int) -> bool:
+    """A negation bound to this phrase, not merely present on the line.
+
+    Chinese 不 is only honoured immediately to the left, where it negates the
+    matched verb. On the right it usually governs a different clause — that is
+    how 「刷新原型哈希，不必手动改」 once escaped as a false promise.
+    """
+    left = _strip_emphasis(line[max(0, start - 14): start])
+    right = _strip_emphasis(line[end: end + 16])
+    if any(n in left or n in right for n in _NEGATORS):
+        return True
+    return left.rstrip().endswith("不") or left.rstrip().endswith("未")
 
 
 def test_sync_semantics_not_misstated():
@@ -138,17 +182,67 @@ def test_sync_semantics_not_misstated():
     for path, text in _doc_text().items():
         lines = text.splitlines()
         for i, line in enumerate(lines):
-            if not any(p.search(line) for p in _AUTO_REFRESH_CLAIMS):
-                continue
-            window = "\n".join(lines[max(0, i - 2): i + 3])
-            if "sync" not in window:
-                continue  # a claim about some other command
-            if "attest" in window:
-                continue  # correctly qualified
-            if any(cue in line for cue in _DISCUSSING_THE_RULE):
-                continue  # describing the rule, not promising the behavior
-            offenders.append(f"{path.name}:{i + 1}: {line.strip()[:90]}")
+            for pattern in _AUTO_REFRESH_CLAIMS:
+                m = pattern.search(line)
+                if not m:
+                    continue
+                window = "\n".join(lines[max(0, i - 2): i + 3])
+                if "sync" not in window:
+                    continue  # a claim about some other command
+                # Qualification must be on the same line as the claim. A nearby
+                # correct line does not fix a wrong one — and readers often see
+                # only one of the two.
+                if "attest" in line:
+                    continue
+                if _is_cited(line, m.start(), m.end()) or _is_negated(line, m.start(), m.end()):
+                    continue  # naming or denying the phrase, not promising it
+                offenders.append(f"{path.name}:{i + 1}: {line.strip()[:90]}")
+                break
     assert not offenders, "sync described as auto-refreshing the prototype hash: " + "; ".join(offenders)
+
+
+def test_sync_semantics_detector_is_calibrated():
+    """The exemption must not swallow real promises.
+
+    Every gate needs its own negative test: the first exemption here keyed on
+    any line containing 不, which let 「刷新原型哈希，不必手动改」 pass. A rule
+    is only as good as the false-negatives it is proven to reject.
+    """
+    def flags(line: str) -> bool:
+        for pattern in _AUTO_REFRESH_CLAIMS:
+            m = pattern.search(line)
+            if not m:
+                continue
+            if "attest" in line:
+                return False
+            if _is_cited(line, m.start(), m.end()) or _is_negated(line, m.start(), m.end()):
+                return False
+            return True
+        return False
+
+    must_flag = [
+        "改完机读后一条命令刷新原型哈希，不必手动改。",
+        "sync 会自动刷新原型哈希，不需要额外操作。",
+        "# sync 会自动刷新原型哈希，不需要额外操作：",  # shell comment above a correct command
+        "sync refreshes the prototype hash so you do not need to think about it.",
+        "一条命令同步人读与原型哈希。",
+        "specnotary sync：重生成人读 + 刷新原型哈希 + 复跑门禁",
+    ]
+    must_not_flag = [
+        "原型 manifest 哈希**不**自动刷新，须复核后显式背书。",
+        "措辞变体（「自动刷新」）也要被检测到。",
+        "sync does not refresh the prototype hash on its own.",
+        "sync 默认不再刷新原型哈希。",
+        "NOTE: prototype hash NOT refreshed — sync does not regenerate the prototype.",
+        "改完机读后重新生成人读；原型须显式 `--attest-prototype` 刷新原型哈希。",
+        # A whole sentence quoted as a counter-example: the offending words are
+        # deep inside the quotes, not adjacent to them.
+        "导致「刷新原型哈希，不必手动改」这类真承诺全部漏过。",
+    ]
+    missed = [s for s in must_flag if not flags(s)]
+    false_alarms = [s for s in must_not_flag if flags(s)]
+    assert not missed, f"detector misses real false promises: {missed}"
+    assert not false_alarms, f"detector flags rule discussion: {false_alarms}"
 
 
 def test_version_is_single_sourced():
@@ -219,6 +313,7 @@ TESTS = [
     test_documented_flags_exist,
     test_renderer_version_matches_docs,
     test_sync_semantics_not_misstated,
+    test_sync_semantics_detector_is_calibrated,
     test_version_is_single_sourced,
     test_lifecycle_diagram_declares_no_transitions,
     test_no_hardcoded_test_counts,

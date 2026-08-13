@@ -770,7 +770,52 @@ def test_human_default_out_standard_layout():
             capture_output=True, text=True, env=env,
         )
         assert p.returncode == 0, p.stdout + p.stderr
-        assert (case / "human" / "spec.md").is_file(), p.stdout
+        written = case / "human" / "spec.md"
+        assert written.is_file(), p.stdout
+        # Existence is not correctness: assert the artifact carries this spec.
+        text = written.read_text(encoding="utf-8")
+        assert "SPEC-LIST-SEARCH-001" in text
+        assert "<!-- renderer_version:" in text and "## 目录" in text
+
+
+def test_commands_actually_perform_their_side_effect():
+    """Every writing command must change its artifact, not just exit 0.
+
+    The sync bug hid behind an exit-code-only assertion: the command reported
+    a status while silently skipping the write it advertises. Assert content
+    movement for each writer.
+    """
+    env = {**os.environ, "PYTHONPATH": str(ROOT / "src")}
+    with tempfile.TemporaryDirectory() as td:
+        case = Path(td) / "case"
+        shutil.copytree(ROOT / "examples/case-order-cancel-raw", case)
+        spec = case / "machine" / "spec.yaml"
+        human = case / "human" / "spec.md"
+        report = case / "reports" / "review-readiness.md"
+        marker = "取消订单（审计标记）"
+        spec.write_text(spec.read_text(encoding="utf-8").replace("取消订单", marker, 1), encoding="utf-8")
+
+        # human: content must land in the artifact
+        before = human.read_text(encoding="utf-8")
+        subprocess.run([sys.executable, "-m", "specnotary.generate_human", str(spec)],
+                       capture_output=True, text=True, env=env, check=True)
+        after = human.read_text(encoding="utf-8")
+        assert after != before and marker in after, "generate_human did not write the new content"
+
+        # report: regenerated and reflects the current hash
+        subprocess.run([sys.executable, "-m", "specnotary.report", str(spec), str(report)],
+                       capture_output=True, text=True, env=env)
+        from specnotary.libspec import load_spec as _load, spec_hash as _hash
+        assert _hash(_load(spec)) in report.read_text(encoding="utf-8"), "report is not current"
+
+        # sync --attest-prototype: the manifest hash must actually move
+        manifest = case / "prototype" / "prototype.manifest.yaml"
+        old_manifest = manifest.read_text(encoding="utf-8")
+        subprocess.run([sys.executable, "-m", "specnotary.sync", str(spec), "--attest-prototype"],
+                       capture_output=True, text=True, env=env)
+        assert manifest.read_text(encoding="utf-8") != old_manifest, "attestation did not refresh the hash"
+        code, out = run(spec)
+        assert code == 0, out
 
 
 def test_mcp_report_matches_cli():
@@ -811,6 +856,37 @@ def test_json_output():
     assert verdict["result"] == "PASS" and verdict["fail"] == []
     assert verdict["summary"]["behaviors"] >= 4
     assert "spec_hash" in verdict
+
+
+def test_json_findings_are_layered():
+    """Integrations must not have to parse message prefixes to know what broke."""
+    import json as _json
+
+    from specnotary.check import classify_findings
+
+    grouped = classify_findings([
+        "prototype stale: hash abc… != machine def…",
+        "human spec stale: body edited or not regenerated — spec.md",
+        "source SRC-001: path missing: ../input/x.txt",
+        "behavior B1: then is empty",
+    ])
+    assert set(grouped) == {"prototype", "human", "source", "machine"}, grouped
+    assert len(grouped["machine"]) == 1
+
+    with tempfile.TemporaryDirectory() as td:
+        case = Path(td) / "case"
+        shutil.copytree(ROOT / "examples/case-order-cancel-raw", case)
+        spec = case / "machine" / "spec.yaml"
+        spec.write_text(spec.read_text(encoding="utf-8").replace("2 小时", "30 天"), encoding="utf-8")
+        env = {**os.environ, "PYTHONPATH": str(ROOT / "src")}
+        subprocess.run([sys.executable, "-m", "specnotary.generate_human", str(spec)],
+                       capture_output=True, text=True, env=env)
+        p = subprocess.run([sys.executable, "-m", "specnotary.cli", "check", str(spec), "--json"],
+                           capture_output=True, text=True, env=env)
+        verdict = _json.loads(p.stdout)
+        # Only the endorsement is stale: the machine layer must be clean.
+        assert verdict["result"] == "FAIL"
+        assert list(verdict["fail_by_layer"]) == ["prototype"], verdict["fail_by_layer"]
 
 
 def test_precommit_multi():
@@ -938,6 +1014,7 @@ if __name__ == "__main__":
         test_stale_prototype_does_not_block_human_regen,
         test_allow_invalid_stamps_degraded,
         test_human_default_out_standard_layout,
+        test_commands_actually_perform_their_side_effect,
         test_mcp_report_matches_cli,
         test_ready_placeholder_ui_fail,
         test_ready_empty_then_fail,
@@ -966,6 +1043,7 @@ if __name__ == "__main__":
         test_overview_missing_warns_on_ready,
         test_data_contract_claimable,
         test_json_output,
+        test_json_findings_are_layered,
         test_precommit_multi,
         test_en_human_roundtrip,
         test_en_vague_calibration,

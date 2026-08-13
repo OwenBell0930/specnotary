@@ -134,12 +134,13 @@ def dangling_refs(data: dict) -> list[str]:
 def _is_placeholder(text: str) -> bool:
     """Scaffold text that survived into a ready spec.
 
-    The shipped template deliberately uses 「占位」 so a fresh copy passes as a
-    draft; that same word must not be allowed to reach ready, or the tool would
-    be teaching people to write empty shells that clear the gate.
+    Scanned on the raw string, deliberately: the vague-wording rule exempts
+    「…」 spans so a real button named 「智能识别」 passes, but the template
+    writes its filler as 「占位」…, so sharing that exemption let every
+    template-derived shell through. Placeholder markers are scaffold residue,
+    never UI copy.
     """
-    stripped = _strip_ui_literals(text).strip().lower()
-    return any(marker in stripped for marker in PLACEHOLDER)
+    return any(marker in text.strip().lower() for marker in PLACEHOLDER)
 
 
 def _strip_ui_literals(text: str) -> str:

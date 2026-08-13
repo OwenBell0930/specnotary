@@ -144,6 +144,13 @@ MUTANTS = [
      _set("acceptance.0.zh", "待补"), "placeholder text"),
     ("placeholder-overview", "overview", "completeness", BASE_SPEC,
      _set("overview", {"summary": {"zh": "TODO"}}), "placeholder text"),
+    # Rule-interaction blind spot: the vague-wording rule exempts 「…」 spans,
+    # and the template writes its filler as 「占位」…, so a shared exemption let
+    # every template-derived shell through. Placeholders scan the raw text.
+    ("placeholder-in-cjk-quotes", "behaviors", "completeness", BASE_SPEC,
+     _set("behaviors.0.then", {"zh": "「占位」可观察结果（数据/状态/文案）"}), "placeholder text"),
+    ("placeholder-ac-in-quotes", "acceptance", "completeness", BASE_SPEC,
+     _set("acceptance.0.zh", "「待补」Given…When…Then…"), "placeholder text"),
 
     # ---- evidence ledger ----
     ("evid-no-claims", "source_claims", "evidence", BASE_SPEC, _set("source_claims", []),
@@ -254,6 +261,20 @@ def test_matrix_covers_every_operator_class():
     assert {"type", "uniqueness", "closure", "contradiction", "completeness", "evidence"} <= classes
 
 
+def test_real_ui_literals_are_not_placeholders():
+    """The placeholder rule must not swallow legitimate quoted UI copy.
+
+    Tightening a rule is only safe if the false positives it could create are
+    pinned down too — this is the paired assertion the 「占位」 fix needs.
+    """
+    data = load_spec(BASE_SPEC)
+    data["behaviors"][0]["then"] = {"zh": "点击「智能识别」后目录整树替换，编号重算"}
+    data["acceptance"][0]["zh"] = "输入「蓝牙」可看到标题含「蓝牙」的商品行"
+    result = validate(data, {}, spec_path=BASE_SPEC, check_human=False)
+    offenders = [e for e in result["fail"] if "placeholder" in e]
+    assert not offenders, f"real UI copy misread as placeholder: {offenders}"
+
+
 if __name__ == "__main__":
     killed, total, survivors = run_matrix()
     print()
@@ -267,7 +288,8 @@ if __name__ == "__main__":
         "NOTE: the denominator is registered mutants, not all possible bad specs.\n"
         "      100% means known coverage did not regress — see docs/proof-boundary.md."
     )
-    for t in (test_matrix_covers_every_object_family, test_matrix_covers_every_operator_class):
+    for t in (test_matrix_covers_every_object_family, test_matrix_covers_every_operator_class,
+              test_real_ui_literals_are_not_placeholders):
         t()
         print(f"OK  {t.__name__}")
     sys.exit(1 if survivors else 0)

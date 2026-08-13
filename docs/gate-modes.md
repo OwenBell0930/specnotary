@@ -18,16 +18,27 @@
 ## 校验分层
 
 1. **JSON Schema**（`src/specnotary/schemas/machine-spec.schema.json`）— 类型、enum、必填  
-2. **确定性规则** — **YAML 重复键直接拒绝加载**（同一键两次赋值意味着准据本身歧义）；ID 唯一（含跨类型不撞车）、跨对象引用、不自相矛盾（scope / 矩阵 / 职责）；ready 完备性（占位 ui/defaults/states 不算数；`title` 非空；behavior 必须有 `name`；given/when/then 与 AC 非空、禁空话、禁模板占位词（占位/待补/TODO…），`「…」`内的字面 UI 文案豁免；`in_scope` 非空）、Pending 五字段、**决策记录未拍板在 ready 上 FAIL**、自由文本悬空引用（`P-*` / `AC-*` / `SRC-*` / `D-*` 提及即必须存在；ready FAIL，draft WARN）；ready 缺 `overview`、`permissions.can` 未出现在 `action_matrix`、未知顶层字段（`x_` 前缀豁免）均为 WARN  
+2. **确定性规则** — **YAML 重复键直接拒绝加载**（同一键两次赋值意味着准据本身歧义）；ID 唯一（含跨类型不撞车）、跨对象引用、不自相矛盾（scope / 矩阵 / 职责）；ready 完备性（占位 ui/defaults/states 不算数；`title` 非空；behavior 必须有 `name`；given/when/then 与 AC 非空、禁空话、禁模板占位词（占位/待补/TODO…）——注意**空话检测豁免 `「…」` 内的字面 UI 文案，占位检测不豁免**（模板把占位词写在「」里，共用豁免会放过所有模板空壳）；`in_scope` 非空）、Pending 五字段、**决策记录未拍板在 ready 上 FAIL**、自由文本悬空引用（`P-*` / `AC-*` / `SRC-*` / `D-*` 提及即必须存在；ready FAIL，draft WARN）；ready 缺 `overview`、`permissions.can` 未出现在 `action_matrix`、未知顶层字段（`x_` 前缀豁免）均为 WARN  
 3. **原料覆盖** — `sources[].path` 必须存在；**`content_hash` 在 ready 上必填**（PASS 的定义包含「登记基于未变化的快照」，不钉死则该定义不成立；draft 上为 WARN），原料一变全体 claims stale FAIL；`evidence` 引文文件名须与 `source_ref` 指向的文件一致（换文件即暴露）；ready 至少 1 条 `covered`；每个必选 behavior/AC/control 须被 claim 引用；`omitted` / 未闭合 `conflict` 在 `ready` 上 FAIL；`assumption` 为 WARN  
 4. **人读 stale** — 人读头 `spec_hash` 必须等于当前机读内容哈希；`renderer_version` 必须等于当前渲染器版本（版本不符给出单条「重新生成」提示）；正文须与按机读重渲染逐字一致（只改正文也 FAIL）  
 5. **原型一致性** — 若存在 `prototype/prototype.manifest.yaml`：manifest 哈希、必需控件/行为映射、禁止无规格业务动作、`data-spec-id` 落点核对（HTML 与 React/Vue/Svelte 源文件均可；注释不算命中）、interaction `from/to/trigger` 不得断链、`required` screen 必须有 path；`semantic_warnings` 仅为 WARN。无 manifest 时跳过（ready 下 WARN，不挡 PASS）
 
 依赖：`pip install .`（或仅 `pip install pyyaml jsonschema` 走 `cli/run-*.sh`）
 
+## 结论分层（按「该改哪个产物」归类）
+
+一次 FAIL 可能来自四个不同的产物，修法完全不同。文本输出在跨层时打印 `FAIL_LAYERS:`，`--json` 给出 `fail_by_layer` / `warn_by_layer`，集成方不必解析消息前缀：
+
+| 层 | 含义 | 怎么修 |
+|----|------|--------|
+| `machine` | 机读规格本身不合规 | 改 YAML |
+| `source` | 原料或覆盖账本漂了 | 复核 SourceClaim / 更新 `content_hash` |
+| `human` | 派生物过期 | `specnotary sync <spec>` |
+| `prototype` | 背书过期 | 复核原型后 `specnotary sync <spec> --attest-prototype` |
+
 ## 集成出口
 
-- **`specnotary check --json`**：机读判定（fail/warn/ready_gap/exit_code），CI、编辑器、Action 共用一个语义源。
+- **`specnotary check --json`**：机读判定（fail/warn/`fail_by_layer`/ready_gap/exit_code），CI、编辑器、Action 共用一个语义源。
 - **`specnotary precommit <spec...>`**：多文件聚合门禁，配 `.pre-commit-hooks.yaml` 一行接入。
 - **GitHub Action**（根目录 `action.yml`）：PR 上按文件产出 error/warning 标注。
 - **`specnotary mcp`**：stdio MCP server，暴露 `check_spec` / `ready_gap` / `review_report` 三个工具给 Agent（Experimental）。

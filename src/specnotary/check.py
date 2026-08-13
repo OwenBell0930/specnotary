@@ -18,6 +18,30 @@ from .libspec import (
 
 USAGE = "Usage: specnotary check <machine-spec.yaml|json> [human.md] [prototype.manifest.yaml] [--explain] [--json]"
 
+# Which artifact a finding is about — and therefore what fixes it.
+LAYERS = ("machine", "human", "prototype", "source")
+
+
+def classify_findings(items: list[str]) -> dict[str, list[str]]:
+    """Group findings by the artifact they concern.
+
+    machine   — the spec itself is wrong; edit the YAML.
+    source    — the ledger or the raw material drifted; re-review claims.
+    human     — a derivation is stale; regenerate it.
+    prototype — the endorsement is stale; re-verify, then attest.
+    """
+    grouped: dict[str, list[str]] = {layer: [] for layer in LAYERS}
+    for item in items:
+        if item.startswith("prototype"):
+            grouped["prototype"].append(item)
+        elif item.startswith("human spec"):
+            grouped["human"].append(item)
+        elif item.startswith(("source ", "source_claim")):
+            grouped["source"].append(item)
+        else:
+            grouped["machine"].append(item)
+    return {k: v for k, v in grouped.items() if v}
+
 
 def gate(
     path: Path,
@@ -66,6 +90,12 @@ def gate(
             "prototype": str(resolved_manifest) if resolved_manifest is not None else None,
             "fail": result["fail"],
             "warn": result["warn"],
+            # Findings carry different evidence strengths and different fixes
+            # (edit the spec vs regenerate a derivation vs re-verify and endorse
+            # the prototype). Integrations should not have to reverse-engineer
+            # that from message prefixes.
+            "fail_by_layer": classify_findings(result["fail"]),
+            "warn_by_layer": classify_findings(result["warn"]),
         }
     )
     if isinstance(data, dict):
@@ -135,6 +165,9 @@ def main(argv: list[str] | None = None) -> int:
         print(f"object_ai_weight: {verdict['object_ai_weight']}")
     print(f"FAIL_COUNT: {len(verdict['fail'])}")
     print(f"WARN_COUNT: {len(verdict['warn'])}")
+    by_layer = verdict.get("fail_by_layer") or {}
+    if len(by_layer) > 1:
+        print("FAIL_LAYERS: " + " ".join(f"{k}={len(v)}" for k, v in by_layer.items()))
     for e in verdict["fail"]:
         print(f"FAIL: {e}")
     for w in verdict["warn"]:

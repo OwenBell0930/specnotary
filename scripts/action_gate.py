@@ -25,7 +25,18 @@ def main() -> int:
     for raw in files:
         verdict = gate(Path(raw), explain=explain)
         fails, warns = verdict["fail"], verdict["warn"]
-        print(f"::group::SpecNotary {raw} — {verdict['result']} (FAIL {len(fails)} / WARN {len(warns)})")
+        layers = verdict.get("fail_by_layer") or {}
+        summary = " ".join(f"{k}={len(v)}" for k, v in layers.items()) or "clean"
+        print(f"::group::SpecNotary {raw} — {verdict['result']} [{summary}]")
+        # Reviewers need to know which artifact to touch, not just that it failed.
+        FIX = {
+            "machine": "edit the machine spec",
+            "source": "re-review SourceClaims / update content_hash",
+            "human": "run: specnotary sync <spec>",
+            "prototype": "re-verify the prototype, then: specnotary sync <spec> --attest-prototype",
+        }
+        for layer, items in layers.items():
+            print(f"::notice file={raw},line=1::{len(items)} {layer} finding(s) — {FIX.get(layer, '')}")
         for e in fails:
             print(f"::error file={raw},line=1::{e}")
         for w in warns:

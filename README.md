@@ -100,7 +100,7 @@
 | 变异覆盖率度量 | **Available** | `tests/test_mutations.py`：变异算子 × 对象族，输出 `KILL_RATE` 并进 CI |
 | 文档不漂自检 | **Available** | `tests/test_doc_consistency.py`：能力表语义/版本/子命令/flag 对着代码校验 |
 | pip 安装 | **Available** | `pip install .`（PyPI 发布待九步批准） |
-| 机读判定输出 | **Available** | `specnotary check --json`；CI/编辑器集成的地基 |
+| 机读判定输出 | **Available** | `specnotary check --json`：含 `fail_by_layer`（machine/source/human/prototype，直接告诉集成方该改哪个产物） |
 | 英文人读视图 | **Available** | `specnotary human --lang en`；中文输出逐字节不变 |
 | pre-commit 钩子 | **Available** | `.pre-commit-hooks.yaml`，`specnotary precommit` 多文件门禁 |
 | GitHub Action | **Experimental** | `action.yml`：PR 上按文件标注 FAIL/WARN（发布后生效） |
