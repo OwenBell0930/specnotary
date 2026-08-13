@@ -20,6 +20,10 @@ jobs:
         run: pip install -e .
       - name: Full regression
         run: python3 tests/test_cli.py
+      - name: Mutation matrix (negative coverage)
+        run: python3 tests/test_mutations.py
+      - name: Docs match implementation
+        run: python3 tests/test_doc_consistency.py
       - name: Gate the shipped examples
         run: |
           ./cli/run-check.sh examples/case-order-cancel-raw/machine/spec.yaml

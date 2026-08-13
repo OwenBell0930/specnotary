@@ -76,8 +76,8 @@ specnotary report examples/case-order-cancel-raw/machine/spec.yaml
 
 `specnotary human`（或 `./cli/run-generate-human.sh`）在机读仍有 FAIL 时**拒绝写入**，除非传入 `--allow-invalid`。
 
-### 人读阅读动线（渲染器 v3）
+### 人读阅读动线（渲染器 v4）
 
 先全局后细节：目录 → 概览（叙述/设计原则/环境约束）→ 范围 → 架构总览 → 职责边界（负责/不负责）→ 数据契约（字段表+规则）→ 角色权限 → 状态与允许动作 → 页面与交互 → 主路径 → 默认值文案 → 错误码 → AC → Pending → 决策记录 → 对象 AI → 原料覆盖（附录）。章节按机读实际内容动态编号。
 
-**图也是确定性的**：生命周期图与主路径图由 `states.lifecycle` / `behaviors` 自动生成；架构图的 mermaid 源码存在机读 `architecture.mermaid` 里——图进哈希链，一样防漂。判断性文字（概览、设计原则、决策理由）在**起草期**写入机读字段（Skill 辅助），渲染器只摆放、不创作。
+**图也是确定性的**：生命周期图由 `states.lifecycle` 自动生成（仅表示枚举顺序，转移条件以矩阵为准）；架构图的 mermaid 源码存在机读 `architecture.mermaid` 里——图进哈希链，一样防漂。v4 起**不再**自动生成主路径流程图：behaviors 常为互斥分支，串成顺序流会断言机读从未声明的流程关系。判断性文字（概览、设计原则、决策理由）在**起草期**写入机读字段（Skill 辅助），渲染器只摆放、不创作。

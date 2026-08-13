@@ -377,6 +377,11 @@ def file_sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+# Evidence locators look like "ops-note.zh.txt:L2" / "cs-faq.zh.txt:Q3".
+# Free-form evidence (e.g. 推导) is left alone — only file-shaped ones are matched.
+_EVIDENCE_FILE = re.compile(r"^([\w.\-]+\.[A-Za-z0-9]+)\s*[:：]")
+
+
 def _covered_spec_refs(claims: list) -> set[str]:
     refs: set[str] = set()
     for claim in claims:
@@ -450,6 +455,24 @@ def _validate_source_layer(
             fail.append(f"source_claim {cid}: source_ref is required")
         elif str(sref) not in source_ids:
             fail.append(f"source_claim {cid}: source_ref missing: {sref}")
+        else:
+            # content_hash proves "that file did not change"; it cannot prove
+            # "path still points at the same file". Cross-checking the evidence
+            # locator against the source filename closes the swap: repointing a
+            # source at a different file leaves every evidence string stranded.
+            evidence = str(claim.get("evidence") or "")
+            src_obj = next(
+                (s for s in (sources if isinstance(sources, list) else []) if isinstance(s, dict) and str(s.get("id")) == str(sref)),
+                None,
+            )
+            src_name = Path(str((src_obj or {}).get("path") or "")).name
+            if evidence and src_name and _EVIDENCE_FILE.match(evidence):
+                cited = _EVIDENCE_FILE.match(evidence).group(1)
+                if cited != src_name:
+                    fail.append(
+                        f"source_claim {cid}: evidence cites {cited} but {sref} points at {src_name} "
+                        "— source was repointed or evidence is stale"
+                    )
         refs = claim.get("spec_refs") or []
         allowed_refs = claim_spec_ref_ids(data)
         if disp == "covered":
@@ -549,6 +572,82 @@ def _layer_schema(data: dict, fail: list[str]) -> None:
         fail.append(f"schema validation error: {exc}")
 
 
+def _text_key(node: Any) -> str:
+    """Normalized comparison key for a bilingual-or-plain text item."""
+    if isinstance(node, dict):
+        return " ".join(str(node.get(k, "")).strip() for k in ("zh", "en")).strip()
+    return str(node or "").strip()
+
+
+def _check_new_object_integrity(data: dict, fail: list[str], warn: list[str]) -> None:
+    """Uniqueness / closure / non-contradiction for the v3 object family.
+
+    The older objects (behaviors, acceptance, controls…) already had this rule
+    family; overview/responsibilities/data_contracts/error_codes/decisions were
+    added later and only got existence checks. An external audit found the gap.
+    """
+    scope_in = {_text_key(x) for x in (data.get("in_scope") or []) if _text_key(x)}
+    for item in data.get("out_of_scope") or []:
+        key = _text_key(item)
+        if key and key in scope_in:
+            fail.append(f"scope contradiction: {key!r} is both in_scope and out_of_scope")
+
+    seen_states: set[str] = set()
+    for s in (data.get("states") or {}).get("lifecycle") or []:
+        if str(s) in seen_states:
+            fail.append(f"duplicate lifecycle state: {s}")
+        seen_states.add(str(s))
+
+    for r in data.get("responsibilities") or []:
+        if not isinstance(r, dict):
+            continue
+        owns = {_text_key(x) for x in (r.get("owns") or []) if _text_key(x)}
+        for item in r.get("not_owns") or []:
+            key = _text_key(item)
+            if key and key in owns:
+                fail.append(f"responsibility contradiction: {r.get('role')} both owns and disowns {key!r}")
+
+    seen_codes: set[str] = set()
+    for e in data.get("error_codes") or []:
+        if not isinstance(e, dict):
+            continue
+        code = str(e.get("code") or "")
+        if not code:
+            fail.append("error_code item missing code")
+            continue
+        if code in seen_codes:
+            fail.append(f"duplicate error_code: {code}")
+        seen_codes.add(code)
+
+    for dc in data.get("data_contracts") or []:
+        if not isinstance(dc, dict):
+            continue
+        seen_fields: set[str] = set()
+        for f in dc.get("fields") or []:
+            if not isinstance(f, dict):
+                continue
+            name = str(f.get("name") or "")
+            if not name:
+                fail.append(f"data_contract {dc.get('id')}: field missing name")
+                continue
+            if name in seen_fields:
+                fail.append(f"data_contract {dc.get('id')}: duplicate field: {name}")
+            seen_fields.add(name)
+
+    for d in data.get("decisions") or []:
+        if not isinstance(d, dict):
+            continue
+        options = [o for o in (d.get("options") or []) if isinstance(o, dict)]
+        option_ids = {str(o.get("id")) for o in options if o.get("id")}
+        chosen = str(d.get("chosen") or "").strip()
+        if chosen and option_ids and chosen not in option_ids:
+            fail.append(
+                f"decision {d.get('id')}: chosen={chosen} is not one of its options ({', '.join(sorted(option_ids))})"
+            )
+        elif chosen and not option_ids:
+            warn.append(f"decision {d.get('id')}: chosen recorded without options to choose from")
+
+
 def _layer_structure(data: dict, fail: list[str], warn: list[str]) -> list[dict]:
     """Layer 2 — ID uniqueness, cross-references, action matrix. Returns matrix rows."""
     behaviors = data.get("behaviors") or []
@@ -560,9 +659,23 @@ def _layer_structure(data: dict, fail: list[str], warn: list[str]) -> list[dict]
 
     actor_ids = _collect_ids(fail, data.get("actors") or [], "actor")
     behavior_ids = _collect_ids(fail, behaviors if isinstance(behaviors, list) else [], "behavior")
-    _collect_ids(fail, acceptance if isinstance(acceptance, list) else [], "acceptance")
-    _collect_ids(fail, (data.get("ui") or {}).get("controls") or [], "control")
+    ac_ids = _collect_ids(fail, acceptance if isinstance(acceptance, list) else [], "acceptance")
+    control_ids = _collect_ids(fail, (data.get("ui") or {}).get("controls") or [], "control")
     _collect_ids(fail, data.get("pending") or [], "pending")
+    contract_ids = _collect_ids(fail, data.get("data_contracts") or [], "data_contract")
+    decision_ids = _collect_ids(fail, data.get("decisions") or [], "decision")
+
+    # IDs are referenced by bare name across object kinds (spec_refs, prototype
+    # markers, free text), so a name may only mean one thing spec-wide.
+    named: dict[str, str] = {}
+    for kind, ids in (
+        ("behavior", behavior_ids), ("acceptance", ac_ids), ("control", control_ids),
+        ("actor", actor_ids), ("data_contract", contract_ids), ("decision", decision_ids),
+    ):
+        for i in ids:
+            if i in named and named[i] != kind:
+                fail.append(f"id collision across kinds: {i} is both {named[i]} and {kind}")
+            named[i] = kind
 
     for p in data.get("permissions") or []:
         if not isinstance(p, dict):
@@ -570,6 +683,8 @@ def _layer_structure(data: dict, fail: list[str], warn: list[str]) -> list[dict]
         actor = p.get("actor")
         if actor and str(actor) not in actor_ids:
             fail.append(f"permission references missing actor: {actor}")
+
+    _check_new_object_integrity(data, fail, warn)
 
     for a in acceptance if isinstance(acceptance, list) else []:
         if not isinstance(a, dict):
@@ -720,6 +835,38 @@ def _layer_object_ai(data: dict, project: dict | None, fail: list[str]) -> None:
                     fail.append(f"object_ai_weight=high requires object_ai.{key}")
 
 
+def _validate_human_provenance(
+    spec_path: Path | None, human_path: Path, fail: list[str], warn: list[str]
+) -> None:
+    """The `generated_from` header is a provenance claim; verify it resolves to
+    the spec being checked, so a human view cannot misstate its own origin."""
+    if spec_path is None:
+        return
+    meta = parse_human_header(human_path.read_text(encoding="utf-8"))
+    declared = str(meta.get("generated_from") or "").strip()
+    if not declared:
+        warn.append(f"human spec {human_path.name}: no generated_from provenance")
+        return
+    root = find_repo_root(spec_path)
+    candidates = {
+        (root / declared).resolve(),
+        (human_path.parent / declared).resolve(),
+        Path(declared).resolve() if Path(declared).is_absolute() else None,
+    }
+    if spec_path.resolve() in {c for c in candidates if c is not None}:
+        return
+    if Path(declared).name == spec_path.name:
+        # Same filename but a different base: the case directory was moved or
+        # copied. Content proofs still hold, so nudge rather than block.
+        warn.append(
+            f"human spec provenance unresolved: generated_from={declared} — regenerate after moving the case"
+        )
+        return
+    fail.append(
+        f"human spec provenance mismatch: generated_from={declared} is not {spec_path.name}"
+    )
+
+
 def _layer_human(
     data: dict,
     spec_path: Path | None,
@@ -730,6 +877,7 @@ def _layer_human(
     explicit_human = human_path is not None
     resolved_human = human_path if explicit_human else expected_human_path(spec_path)
     if resolved_human is not None and resolved_human.is_file():
+        _validate_human_provenance(spec_path, resolved_human, fail, warn)
         _validate_human_stale(data, resolved_human, fail, warn)
     elif resolved_human is not None and (explicit_human or data.get("status") == "ready"):
         fail.append(f"human spec missing: {resolved_human}")

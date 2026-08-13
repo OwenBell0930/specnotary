@@ -15,9 +15,37 @@ from specnotary.libproto import classify_proto_issues, validate_prototype  # noq
 from specnotary.libspec import load_spec, ready_gap, render_human, spec_hash, validate  # noqa: E402
 
 
-def run(path: Path) -> tuple[int, str]:
-    p = subprocess.run(["bash", str(CHECK), str(path)], capture_output=True, text=True)
-    return p.returncode, p.stdout + p.stderr
+def run(path: Path, *args: str) -> tuple[int, str]:
+    """Gate a spec in-process and capture its report.
+
+    Spawning bash + a fresh interpreter per assertion cost the suite minutes;
+    the wrapper script itself is covered end-to-end by
+    test_wrapper_scripts_end_to_end.
+    """
+    import contextlib
+    import io
+
+    from specnotary.check import main as check_main
+
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        code = check_main([str(path), *args])
+    return code, buf.getvalue()
+
+
+def test_wrapper_scripts_end_to_end():
+    """The bash wrappers must stay runnable (PYTHONPATH wiring, exit codes)."""
+    ok = subprocess.run(
+        ["bash", str(CHECK), str(RAW)], capture_output=True, text=True
+    )
+    assert ok.returncode == 0, ok.stdout + ok.stderr
+    assert "RESULT: PASS" in ok.stdout
+    bad = subprocess.run(
+        ["bash", str(CHECK), str(ROOT / "examples/case-order-cancel-bad/machine/spec.yaml")],
+        capture_output=True, text=True,
+    )
+    assert bad.returncode == 1, bad.stdout + bad.stderr
+    assert "RESULT: FAIL" in bad.stdout
 
 
 def test_order_raw_pass():
@@ -836,6 +864,7 @@ def test_cli_module_entry():
 if __name__ == "__main__":
     failed = 0
     for t in [
+        test_wrapper_scripts_end_to_end,
         test_order_raw_pass,
         test_order_bad_fail,
         test_order_fixed_pass,

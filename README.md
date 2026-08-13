@@ -86,17 +86,19 @@
 | YAML/JSON 机读校验（Schema + 规则） | **Available** | `specnotary check` / `./cli/run-check.sh` |
 | ready 差距报告 | **Available** | `specnotary check --explain` 打印 `READY-GAP` |
 | 人读施工图生成 | **Available** | `specnotary human`（FAIL 时拒绝写入） |
-| 一键同步哈希链 | **Available** | `specnotary sync`：重生成人读 + 刷新原型哈希 + 复跑门禁 |
+| 一键同步派生物 | **Available** | `specnotary sync`：重生成人读 + 复跑门禁；原型背书须显式 `--attest-prototype` |
 | FAIL / WARN / Pending 分层 | **Available** | 见 `docs/gate-modes.md` |
 | 通用 `action_matrix`（非订单域样例） | **Available** | 见 `examples/case-list-search/` |
 | Skill 起草 / 降级检查 | **Available** | 降级须标 `degraded` |
 | 原料覆盖（SourceClaim） | **Available** | 原料文件必须存在；必选实体必须被引用；`specnotary report` |
-| 全局视角人读（目录/概览/架构图/职责/数据契约/错误码/决策记录） | **Available** | 渲染器 v3；mermaid 图确定性生成或随机读防漂 |
+| 全局视角人读（目录/概览/架构图/职责/数据契约/错误码/决策记录） | **Available** | 渲染器 v4；mermaid 图确定性生成或随机读防漂 |
 | 决策记录门禁 | **Available** | `decisions` 未拍板在 `ready` 上 FAIL |
 | 人读哈希 / stale 检测 | **Available** | `spec_hash` + 正文逐字对照 + `renderer_version`；只改正文也 FAIL |
 | 原型 Manifest 一致性 | **Available** | manifest 哈希 + `data-spec-id` 落点（HTML/React/Vue 源）；无 manifest 则跳过并 WARN |
 | 存量项目标记对账 | **Available** | `specnotary markers`：列出已标/非法/待回填的 `data-spec-id` |
 | 悬空引用检查 | **Available** | 文本提及 `P-*`/`AC-*`/`SRC-*` 必须真实存在 |
+| 变异覆盖率度量 | **Available** | `tests/test_mutations.py`：变异算子 × 对象族，输出 `KILL_RATE` 并进 CI |
+| 文档不漂自检 | **Available** | `tests/test_doc_consistency.py`：能力表语义/版本/子命令/flag 对着代码校验 |
 | pip 安装 | **Available** | `pip install .`（PyPI 发布待九步批准） |
 | 机读判定输出 | **Available** | `specnotary check --json`；CI/编辑器集成的地基 |
 | 英文人读视图 | **Available** | `specnotary human --lang en`；中文输出逐字节不变 |
@@ -214,6 +216,7 @@ python3 tests/test_cli.py
 ```
 
 > [!NOTE]
+> **量级预期**：把含糊压成确定性规格是有成本的——样例里 12 行运营原料展开为约 430 行机读、310 行人读施工图。适合多状态多异常的复杂需求；极小改动别用它。  
 > 无 Python：用 `skills/` 做降级检查，必须写明 `gate_mode: degraded`。  
 > 非 Cursor 用户：把 `skills/SKILL.md` 当提示词喂给任意 LLM 起草机读，再用 CLI 判定；CLI 本身不解析自然语言。  
 > Node CLI = **Deferred**，不是等价硬门禁。

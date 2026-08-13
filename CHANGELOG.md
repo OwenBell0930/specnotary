@@ -29,6 +29,8 @@ SpecNotary 遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)；
 
 ### Fixed
 
+- **第二轮独立审查修复包（2026-08-12，9 项）**：补齐 v3 新对象缺失的规则家族——跨类型 ID 撞车、`error_codes` 重复码、`data_contracts` 重复字段、`lifecycle` 重复状态、`in_scope`/`out_of_scope` 自相矛盾、`responsibilities` 自我否定、`decisions.chosen` 悬空选项；封两处证据链绕过——`evidence` 引文必须与 `source_ref` 指向的文件名一致（原料整体掉包即暴露）、人读 `generated_from` 来源声明须确指被检查的机读文件（迁移只 WARN，伪造则 FAIL）；修正两处文档漂移（能力表仍写 `sync` 自动刷新原型哈希、渲染器版本 v3/v4 不一致，`docs/gate-modes.md` 还在描述已删除的主路径图）；README 补起草量级预期。
+- **两项防退化机制**：`tests/test_mutations.py` 变异矩阵（43 个变异 × 6 类算子 × 13 个对象族，`KILL_RATE` 100% 并进 CI，新增对象不补算子即 FAIL）；`tests/test_doc_consistency.py` 文档自检（子命令 / flag / 渲染器版本 / `sync` 语义 / 品牌 / 禁止手抄测试数）。全量回归从 132 秒降到 22 秒（纯逻辑用例改进程内调用，另留端到端用例守 bash 包装）。
 - **外部红队修复包（2026-08-12 审计，11 条负例全部封死）**：原料内容哈希钉死快照（`sources[].content_hash`，原料一变即 FAIL）；`sync` 不再静默重新认证原型（须显式 `--attest-prototype`，背书是动作不是副作用）；任意类型错误的输入稳定 FAIL 不再崩溃；AC 必须关联 behavior；`action_matrix` 缺 `allowed` 或同键矛盾行 FAIL；`--allow-invalid` 产物改盖 `degraded` 并标注 forced；MCP 与 CLI 共用同一装配（`project_hint` 合并一致）；`human` 默认输出对齐 `human/spec.md`；样例补齐「ID 精确搜」行为与业务动因登记；自动主路径流程图移除（渲染器 v4——行为常为互斥分支，串成顺序流是错误语义）；证明边界唯一口径见 `docs/proof-boundary.md`。
 - Node CLI（check 与 generate）不再可能冒充 `gate_mode: hard` / `RESULT: PASS`——一律退出码 3，且不携带影子规则集。
 - `jsonschema` 未安装时 FAIL 而非静默降级。
