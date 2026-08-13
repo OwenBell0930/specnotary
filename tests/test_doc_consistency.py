@@ -19,21 +19,46 @@ sys.path.insert(0, str(ROOT / "src"))
 from specnotary.cli import COMMANDS  # noqa: E402
 from specnotary.libspec import RENDERER_VERSION  # noqa: E402
 
+# User-facing prose. CLI help and the Action manifest count: an audit found the
+# stale `sync` promise living in `cli.py`'s help string, which users read more
+# often than any markdown file.
 DOCS = [
     ROOT / "README.md",
     ROOT / "README.en.md",
     ROOT / "docs/gate-modes.md",
     ROOT / "docs/proof-boundary.md",
     ROOT / "docs/positioning.md",
+    ROOT / "docs/release-checklist.md",
     ROOT / "CONTRIBUTING.md",
+    ROOT / "CHANGELOG.md",
+    ROOT / "SECURITY.md",
     ROOT / "skills/SKILL.md",
+    ROOT / "src/specnotary/cli.py",
+    ROOT / "src/specnotary/sync.py",
+    ROOT / "action.yml",
+    ROOT / "playground/index.html",
 ]
 BRAND = "SpecNotary"
 PACKAGE = "specnotary"
 
 
 def _doc_text() -> dict[Path, str]:
-    return {p: p.read_text(encoding="utf-8") for p in DOCS if p.is_file()}
+    """Doc bodies, with released CHANGELOG entries trimmed off.
+
+    A shipped changelog entry is a historical record: it may legitimately cite
+    the renderer version or semantics of its own release. Only the newest
+    (still-shipping) section is held to current truth.
+    """
+    out: dict[Path, str] = {}
+    for p in DOCS:
+        if not p.is_file():
+            continue
+        text = p.read_text(encoding="utf-8")
+        if p.name == "CHANGELOG.md":
+            sections = re.split(r"^## \[", text, flags=re.MULTILINE)
+            text = sections[0] + ("## [" + sections[1] if len(sections) > 1 else "")
+        out[p] = text
+    return out
 
 
 def test_documented_subcommands_exist():
@@ -83,21 +108,73 @@ def test_renderer_version_matches_docs():
     assert not wrong, "stale renderer version in docs: " + "; ".join(wrong)
 
 
+# Ways prose has claimed the prototype hash refreshes itself. The first audit's
+# regex only knew 刷新原型 / refresh…prototype on the *same line* as the command,
+# so a comment one line above the command, a Python help string, and the wording
+# 自动刷新 all slipped through. Match the claim, not one phrasing of it.
+_AUTO_REFRESH_CLAIMS = (
+    re.compile(r"刷新原型"),
+    re.compile(r"自动刷新"),
+    re.compile(r"同步.{0,6}原型.{0,4}哈希"),
+    re.compile(r"refresh(?:es|ing)?\s+(?:the\s+)?prototype", re.IGNORECASE),
+    re.compile(r"prototype\s+hash.{0,20}refresh", re.IGNORECASE),
+)
+# A line that *discusses* the forbidden phrasing (a changelog entry about the
+# rule, a doc explaining what is not allowed) is not itself a false promise.
+_DISCUSSING_THE_RULE = (
+    "不", "no longer", "not ", "须", "必须", "改为", "曾", "盲区", "误判",
+    "「自动刷新」", "措辞变体", "NOT refreshed",
+)
+
+
 def test_sync_semantics_not_misstated():
     """`sync` must never be described as refreshing the prototype hash on its own.
 
-    This is the exact line an audit caught: attestation is an explicit action,
-    and prose implying otherwise manufactures false confidence.
+    Attestation is an explicit action; prose implying otherwise manufactures
+    false confidence. Scanned in a sliding window because the claim and the
+    command are often on adjacent lines (a shell comment above its command).
     """
     offenders = []
     for path, text in _doc_text().items():
-        for line in text.splitlines():
-            if PACKAGE + " sync" not in line and "sync`" not in line and "sync：" not in line:
+        lines = text.splitlines()
+        for i, line in enumerate(lines):
+            if not any(p.search(line) for p in _AUTO_REFRESH_CLAIMS):
                 continue
-            mentions_refresh = ("刷新原型" in line) or ("refresh" in line.lower() and "prototype" in line.lower())
-            if mentions_refresh and "attest" not in line:
-                offenders.append(f"{path.name}: {line.strip()[:100]}")
+            window = "\n".join(lines[max(0, i - 2): i + 3])
+            if "sync" not in window:
+                continue  # a claim about some other command
+            if "attest" in window:
+                continue  # correctly qualified
+            if any(cue in line for cue in _DISCUSSING_THE_RULE):
+                continue  # describing the rule, not promising the behavior
+            offenders.append(f"{path.name}:{i + 1}: {line.strip()[:90]}")
     assert not offenders, "sync described as auto-refreshing the prototype hash: " + "; ".join(offenders)
+
+
+def test_version_is_single_sourced():
+    """Package, CLI and release plan must cite one version."""
+    from specnotary import __version__
+
+    pyproject = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
+    m = re.search(r'^version\s*=\s*"([^"]+)"', pyproject, re.MULTILINE)
+    assert m, "pyproject has no version"
+    assert m.group(1) == __version__, f"pyproject {m.group(1)} != package {__version__}"
+    wrong = []
+    for path, text in _doc_text().items():
+        for tag in re.findall(r"tag\s+`?v(\d+\.\d+\.\d+)`?", text):
+            if tag != __version__:
+                wrong.append(f"{path.name}: tag v{tag} (package {__version__})")
+    assert not wrong, "release tag disagrees with package version: " + "; ".join(wrong)
+
+
+def test_lifecycle_diagram_declares_no_transitions():
+    """The state-set diagram must not draw arrows between lifecycle entries."""
+    from specnotary.libspec import mermaid_lifecycle
+
+    diagram = mermaid_lifecycle({"lifecycle": ["a", "b", "c"]}) or ""
+    assert "-->" not in diagram, (
+        "lifecycle diagram must not imply transitions; declaration order is not a flow"
+    )
 
 
 def test_no_hardcoded_test_counts():
@@ -142,6 +219,8 @@ TESTS = [
     test_documented_flags_exist,
     test_renderer_version_matches_docs,
     test_sync_semantics_not_misstated,
+    test_version_is_single_sourced,
+    test_lifecycle_diagram_declares_no_transitions,
     test_no_hardcoded_test_counts,
     test_capability_table_commands_runnable,
     test_brand_is_consistent,

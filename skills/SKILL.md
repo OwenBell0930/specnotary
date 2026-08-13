@@ -59,7 +59,7 @@ CLI **不解析任意前端框架**。Agent 生成可演示原型时必须同时
 
 - 每个业务控件加稳定标记：`data-spec-id="<机读控件或行为 ID>"`（写进真实 DOM/JSX，注释不算）
 - 存量项目先跑 `specnotary markers <machine.yaml> <源码目录>` 对账缺哪些标记，回填后再写 manifest
-- `generated_from_spec.hash` = 当前机读 `spec_hash`（`specnotary check` 会打印；改机读后用 `specnotary sync` 自动刷新）
+- `generated_from_spec.hash` = 当前机读 `spec_hash`（`specnotary check` 会打印）。改机读后该哈希**不会**被自动刷新：先复核原型是否仍与新机读一致，再显式 `specnotary sync <spec> --attest-prototype` 背书
 - 规格里未标 `prototype_optional` 的控件 / 行为必须映射
 - 无规格引用的控件/交互 → FAIL（仅 `role: decoration|visual` 豁免）；interaction 的 `from/to/trigger` 必须指向已声明的 id
 - LLM 对截图/文案的怀疑只能进 `semantic_warnings`（WARN，须带 evidence + confidence）

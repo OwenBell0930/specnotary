@@ -132,6 +132,19 @@ MUTANTS = [
     ("ready-undecided", "decisions", "completeness", RICH_SPEC,
      _append("decisions", {"id": "D-99", "question": {"zh": "未拍板"}, "status": "pending"}), "undecided"),
 
+    # ---- shells and placeholders (third-round audit: matrix scored 100% and
+    # still missed all of these) ----
+    ("shell-title", "title", "completeness", BASE_SPEC, _set("title", {}),
+     "requires a non-empty title"),
+    ("shell-behavior-name", "behaviors", "completeness", BASE_SPEC,
+     lambda d: ([b.pop("name", None) for b in d["behaviors"]], d)[1], "missing name"),
+    ("placeholder-then", "behaviors", "completeness", BASE_SPEC,
+     _set("behaviors.0.then", {"zh": "占位"}), "placeholder text"),
+    ("placeholder-ac", "acceptance", "completeness", BASE_SPEC,
+     _set("acceptance.0.zh", "待补"), "placeholder text"),
+    ("placeholder-overview", "overview", "completeness", BASE_SPEC,
+     _set("overview", {"summary": {"zh": "TODO"}}), "placeholder text"),
+
     # ---- evidence ledger ----
     ("evid-no-claims", "source_claims", "evidence", BASE_SPEC, _set("source_claims", []),
      "source_claims missing"),
@@ -152,12 +165,46 @@ MUTANTS = [
      "evidence cites"),
     ("evid-source-status", "sources", "evidence", BASE_SPEC,
      lambda d: (d["sources"][0].__setitem__("status", "bogus"), d)[1], "registered|superseded"),
+    ("evid-unpinned-source", "sources", "evidence", BASE_SPEC,
+     lambda d: (d["sources"][0].pop("content_hash", None), d)[1],
+     "ready requires claims pinned"),
+]
+
+# Mutations that must be rejected at parse time, before any rule runs.
+LOAD_MUTANTS = [
+    ("parse-duplicate-key", "yaml", "ambiguity",
+     lambda text: text.replace("status: ready", "status: banana\nstatus: ready", 1),
+     "duplicate key"),
 ]
 
 
 def _apply(mutation, data):
     out = mutation(copy.deepcopy(data))
     return out if isinstance(out, dict) else data
+
+
+def _run_load_mutants(verbose: bool) -> list[str]:
+    """Parse-time mutants: the loader must refuse them outright."""
+    import tempfile
+
+    survivors: list[str] = []
+    original = BASE_SPEC.read_text(encoding="utf-8")
+    for mid, family, klass, mutate, expected in LOAD_MUTANTS:
+        with tempfile.NamedTemporaryFile("w", suffix=".yaml", delete=False, encoding="utf-8") as fh:
+            fh.write(mutate(original))
+            tmp = Path(fh.name)
+        try:
+            load_spec(tmp)
+            survivors.append(f"{mid} [{klass}/{family}] SURVIVED: loaded without error")
+        except Exception as exc:  # noqa: BLE001
+            if expected in str(exc):
+                if verbose:
+                    print(f"  killed {mid:26} [{klass}/{family}]")
+            else:
+                survivors.append(f"{mid} [{klass}/{family}] wrong error: {exc}")
+        finally:
+            tmp.unlink(missing_ok=True)
+    return survivors
 
 
 def run_matrix(verbose: bool = True) -> tuple[int, int, list[str]]:
@@ -179,7 +226,9 @@ def run_matrix(verbose: bool = True) -> tuple[int, int, list[str]]:
             )
         elif verbose:
             print(f"  killed {mid:26} [{klass}/{family}]")
-    return len(MUTANTS) - len(survivors), len(MUTANTS), survivors
+    survivors += _run_load_mutants(verbose)
+    total = len(MUTANTS) + len(LOAD_MUTANTS)
+    return total - len(survivors), total, survivors
 
 
 def test_mutation_matrix_full_kill():
@@ -214,6 +263,10 @@ if __name__ == "__main__":
     print(f"\nMUTANTS: {total}")
     print(f"KILLED: {killed}")
     print(f"KILL_RATE: {rate:.1f}%")
+    print(
+        "NOTE: the denominator is registered mutants, not all possible bad specs.\n"
+        "      100% means known coverage did not regress — see docs/proof-boundary.md."
+    )
     for t in (test_matrix_covers_every_object_family, test_matrix_covers_every_operator_class):
         t()
         print(f"OK  {t.__name__}")

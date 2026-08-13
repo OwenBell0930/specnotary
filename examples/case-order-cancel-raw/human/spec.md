@@ -2,8 +2,8 @@
 <!-- spec_id: SPEC-ORDER-CANCEL-001 -->
 <!-- spec_version: 0.1 -->
 <!-- spec_hash: fc0cc2a042ab1180648dd08570b42a9970eb296ad80ec28f6a9bb20f03c635d6 -->
-<!-- body_hash: 65206e666a51f47ba0af58c1b3dbaa133f28d0d86696c0f4af4ae64e55a9a1d1 -->
-<!-- renderer_version: 4 -->
+<!-- body_hash: 984e49c39d1174b2bb0c5a829eb03b231959adf2fa2210fb7eb5435621ff127d -->
+<!-- renderer_version: 5 -->
 <!-- lang: zh -->
 <!-- gate_mode: hard -->
 <!-- 以机读 YAML 为唯一准据；禁止长期只改本文件 -->
@@ -146,11 +146,16 @@ flowchart LR
 
 6 个状态 × 1 类动作，其中明确禁止 4 项。前端显隐与置灰以下表为唯一准据。
 
-生命周期枚举顺序（非流程图；转移条件以矩阵为准）：
+已声明的状态集合（不表示转移；允许的转移以下表为准）：
 
 ```mermaid
 flowchart LR
-  S0["unpaid"] --> S1["paid_unshipped"] --> S2["fulfilling"] --> S3["shipped"] --> S4["completed"] --> S5["cancelled"]
+  S0["unpaid"]
+  S1["paid_unshipped"]
+  S2["fulfilling"]
+  S3["shipped"]
+  S4["completed"]
+  S5["cancelled"]
 ```
 
 **生命周期（编号供流程对照）：**
@@ -297,7 +302,7 @@ flowchart LR
 
 ## 16. 原料覆盖（SourceClaim）
 
-覆盖账本（附录）：原料每句话的下落。covered 6 · assumption 0 · out_of_scope 1 · 其他 0。
+覆盖账本（附录）：已登记原料条目的下落，账本完整性须人工抽查。covered 6 · assumption 0 · out_of_scope 1 · 其他 0。
 
 | ID | 处置 | 摘要 | 规格引用 |
 |----|------|------|----------|

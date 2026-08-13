@@ -5,7 +5,7 @@
 - 机读哈希：`fc0cc2a042ab1180648dd08570b42a9970eb296ad80ec28f6a9bb20f03c635d6`
 - 人读：`examples/case-order-cancel-raw/human/spec.md`
 - 原型：`examples/case-order-cancel-raw/prototype/prototype.manifest.yaml`
-- FAIL：0 · WARN：0
+- FAIL：0 · WARN：6
 
 ## 原料覆盖汇总
 
@@ -34,3 +34,9 @@
 ## 门禁
 
 **RESULT: PASS**
+- WARN: permission buyer: can=cancel_unpaid is not an action in states.action_matrix — confirm it is a capability label, not a state-machine action
+- WARN: permission buyer: can=cancel_paid_unshipped is not an action in states.action_matrix — confirm it is a capability label, not a state-machine action
+- WARN: permission buyer: can=view_refund_progress is not an action in states.action_matrix — confirm it is a capability label, not a state-machine action
+- WARN: permission cs_agent: can=force_cancel_with_reason is not an action in states.action_matrix — confirm it is a capability label, not a state-machine action
+- WARN: permission seller_ops: can=view_cancel_logs is not an action in states.action_matrix — confirm it is a capability label, not a state-machine action
+- WARN: permission risk_engine: can=flag_block_self_cancel is not an action in states.action_matrix — confirm it is a capability label, not a state-machine action

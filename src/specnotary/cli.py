@@ -38,7 +38,7 @@ COMMANDS = {
     "check": (check_main, "Hard gate: schema + rules + evidence chain (--explain, --json)"),
     "human": (human_main, "Generate human construction-grade view (--lang zh|en)"),
     "report": (report_main, "Write review-readiness report (coverage + prototype buckets)"),
-    "sync": (sync_main, "Regenerate human + refresh prototype hash after machine edits"),
+    "sync": (sync_main, "Regenerate the human view after machine edits (prototype needs --attest-prototype)"),
     "markers": (markers_main, "Diff data-spec-id markers in a source tree against spec entities (retrofit helper)"),
     "precommit": (precommit_main, "Gate multiple specs at once (pre-commit hook entry)"),
     "mcp": (mcp_main, "Run the stdio MCP server exposing check/gap/report to agents"),

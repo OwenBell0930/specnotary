@@ -71,31 +71,41 @@ def main(argv: list[str] | None = None) -> int:
         project = {**project, **data["project_hint"]}
     result = validate(data, project, spec_path=src, check_human=False)
 
-    if result["fail"] and not allow_invalid:
+    # The human view derives from the machine source alone. Prototype
+    # attestation is a separate, later concern — letting a stale prototype
+    # block regeneration made `sync` unusable on any project with a prototype
+    # and left users unable to tell "human not synced" from "prototype not
+    # re-endorsed".
+    blocking = [e for e in result["fail"] if not e.startswith("prototype")]
+    proto_fails = [e for e in result["fail"] if e.startswith("prototype")]
+
+    if blocking and not allow_invalid:
         print("FAIL: machine spec has FAIL items — refuse to write human view")
         print("Hint: fix FAIL first, or pass --allow-invalid to force generate")
-        for e in result["fail"]:
+        for e in blocking:
             print(f"FAIL: {e}")
         for w in result["warn"]:
             print(f"WARN: {w}")
         return 1
 
     # A human view forced past a failing gate must never carry the hard stamp.
-    mode = "hard" if not result["fail"] else "degraded"
+    mode = "hard" if not blocking else "degraded"
     md = render_human(data, source=relpath_from_root(src, find_repo_root(src)), gate_mode=mode, lang=lang)
-    if result["fail"]:
+    if blocking:
         md = md.replace(
             f"<!-- gate_mode: {mode} -->",
-            f"<!-- gate_mode: {mode} -->\n<!-- forced: --allow-invalid, FAIL_COUNT={len(result['fail'])} -->",
+            f"<!-- gate_mode: {mode} -->\n<!-- forced: --allow-invalid, FAIL_COUNT={len(blocking)} -->",
             1,
         )
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(md, encoding="utf-8")
     print(f"wrote: {out}")
-    if result["fail"]:
+    if blocking:
         print(f"NOTE: generated with --allow-invalid despite FAIL — stamped gate_mode: {mode}")
-        for e in result["fail"]:
+        for e in blocking:
             print(f"FAIL: {e}")
+    for e in proto_fails:
+        print(f"NOTE: human view regenerated; prototype still needs re-attestation — {e}")
     for w in result["warn"]:
         print(f"WARN: {w}")
     return 0

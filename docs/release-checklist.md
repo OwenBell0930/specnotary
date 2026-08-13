@@ -17,7 +17,9 @@
 | 8 | 无真实公司资料 / 未脱敏内容 | 人工复查 examples/ docs/ | 发布前复查 |
 | 9 | 名称无混淆 | **SpecNotary**（2026-08-12 定名）：web 初查零命中；曾用名 SpecAnvil 因 specanvil.com 撞名弃用。发布前跑六渠道终查：GitHub org+repo / npm / PyPI / crates.io / 域名 whois / X+LinkedIn | ⏳ 发布前终查 |
 | 10 | 个人资产隔离 | `.cursor/` 运营指针不入 git；`git ls-files .cursor/` 应为空 | ✅ 本轮已移除 |
-| 11 | 外部无上下文红队 | 换一个未参与开发的模型/人，对照 `docs/proof-boundary.md` 打对抗负例，全部有 FAIL 或有边界解释 | 每次发布前执行 |
+| 11 | 外部无上下文红队 | 换一个未参与开发的模型/人，对照 `docs/proof-boundary.md` 打对抗负例，全部有 FAIL 或有边界解释；**新发现一律转为 `tests/test_mutations.py` 变异用例** | 每次发布前执行（已跑三轮：11 + 9 + 14 项） |
+| 13 | 变异矩阵与文档自检绿 | `python3 tests/test_mutations.py`（KILL_RATE 100%）· `python3 tests/test_doc_consistency.py` | ✅ |
+| 14 | 版本单一来源 | 包 / CLI / 发布 tag 同一版本（由 `test_version_is_single_sourced` 守） | ✅ 0.3.0 |
 | 12 | 承诺与证明对齐 | README 中英承诺语句逐条对照 `docs/proof-boundary.md` | ✅ 本轮已校准 |
 
 ## 增长面就绪（本地已实现，发布后生效）

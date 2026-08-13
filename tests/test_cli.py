@@ -508,6 +508,9 @@ def test_sync_roundtrip_requires_attest():
         assert stale_code == 1, stale_out
         assert "stale" in stale_out
         # Plain sync regenerates the human but must NOT re-certify the prototype.
+        # Asserting only the exit code once let a real bug hide here: the human
+        # view was not regenerated at all. Assert the artifact, not just the code.
+        human = case / "human" / "spec.md"
         p = subprocess.run(
             ["bash", str(ROOT / "cli" / "run-sync.sh"), str(spec)],
             capture_output=True,
@@ -515,6 +518,11 @@ def test_sync_roundtrip_requires_attest():
         )
         assert p.returncode == 1, p.stdout + p.stderr
         assert "NOT refreshed" in p.stdout + p.stderr
+        assert "original_channel" in human.read_text(encoding="utf-8"), (
+            "plain sync must regenerate the human view — a stale prototype is a "
+            "separate concern and must not block the derivation"
+        )
+        assert "needs re-attestation" in p.stdout
         code, out = run(spec)
         assert code == 1, out
         assert "prototype stale" in out
@@ -595,14 +603,17 @@ def test_markers_command_reconciles():
         assert "btn_search" in out  # required but unmarked
 
 
-def test_v3_toc_overview_and_diagrams():
+def test_human_view_toc_overview_and_diagrams():
     text = (ROOT / "examples/case-order-cancel-raw/human/spec.md").read_text(encoding="utf-8")
     assert "## 目录" in text
     assert "概览" in text and "设计原则" in text
-    assert text.count("```mermaid") >= 2  # architecture + lifecycle
+    assert text.count("```mermaid") >= 2  # architecture + state set
     # v4: no auto main-path chain — behaviors are often branches, not a sequence
     assert "flowchart TD" not in text
-    assert "非流程图" in text
+    # v5: the state diagram lists states without asserting transitions
+    assert "不表示转移" in text
+    state_block = text.split("```mermaid")[2].split("```")[0]
+    assert "-->" not in state_block, "state set diagram must not draw transitions"
     assert "职责边界" in text and "不负责" in text
 
 
@@ -700,13 +711,37 @@ def test_source_content_hash_pins_material():
         assert "content changed" in out2
 
 
-def test_ready_missing_content_hash_warn():
-    data = load_spec(ROOT / "examples/case-list-search/machine/spec.yaml")
+def test_ready_missing_content_hash_fails_draft_warns():
+    """PASS is defined as resting on a pinned snapshot, so ready must enforce it."""
+    spec = ROOT / "examples/case-list-search/machine/spec.yaml"
+    data = load_spec(spec)
     data["sources"][0].pop("content_hash")
-    result = validate(
-        data, {}, spec_path=ROOT / "examples/case-list-search/machine/spec.yaml"
-    )
-    assert any("not pinned" in w for w in result["warn"]), result
+    ready = validate(data, {}, spec_path=spec, check_human=False)
+    assert any("ready requires claims pinned" in e for e in ready["fail"]), ready
+    data["status"] = "draft"
+    draft = validate(data, {}, spec_path=spec, check_human=False)
+    assert not any("content_hash" in e for e in draft["fail"]), draft
+    assert any("not pinned" in w for w in draft["warn"]), draft
+
+
+def test_stale_prototype_does_not_block_human_regen():
+    """Regression: prototype attestation state must not gate the derivation."""
+    with tempfile.TemporaryDirectory() as td:
+        case = Path(td) / "case"
+        shutil.copytree(ROOT / "examples/case-order-cancel-raw", case)
+        spec = case / "machine" / "spec.yaml"
+        human = case / "human" / "spec.md"
+        spec.write_text(spec.read_text(encoding="utf-8").replace("2 小时", "30 天"), encoding="utf-8")
+        env = {**os.environ, "PYTHONPATH": str(ROOT / "src")}
+        p = subprocess.run(
+            [sys.executable, "-m", "specnotary.generate_human", str(spec)],
+            capture_output=True, text=True, env=env,
+        )
+        assert p.returncode == 0, p.stdout + p.stderr
+        text = human.read_text(encoding="utf-8")
+        assert "30 天" in text
+        assert "<!-- gate_mode: hard -->" in text  # machine itself is clean
+        assert "re-attestation" in p.stdout
 
 
 def test_allow_invalid_stamps_degraded():
@@ -899,7 +934,8 @@ if __name__ == "__main__":
         test_ac_missing_behavior_link_fail,
         test_matrix_missing_allowed_and_conflict_fail,
         test_source_content_hash_pins_material,
-        test_ready_missing_content_hash_warn,
+        test_ready_missing_content_hash_fails_draft_warns,
+        test_stale_prototype_does_not_block_human_regen,
         test_allow_invalid_stamps_degraded,
         test_human_default_out_standard_layout,
         test_mcp_report_matches_cli,
@@ -923,7 +959,7 @@ if __name__ == "__main__":
         test_declared_ref_in_text_ok,
         test_spa_source_markers_and_comments,
         test_markers_command_reconciles,
-        test_v3_toc_overview_and_diagrams,
+        test_human_view_toc_overview_and_diagrams,
         test_v3_data_contract_error_codes_decisions,
         test_decision_undecided_blocks_ready,
         test_decision_decided_passes,

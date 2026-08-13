@@ -57,7 +57,7 @@
 | 需求写了很长，研发仍要猜显隐、文案、默认值 | 人读视图强制线框 · 控件表 · 状态/动作矩阵 · 编号主路径 |
 | 「智能 / 尽快 / 体验好」冒充可开发 | 硬门禁 `FAIL`：空话 given/when/then、不可观察 AC、占位 ui/defaults 直接否决 |
 | 人读与机读各改各的，越改越漂 | **以机读 YAML 为唯一准据**（single source of truth）；人读只由生成器产出，改正文即 FAIL |
-| 评审时说不清原料哪句落到了哪条规格 | SourceClaim 覆盖闭环：每条原料有处置，每个必选实体有出处 |
+| 评审时说不清原料哪句落到了哪条规格 | SourceClaim 账本：**已登记**的每条原料有处置、每个必选实体有出处，原料内容被哈希钉死（账本完整性由人抽查，见[证明边界](docs/proof-boundary.md)） |
 | 原型与规格各自演化 | PrototypeManifest + HTML `data-spec-id` 落点核对 |
 | 未决事项假装已就绪 | `Pending` 须齐五字段；挂在 `ready` 上 → `FAIL` |
 | 没装 Python 就没法跑硬门禁 | 可用 Skill 降级检查，必须标 `gate_mode: degraded`；Node CLI = Deferred |
@@ -91,7 +91,7 @@
 | 通用 `action_matrix`（非订单域样例） | **Available** | 见 `examples/case-list-search/` |
 | Skill 起草 / 降级检查 | **Available** | 降级须标 `degraded` |
 | 原料覆盖（SourceClaim） | **Available** | 原料文件必须存在；必选实体必须被引用；`specnotary report` |
-| 全局视角人读（目录/概览/架构图/职责/数据契约/错误码/决策记录） | **Available** | 渲染器 v4；mermaid 图确定性生成或随机读防漂 |
+| 全局视角人读（目录/概览/架构图/职责/数据契约/错误码/决策记录） | **Available** | 渲染器 v5；mermaid 图确定性生成或随机读防漂 |
 | 决策记录门禁 | **Available** | `decisions` 未拍板在 `ready` 上 FAIL |
 | 人读哈希 / stale 检测 | **Available** | `spec_hash` + 正文逐字对照 + `renderer_version`；只改正文也 FAIL |
 | 原型 Manifest 一致性 | **Available** | manifest 哈希 + `data-spec-id` 落点（HTML/React/Vue 源）；无 manifest 则跳过并 WARN |
@@ -205,8 +205,10 @@ specnotary report examples/case-order-cancel-raw/machine/spec.yaml
 ```bash
 mkdir -p my-feature/machine && cp templates/machine/spec.template.yaml my-feature/machine/spec.yaml
 specnotary check my-feature/machine/spec.yaml --explain   # draft 即 PASS；READY-GAP 告诉你距 ready 差什么
-# ……填内容；改完机读后一条命令同步人读与原型哈希：
+# ……填内容；改完机读后重新生成人读（真派生物）：
 specnotary sync my-feature/machine/spec.yaml
+# 原型不由本命令重生成——复核原型后再显式背书：
+specnotary sync my-feature/machine/spec.yaml --attest-prototype
 ```
 
 **回归：**

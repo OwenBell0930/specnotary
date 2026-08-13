@@ -19,6 +19,7 @@ except ImportError:  # pragma: no cover
     jsonschema = None
 
 REQUIRED_TOP = ["spec_version", "id", "title", "status", "behaviors", "acceptance"]
+PLACEHOLDER = ("占位", "待补", "todo", "tbd", "placeholder", "xxx", "示例内容", "lorem ipsum")
 VAGUE = (
     "体验好",
     "尽量快",
@@ -36,7 +37,7 @@ VAGUE = (
     "blazingly fast",
     "best-in-class",
 )
-RENDERER_VERSION = "4"
+RENDERER_VERSION = "5"
 SCHEMA_PATH = Path(__file__).resolve().parent / "schemas" / "machine-spec.schema.json"
 CLAIM_DISPOSITIONS = {
     "covered",
@@ -49,6 +50,39 @@ CLAIM_DISPOSITIONS = {
 OPEN_CONFLICT = {"", "open", "unresolved", "待确认", "tbd"}
 
 
+class DuplicateKeyError(RuntimeError):
+    """A mapping declared the same key twice — the source of truth is ambiguous."""
+
+
+class _StrictLoader(getattr(yaml, "SafeLoader", object) if yaml else object):
+    """SafeLoader that refuses duplicate mapping keys.
+
+    Plain YAML silently keeps the last value, so `status: banana` followed by
+    `status: ready` parses as ready with no warning. A file that means two
+    different things cannot be a single source of truth.
+    """
+
+
+def _no_duplicate_keys(loader, node, deep=False):  # pragma: no cover - thin shim
+    mapping: dict = {}
+    for key_node, value_node in node.value:
+        key = loader.construct_object(key_node, deep=deep)
+        if key in mapping:
+            raise DuplicateKeyError(
+                f"duplicate key {key!r} at line {key_node.start_mark.line + 1} "
+                "— the machine source must be unambiguous"
+            )
+        mapping[key] = loader.construct_object(value_node, deep=deep)
+    return mapping
+
+
+if yaml is not None:
+    _StrictLoader.add_constructor(
+        yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
+        lambda loader, node: _no_duplicate_keys(loader, node, deep=False),
+    )
+
+
 def load_spec(path: Path) -> Any:
     text = path.read_text(encoding="utf-8")
     suffix = path.suffix.lower()
@@ -57,7 +91,7 @@ def load_spec(path: Path) -> Any:
             raise RuntimeError(
                 "PyYAML missing. Install: pip install pyyaml  OR use JSON  OR degraded Skill mode."
             )
-        return yaml.safe_load(text)
+        return yaml.load(text, Loader=_StrictLoader)  # noqa: S506 - strict SafeLoader subclass
     if suffix == ".json":
         return json.loads(text)
     raise RuntimeError(f"unsupported suffix {suffix} (use .yaml/.yml/.json)")
@@ -75,7 +109,9 @@ def _lang(node: Any, lang: str = "zh") -> str:
             return str(node["zh"])
         if "en" in node:
             return str(node["en"])
-        return str(node)
+        # An empty/shape-only mapping carries no text; stringifying it would
+        # yield a literal "{}" that later emptiness checks would accept.
+        return "" if not node else str(node)
     return "" if node is None else str(node)
 
 
@@ -93,6 +129,17 @@ def dangling_refs(data: dict) -> list[str]:
     blob = json.dumps(data, ensure_ascii=False, default=str)
     known = known_entity_ids(data)
     return sorted({tok for tok in REF_TOKEN.findall(blob) if tok not in known})
+
+
+def _is_placeholder(text: str) -> bool:
+    """Scaffold text that survived into a ready spec.
+
+    The shipped template deliberately uses 「占位」 so a fresh copy passes as a
+    draft; that same word must not be allowed to reach ready, or the tool would
+    be teaching people to write empty shells that clear the gate.
+    """
+    stripped = _strip_ui_literals(text).strip().lower()
+    return any(marker in stripped for marker in PLACEHOLDER)
 
 
 def _strip_ui_literals(text: str) -> str:
@@ -159,7 +206,7 @@ _EN = {
     "{n} 类角色；可执行动作与状态矩阵联动。": "{n} actor roles; allowed actions tie back to the state matrix.",
     "| 角色 | 说明 | 可执行动作 |": "| Role | Description | Allowed actions |",
     "{s} 个状态 × {a} 类动作，其中明确禁止 {d} 项。前端显隐与置灰以下表为唯一准据。": "{s} states × {a} action kinds, {d} explicitly denied. The table below is the single source of truth for enabling/hiding controls.",
-    "生命周期枚举顺序（非流程图；转移条件以矩阵为准）：": "Lifecycle enumeration order (not a flow diagram; transitions are governed by the matrix):",
+    "已声明的状态集合（不表示转移；允许的转移以下表为准）：": "Declared state set (no transitions implied; allowed transitions are governed by the table below):",
     "**生命周期（编号供流程对照）：**": "**Lifecycle (numbered for flow reference):**",
     "| 状态 | 动作 | 是否允许 | 说明 |": "| State | Action | Allowed | Notes |",
     "| （机读未提供 action_matrix） | — | — | — |": "| (machine source has no action_matrix) | — | — | — |",
@@ -193,7 +240,7 @@ _EN = {
     "- 失败兜底: {v}": "- Failure fallback: {v}",
     "- 工具边界:": "- Tool boundary:",
     "- 人工接管:": "- Human takeover:",
-    "覆盖账本（附录）：原料每句话的下落。covered {c} · assumption {a} · out_of_scope {o} · 其他 {r}。": "Coverage ledger (appendix): where every source statement landed. covered {c} · assumption {a} · out_of_scope {o} · other {r}.",
+    "覆盖账本（附录）：已登记原料条目的下落，账本完整性须人工抽查。covered {c} · assumption {a} · out_of_scope {o} · 其他 {r}。": "Coverage ledger (appendix): where each registered source item landed; ledger completeness needs human spot-checking. covered {c} · assumption {a} · out_of_scope {o} · other {r}.",
     "| ID | 处置 | 摘要 | 规格引用 |": "| ID | Disposition | Summary | Spec refs |",
     "**EN title:** {t}": "**Title (zh):** {t}",
     "<!-- 以机读 YAML 为唯一准据；禁止长期只改本文件 -->": "<!-- Machine YAML is the single source of truth; do not hand-edit this file long-term -->",
@@ -430,6 +477,15 @@ def _validate_source_layer(
                             f"({recorded[:12]}… != {actual[:12]}…) — re-review claims and update content_hash"
                         )
                 elif status == "ready":
+                    # PASS is defined as "claims rest on an unchanged source
+                    # snapshot" (docs/proof-boundary.md). An unpinned source on a
+                    # ready spec would make that definition false, so it must
+                    # block rather than warn.
+                    fail.append(
+                        f"source {src.get('id')}: no content_hash — ready requires claims pinned to a "
+                        f"source snapshot (sha256 of {Path(str(path)).name})"
+                    )
+                else:
                     warn.append(
                         f"source {src.get('id')}: no content_hash — claims not pinned to source content"
                     )
@@ -572,6 +628,31 @@ def _layer_schema(data: dict, fail: list[str]) -> None:
         fail.append(f"schema validation error: {exc}")
 
 
+KNOWN_TOP_LEVEL = frozenset(
+    {
+        "spec_version", "id", "title", "status", "baseline", "in_scope", "out_of_scope",
+        "open_questions", "actors", "permissions", "defaults", "states", "ui",
+        "empty_states", "object_ai", "behaviors", "acceptance", "pending",
+        "project_hint", "sources", "source_claims", "overview", "architecture",
+        "responsibilities", "data_contracts", "error_codes", "decisions",
+        "content_hash",
+    }
+)
+
+
+def _warn_unknown_top_level(data: dict, warn: list[str]) -> None:
+    """Unknown top-level keys are consumed by nothing.
+
+    The schema allows extensions on purpose, but a typo (`bizRuls:`) silently
+    evaporates a business rule the author believed they had written down.
+    """
+    for key in data:
+        if key not in KNOWN_TOP_LEVEL and not str(key).startswith("x_"):
+            warn.append(
+                f"unknown top-level field {key!r} — nothing consumes it (prefix with x_ to mark it intentional)"
+            )
+
+
 def _text_key(node: Any) -> str:
     """Normalized comparison key for a bilingual-or-plain text item."""
     if isinstance(node, dict):
@@ -677,14 +758,27 @@ def _layer_structure(data: dict, fail: list[str], warn: list[str]) -> list[dict]
                 fail.append(f"id collision across kinds: {i} is both {named[i]} and {kind}")
             named[i] = kind
 
+    matrix_actions = {
+        str(r.get("action")) for r in action_matrix_rows(data.get("states") or {}) if r.get("action")
+    }
     for p in data.get("permissions") or []:
         if not isinstance(p, dict):
             continue
         actor = p.get("actor")
         if actor and str(actor) not in actor_ids:
             fail.append(f"permission references missing actor: {actor}")
+        # `can` entries are sometimes coarser capability labels (data scope) and
+        # sometimes literal matrix actions. Flag the divergence so a reviewer
+        # decides, but do not fail legitimate two-layer modelling.
+        for act in p.get("can") or []:
+            if matrix_actions and str(act) not in matrix_actions:
+                warn.append(
+                    f"permission {actor}: can={act} is not an action in states.action_matrix "
+                    "— confirm it is a capability label, not a state-machine action"
+                )
 
     _check_new_object_integrity(data, fail, warn)
+    _warn_unknown_top_level(data, warn)
 
     for a in acceptance if isinstance(acceptance, list) else []:
         if not isinstance(a, dict):
@@ -734,6 +828,8 @@ def _layer_ready(data: dict, matrix: list[dict], fail: list[str]) -> None:
         fail.append("status=ready requires actors")
     if not [s for s in (data.get("in_scope") or []) if _lang(s, "zh") or _lang(s, "en")]:
         fail.append("status=ready requires non-empty in_scope")
+    if not (_lang(data.get("title"), "zh") or _lang(data.get("title"), "en")).strip():
+        fail.append("status=ready requires a non-empty title")
     defaults = data.get("defaults") or {}
     real_defaults = [
         k
@@ -761,12 +857,16 @@ def _layer_ready(data: dict, matrix: list[dict], fail: list[str]) -> None:
         if not isinstance(b, dict):
             continue
         bid = b.get("id")
+        if not (_lang(b.get("name"), "zh") or _lang(b.get("name"), "en")).strip():
+            fail.append(f"behavior {bid}: missing name — the human view would render an unnamed step")
         for field in ("given", "when", "then"):
             clause = (_lang(b.get(field), "zh") + " " + _lang(b.get(field), "en")).strip()
             if not clause:
                 fail.append(f"behavior {bid}: {field} is empty")
             elif any(v in _strip_ui_literals(clause).lower() for v in VAGUE):
                 fail.append(f"behavior {bid}: {field}-clause too vague for ready")
+            elif _is_placeholder(clause):
+                fail.append(f"behavior {bid}: {field} is still placeholder text")
     for a in acceptance if isinstance(acceptance, list) else []:
         if not isinstance(a, dict):
             continue
@@ -780,6 +880,15 @@ def _layer_ready(data: dict, matrix: list[dict], fail: list[str]) -> None:
             for v in ("体验好", "功能正常", "good ux", "as fast")
         ):
             fail.append(f"acceptance {a.get('id')}: not observable")
+        elif _is_placeholder(text):
+            fail.append(f"acceptance {a.get('id')}: is still placeholder text")
+    overview_summary = (
+        _lang((data.get("overview") or {}).get("summary"), "zh")
+        + " "
+        + _lang((data.get("overview") or {}).get("summary"), "en")
+    ).strip()
+    if overview_summary and _is_placeholder(overview_summary):
+        fail.append("overview.summary is still placeholder text")
     for p in pending if isinstance(pending, list) else []:
         if not _pending_ok(p):
             fail.append(
@@ -1026,11 +1135,18 @@ def _mermaid_label(text: str) -> str:
 
 
 def mermaid_lifecycle(states: dict) -> str | None:
-    """Deterministic lifecycle-order diagram from states.lifecycle."""
+    """Render the declared states as an unconnected set, never as a chain.
+
+    v5: arrows previously chained lifecycle entries in declaration order,
+    which asserted transitions the machine source never declared — the
+    order-cancel sample rendered `completed --> cancelled`, which is simply
+    wrong. Transition truth lives in action_matrix; the diagram only shows
+    which states exist.
+    """
     chain = [str(s) for s in (states.get("lifecycle") or []) if s]
     if len(chain) < 2:
         return None
-    nodes = " --> ".join(f'S{i}["{_mermaid_label(s)}"]' for i, s in enumerate(chain))
+    nodes = "\n  ".join(f'S{i}["{_mermaid_label(s)}"]' for i, s in enumerate(chain))
     return "flowchart LR\n  " + nodes
 
 
@@ -1179,7 +1295,7 @@ def render_human(data: dict, source: str, gate_mode: str = "hard", lang: str = "
         ]
     life_mermaid = mermaid_lifecycle(states)
     if life_mermaid:
-        sec += [t("生命周期枚举顺序（非流程图；转移条件以矩阵为准）："), "", "```mermaid", life_mermaid, "```", ""]
+        sec += [t("已声明的状态集合（不表示转移；允许的转移以下表为准）："), "", "```mermaid", life_mermaid, "```", ""]
     if lifecycle:
         sec.append(t("**生命周期（编号供流程对照）：**"))
         for i, s in enumerate(lifecycle, 1):
@@ -1350,7 +1466,7 @@ def render_human(data: dict, source: str, gate_mode: str = "hard", lang: str = "
     if claims:
         buckets = claim_summary(data)
         sec = [
-            t("覆盖账本（附录）：原料每句话的下落。covered {c} · assumption {a} · out_of_scope {o} · 其他 {r}。").format(
+            t("覆盖账本（附录）：已登记原料条目的下落，账本完整性须人工抽查。covered {c} · assumption {a} · out_of_scope {o} · 其他 {r}。").format(
                 c=len(buckets.get("covered") or []),
                 a=len(buckets.get("assumption") or []),
                 o=len(buckets.get("out_of_scope") or []),

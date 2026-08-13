@@ -55,8 +55,10 @@ specnotary check examples/case-order-cancel-bad/machine/spec.fixed.yaml
 cp templates/machine/spec.template.yaml my-feature/machine/spec.yaml
 specnotary check my-feature/machine/spec.yaml --explain   # READY-GAP tells you what ready still needs
 
-# After editing the machine source: regenerate human view + refresh prototype hash
+# After editing the machine source: regenerate the human view (a real derivation)
 specnotary sync my-feature/machine/spec.yaml
+# The prototype is not regenerated here — re-verify it, then endorse explicitly:
+specnotary sync my-feature/machine/spec.yaml --attest-prototype
 
 # English human view
 specnotary human my-feature/machine/spec.yaml out.md --lang en
