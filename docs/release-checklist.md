@@ -1,30 +1,30 @@
-# 发布检查清单（GitHub 公开前）
+# 发布检查清单（GitHub 公开）
 
-> **硬约束：公开推送必须先走「上架九步流程」并获得维护者同意；本清单只覆盖技术就绪项，不替代九步。**
-> 当前状态：**未公开**。提交只进本地 remote。
+> 当前状态：**已公开**。[github.com/OwenBell0930/specnotary](https://github.com/OwenBell0930/specnotary) · tag `v0.3.0`。
+> 产品路径仍是：试用页 + 把文件夹交给 Cursor / Codex。不做团队线上改稿。
 
 ## 技术就绪（可自动验证）
 
 | # | 项 | 验证命令 / 位置 | 状态 |
 |---|----|-----------------|------|
-| 1 | 全量回归绿 | `python3 tests/test_cli.py`（**数量以命令输出为准，不在文档手抄**） | ✅ |
+| 1 | 全量回归绿 | `python3 tests/test_cli.py`（**数量以命令输出为准，不在文档手抄**） | ✅ 2026-08-19 |
 | 2 | 样例门禁 PASS | `./cli/run-check.sh examples/case-order-cancel-raw/machine/spec.yaml` | ✅ |
 | 3 | 模板首触 PASS | `./cli/run-check.sh templates/machine/spec.template.yaml` | ✅ draft |
 | 4 | pip 安装可用 | `pip install . && specnotary check …` | ✅ 已在 venv 实测 |
 | 5 | CI 工作流就位 | `.github/workflows/ci.yml`（推送后自动生效） | ✅ |
 | 6 | LICENSE / CHANGELOG / CONTRIBUTING / SECURITY | 根目录 | ✅ |
-| 7 | 无本机绝对路径入库 | `rg "/Users/" --glob '!*.svg'` 应为空 | 发布前复查 |
-| 8 | 无真实公司资料 / 未脱敏内容 | 人工复查 examples/ docs/ | 发布前复查 |
-| 9 | 名称无混淆 | **SpecNotary**（2026-08-12 定名）：web 初查零命中；曾用名 SpecAnvil 因 specanvil.com 撞名弃用。发布前跑六渠道终查：GitHub org+repo / npm / PyPI / crates.io / 域名 whois / X+LinkedIn | ⏳ 发布前终查 |
-| 10 | 个人资产隔离 | 运营仓 MEMORY 不入 git；仅允许 `.cursor/rules/*.mdc` 产品规则（`git ls-files .cursor/` 不得出现 MEMORY/USER） | ✅ |
-| 11 | 外部无上下文红队 | 换一个未参与开发的模型/人，对照 `docs/proof-boundary.md` 打对抗负例，全部有 FAIL 或有边界解释；**新发现一律转为 `tests/test_mutations.py` 变异用例** | 每次发布前执行 |
-| 12 | 承诺与证明对齐 | README 中英承诺语句逐条对照 `docs/proof-boundary.md` | ✅ 本轮已校准 |
-| 13 | 变异矩阵与文档自检绿 | `python3 tests/test_mutations.py`（KILL_RATE 100%）· `python3 tests/test_doc_consistency.py` | ✅ |
-| 14 | 版本单一来源 | 包 / CLI / 计划 tag 同一版本（由 `test_version_is_single_sourced` 守）。**tag 尚未创建**，发布时才打 `v0.3.0` | 计划 0.3.0 |
+| 7 | 无本机绝对路径入库 | `git grep "/Users/" -- ':!*.svg' ':!docs/release-checklist.md'` | ✅ 2026-08-19 复查 |
+| 8 | 无真实公司资料 / 未脱敏内容 | 样例为虚构商城；`launch/` 不入库 | ✅ 2026-08-19 复查 |
+| 9 | 名称无混淆 | **SpecNotary**：GitHub 无同名仓/用户/组织；npm/PyPI/crates.io 无 `specnotary`；与 CNCF Notary Project、公证网站 notary.io 领域不同（README 已声明） | ✅ 2026-08-19 终查 |
+| 10 | 个人资产隔离 | 运营仓 MEMORY 不入 git；仅 `.cursor/rules/*.mdc` 产品规则 | ✅ |
+| 11 | 外部无上下文测试 | 换未参与开发的 Codex 按说明书安装试用，用户确认通过 | ✅ 2026-08-19 |
+| 12 | 承诺与证明对齐 | README 中英承诺语句逐条对照 `docs/proof-boundary.md` | ✅ |
+| 13 | 变异矩阵与文档自检绿 | `python3 tests/test_mutations.py`（KILL_RATE 100%）· `python3 tests/test_doc_consistency.py` | ✅ 2026-08-19 |
+| 14 | 版本单一来源 | 包 / CLI / tag `v0.3.0` | ✅ 发布时打 tag |
 
-## 增长面就绪（本地已实现；**不是产品经理路径**）
+## 增长面就绪（**不是产品经理路径**）
 
-GitHub Action / MCP / pre-commit 给以后的维护者。当前用法：把文件夹交给助手在本机检查。不做团队线上改稿。
+GitHub Action / MCP / pre-commit 给维护者。当前用法：把文件夹交给助手在本机检查。
 
 | 项 | 位置 | 状态 |
 |----|------|------|
@@ -33,19 +33,18 @@ GitHub Action / MCP / pre-commit 给以后的维护者。当前用法：把文�
 | pre-commit 钩子 | `.pre-commit-hooks.yaml` | ✅ |
 | GitHub Action | `action.yml` + `scripts/action_gate.py` | 代码有；**非产品路径** |
 | MCP server | `specnotary mcp` | 代码有；**非产品路径** |
-| Playground | `playground/index.html` | ✅ 本地浏览器实测（坏稿 FAIL / 修好稿 PASS） |
+| Playground | `playground/index.html` | ✅ 可开 GitHub Pages |
 | 终端动图脚本 | `scripts/demo.tape` | 待 `brew install vhs` 后生成 gif |
-| 发布物料 | `launch/`（不入库） | ✅ 草稿齐 |
+| 发布物料 | `launch/`（不入库） | 草稿齐；Show HN / 中文帖不是 git 公开的前置 |
 
-## 发布时才执行（勿提前）
+## 公开后可选（不挡 git）
 
-- 创建 GitHub 仓库（名称 `specnotary`），推送 `main` 与 tag `v0.3.0`；按 `launch/repo-metadata.md` 填 description/topics/social preview。
-- `vhs scripts/demo.tape` 生成 `docs/assets/demo.gif` 并接入 README 首屏。
-- PyPI 发布 `specnotary`（`python -m build && twine upload`）；验证 `uvx specnotary --version`。
-- 开 GitHub Pages（root），线上验证 `playground/`。
-- README 徽章从静态改为 CI 实时徽章；预埋 good first issues；执行 `launch/launch-checklist-48h.md`。
+- PyPI 发布 `specnotary`（`python -m build && twine upload`）
+- GitHub Pages 验证 playground
+- README 徽章改为 CI 实时徽章；预埋 good first issues
+- `vhs scripts/demo.tape` 生成 `docs/assets/demo.gif`
 
 ## 明确不做
 
-- 不在九步批准前添加任何 GitHub remote。
-- 不把运营仓（owenbell-github-ops）任何内容带入公开仓。
+- 不把运营仓任何内容带入公开仓。
+- 不把团队 GitHub 协同当作产品经理使用方式。

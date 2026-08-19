@@ -109,7 +109,7 @@
 | 悬空引用检查 | **Available** | 文本提及 `P-*`/`AC-*`/`SRC-*` 必须真实存在 |
 | 变异覆盖率度量 | **Available** | `tests/test_mutations.py`：变异算子 × 对象族，输出 `KILL_RATE` 并进 CI |
 | 文档不漂自检 | **Available** | `tests/test_doc_consistency.py`：能力表语义/版本/子命令/flag 对着代码校验 |
-| pip 安装 | **Available** | `pip install .`（PyPI 发布待九步批准） |
+| pip 安装 | **Available** | 克隆后 `pip install .`（PyPI 尚未发布） |
 | 机读判定输出 | **Available** | `specnotary check --json`：含 `fail_by_layer`（machine/source/human/prototype，直接告诉集成方该改哪个产物） |
 | 英文人读视图 | **Available** | `specnotary human --lang en`；中文输出逐字节不变 |
 | pre-commit 钩子 | **维护者可选** | 助手本机检查即可。不是产品经理路径，也不做团队线上协同 |
@@ -298,7 +298,7 @@ python3 tests/test_cli.py
 | [`docs/positioning.md`](docs/positioning.md) | 与 GitHub spec-kit / OpenSpec 的关系（对方文档可 ingest，无一键转 YAML） |
 | [`docs/empty-talk-corpus.md`](docs/empty-talk-corpus.md) | 空话好坏句子校准集（已知词表，不是一般 NLP） |
 | [`docs/skill-boundary.md`](docs/skill-boundary.md) | CLI 与 Skill 边界 |
-| [`docs/release-checklist.md`](docs/release-checklist.md) | 公开前技术就绪清单（九步之外的部分） |
+| [`docs/release-checklist.md`](docs/release-checklist.md) | 公开前技术就绪清单 |
 | [`CHANGELOG.md`](CHANGELOG.md) · [`CONTRIBUTING.md`](CONTRIBUTING.md) · [`SECURITY.md`](SECURITY.md) | 版本 · 贡献 · 安全 |
 | [`examples/README.md`](examples/README.md) | 案例索引 |
 | [`skills/SKILL.md`](skills/SKILL.md) | Skill 规则 |
@@ -307,4 +307,4 @@ python3 tests/test_cli.py
 
 ## Status
 
-OwenBell · SpecNotary 未公开（experimental preview）· 上传 GitHub 前走九步复核（**上传即公开**）
+OwenBell · SpecNotary 公开预览（v0.3.0）· [GitHub](https://github.com/OwenBell0930/specnotary) · 产品路径：试用页 + 把文件夹交给 Cursor / Codex
