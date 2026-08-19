@@ -6,8 +6,8 @@
 
 <p align="center">
   <strong>Forge vague requirements into dev-ready specs — writing + a hard gate in one suite.</strong><br/>
-  You do three things: <strong>hand over raw material, confirm the result, take the pack to review.</strong><br/>
-  The assistant runs the checks; you do not operate internal tools.
+  <strong>For product managers.</strong> You do three things: <strong>hand over raw material, confirm the result, take the pack to review.</strong><br/>
+  <strong>Recommended: Cursor or Codex</strong> (can edit files and run commands). Try the playground first; for your own work, hand the <strong>local folder</strong> to the assistant. You do not operate internal tools.
 </p>
 
 <p align="center">
@@ -74,7 +74,7 @@
 2. **Confirm the result** — check the spec and the page draft; assumptions that were not in the source need your yes
 3. **Take it to review** — bring the assistant's self-check report to the meeting
 
-Start with [`playground/index.html`](playground/index.html) and click the sample buttons. For your own work: give the local folder to an AI assistant and ask it to install and follow [`skills/SKILL.md`](skills/SKILL.md). Product managers do not operate internal tools.
+Start with [`playground/index.html`](playground/index.html) and click the sample buttons. For your own work: hand the <strong>local folder</strong> to Cursor or Codex and ask it to install and follow [`skills/SKILL.md`](skills/SKILL.md). Product managers do not operate internal tools.
 
 | Situation | What you do |
 |-----------|-------------|

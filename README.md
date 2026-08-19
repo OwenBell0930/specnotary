@@ -6,8 +6,8 @@
 
 <p align="center">
   <strong>把含糊需求变成可开发规格——写作 + 质检全套。</strong><br/>
-  用户只做三步：<strong>交出原料、确认结果、拿材料去评审</strong>。<br/>
-  检查由 AI 助手代劳，你不必自己操作内部工具。
+  <strong>面向产品经理。</strong>你只做三步：<strong>交出原料、确认结果、拿材料去评审</strong>。<br/>
+  <strong>推荐 Cursor 或 Codex</strong>（能改文件、能跑命令）。先打开试用页；自己的需求把<strong>本机文件夹</strong>交给助手，不必自己操作内部工具。
 </p>
 
 <p align="center">
@@ -73,7 +73,7 @@
 2. **确认结果** — 看说明书和页面稿对不对；原料没写清的假设需要你点头
 3. **拿去评审** — 带上助手给出的输出自检报告去开会
 
-先打开 [`playground/index.html`](playground/index.html) 点按钮看样例。自己的需求：把项目链接发给 AI 助手，请它按 [`skills/SKILL.md`](skills/SKILL.md) 帮你安装并工作。产品经理不必操作内部工具。
+先打开 [`playground/index.html`](playground/index.html) 点按钮看样例。自己的需求：把<strong>本机文件夹</strong>交给 Cursor 或 Codex，请它按 [`skills/SKILL.md`](skills/SKILL.md) 帮你安装并工作。产品经理不必操作内部工具。
 
 | 场景 | 做什么 |
 |------|--------|

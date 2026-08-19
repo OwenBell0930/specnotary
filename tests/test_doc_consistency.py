@@ -329,6 +329,23 @@ def test_brand_is_consistent():
     assert not stale, "abandoned brand or rename history: " + "; ".join(stale)
 
 
+def test_front_door_states_audience_and_tools():
+    """Audience and recommended tools must be visible above the first thematic break."""
+    specs = (
+        ("README.md", "产品经理", ("Cursor", "Codex")),
+        ("README.en.md", "product manager", ("Cursor", "Codex")),
+    )
+    missing = []
+    for name, audience, tools in specs:
+        head = (ROOT / name).read_text(encoding="utf-8").split("\n---\n", 1)[0]
+        if audience.lower() not in head.lower():
+            missing.append(f"{name} top must name {audience}")
+        for tool in tools:
+            if tool not in head:
+                missing.append(f"{name} top must name {tool}")
+    assert not missing, "; ".join(missing)
+
+
 def test_english_readme_has_front_door_sections():
     """The English front door must keep the same section anchors as the Chinese one."""
     zh = (ROOT / "README.md").read_text(encoding="utf-8")
@@ -422,6 +439,7 @@ TESTS = [
     test_no_hardcoded_test_counts,
     test_capability_table_commands_runnable,
     test_brand_is_consistent,
+    test_front_door_states_audience_and_tools,
     test_english_readme_has_front_door_sections,
     test_no_process_theater,
     test_schema_and_known_top_level_agree,
