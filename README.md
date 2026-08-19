@@ -5,10 +5,9 @@
 <h1 align="center">SpecNotary</h1>
 
 <p align="center">
-  <strong>需求规格的 ESLint——把含糊需求锻成可开发规格的硬门禁。</strong><br/>
-  CLI 工具包 + 模板脚手架（辅：Cursor Skill）<br/>
-  产出：<strong>可开发的需求规格说明书</strong> · 兼做<strong>需求评审就绪</strong>收口<br/>
-  机读 YAML 为准据 · 人读施工图 · 确定性门禁（FAIL / WARN / Pending）· 门禁零 LLM
+  <strong>把含糊需求变成可开发规格——写作 + 质检全套。</strong><br/>
+  用户只做三步：<strong>交出原料、确认结果、拿材料去评审</strong>。<br/>
+  检查由 AI 助手代劳，你不必自己操作内部工具。
 </p>
 
 <p align="center">
@@ -27,7 +26,7 @@
 </p>
 
 <p align="center">
-  <img alt="carrier" src="https://img.shields.io/badge/carrier-CLI%20%2B%20Scaffold%20%2B%20Skill-0B6BCB"/>
+  <img alt="try" src="https://img.shields.io/badge/try-browser%20playground-0B6BCB"/>
   <img alt="gate" src="https://img.shields.io/badge/gate-FAIL%20%7C%20WARN%20%7C%20Pending-DC2626"/>
   <img alt="runtime" src="https://img.shields.io/badge/hard%20gate-Python-159947"/>
   <img alt="license" src="https://img.shields.io/badge/license-MIT-0B6BCB"/>
@@ -55,7 +54,7 @@
 | 痛点 | SpecNotary 怎么处理 |
 |------|-------------------|
 | 需求写了很长，研发仍要猜显隐、文案、默认值 | 人读视图强制线框 · 控件表 · 状态/动作矩阵 · 编号主路径 |
-| 「智能 / 尽快 / 体验好」冒充可开发 | 硬门禁 `FAIL`：空话 given/when/then、不可观察 AC、占位 ui/defaults 直接否决 |
+| 「智能 / 尽快 / 体验好」冒充可开发 | 硬门禁 `FAIL`：空话 given/when/then、已知空话／占位词 AC、占位 ui/defaults 直接否决 |
 | 人读与机读各改各的，越改越漂 | **以机读 YAML 为唯一准据**（single source of truth）；人读只由生成器产出，改正文即 FAIL |
 | 评审时说不清原料哪句落到了哪条规格 | SourceClaim 账本：**已登记**的每条原料有处置、每个必选实体有出处，原料内容被哈希钉死（账本完整性由人抽查，见[证明边界](docs/proof-boundary.md)） |
 | 原型与规格各自演化 | PrototypeManifest + HTML `data-spec-id` 落点核对 |
@@ -68,33 +67,44 @@
 
 ### 谁用 · 什么时候用
 
+**用户只做三步：**
+
+1. **交出原料** — 把原始需求说明发给 AI 助手
+2. **确认结果** — 看说明书和页面稿对不对；原料没写清的假设需要你点头
+3. **拿去评审** — 带上助手给出的输出自检报告去开会
+
+先打开 [`playground/index.html`](playground/index.html) 点按钮看样例。自己的需求：把项目链接发给 AI 助手，请它按 [`skills/SKILL.md`](skills/SKILL.md) 帮你安装并工作。产品经理不必操作内部工具。
+
 | 场景 | 做什么 |
 |------|--------|
-| 产品 / BA 收口需求 | 从原料起草机读 YAML，`--explain` 看差距，跑门禁，生成人读施工图 |
-| 需求评审前 | 用 `specnotary report` 确认原料覆盖、Pending 闭合、假详细被拦下 |
-| 研发开工前 | 用控件表与状态/动作矩阵对齐「能不能做、做到哪」 |
-| 测试写用例前 | 用 AC 与空态文案当验收输入 |
-| Agent / Skill 协作 | Skill 起草机读；CLI 当确定性验收，可挂 CI |
-| 复盘假详细稿 | 对照 `case-order-cancel-bad`：看哪些规则会打死坏稿 |
+| 收一笔需求 | 交出原始说明，确认说明书和页面稿，带材料上会 |
+| 需求评审前 | 看覆盖说明、已确认的假设、假详细有没有被拦住 |
+| 交给研发 | 用说明书里的按钮、状态、验收句子看能不能做 |
+| 交给测试 | 用验收句子和空态文案当用例输入 |
+| 复盘假详细稿 | 对照 `case-order-cancel-bad`：看哪些写法会被拦住 |
 
-**不是什么：** 不是又一份口号式 PRD 模板，也不是完整商业 PRD / 全链路 SDD 平台。上游 PRD 仍是**原料**；正式产出名是**可开发的需求规格说明书**（并用于评审收口）。
+**不是什么：** 不是又一份口号式需求模板，也不是项目管理或多人在线改稿。上游需求文档仍是**原料**；正式产出是**可开发的需求规格说明书**（并用于评审收口）。对方工具里的文档可以当原料进来，不会被自动改成我们的内部格式。
 
 ### 能力状态（诚实分层）
+
+> 产品经理看上面三步即可。下表给 AI 助手和仓库维护者对照，不是给你操作的清单。
 
 | 能力 | 状态 | 说明 |
 |------|------|------|
 | YAML/JSON 机读校验（Schema + 规则） | **Available** | `specnotary check` / `./cli/run-check.sh` |
+| 从原料建案 / 再登记一份原料 | **Available** | `specnotary new --from` · `specnotary ingest --spec`（钉哈希；不生成 claims） |
+| WARN 接受账本 | **Available** | `specnotary confirm --by --reason --accept-all-warn`（谁/何时/为何；过期 id 在 ready 上 FAIL） |
 | ready 差距报告 | **Available** | `specnotary check --explain` 打印 `READY-GAP` |
 | 人读施工图生成 | **Available** | `specnotary human`（FAIL 时拒绝写入） |
 | 一键同步派生物 | **Available** | `specnotary sync`：重生成人读 + 复跑门禁；原型背书须显式 `--attest-prototype` |
 | FAIL / WARN / Pending 分层 | **Available** | 见 `docs/gate-modes.md` |
 | 通用 `action_matrix`（非订单域样例） | **Available** | 见 `examples/case-list-search/` |
 | Skill 起草 / 降级检查 | **Available** | 降级须标 `degraded` |
-| 原料覆盖（SourceClaim） | **Available** | 原料文件必须存在；必选实体必须被引用；`specnotary report` |
-| 全局视角人读（目录/概览/架构图/职责/数据契约/错误码/决策记录） | **Available** | 渲染器 v5；mermaid 图确定性生成或随机读防漂 |
+| 原料覆盖（SourceClaim） | **Available** | ready 上每个 source 必须有真实 path + content_hash；删除 path 不能绕过；必选实体必须被引用；`specnotary report` 写出输出自检报告 |
+| 全局视角人读（目录/概览/功能说明/架构图/职责/数据契约/错误码/决策记录） | **Available** | 渲染器 v11；机读 ID 展开为中文；mermaid 图确定性生成，人读防漂 |
 | 决策记录门禁 | **Available** | `decisions` 未拍板在 `ready` 上 FAIL |
 | 人读哈希 / stale 检测 | **Available** | `spec_hash` + 正文逐字对照 + `renderer_version`；只改正文也 FAIL |
-| 原型 Manifest 一致性 | **Available** | manifest 哈希 + `data-spec-id` 落点（HTML/React/Vue 源）；无 manifest 则跳过并 WARN |
+| 原型 Manifest 一致性 | **Available** | manifest 哈希 + 真实文件属性位 `data-spec-id`（HTML/React/Vue 源；script 字符串不算）；无 manifest 则跳过并 WARN |
 | 存量项目标记对账 | **Available** | `specnotary markers`：列出已标/非法/待回填的 `data-spec-id` |
 | 悬空引用检查 | **Available** | 文本提及 `P-*`/`AC-*`/`SRC-*` 必须真实存在 |
 | 变异覆盖率度量 | **Available** | `tests/test_mutations.py`：变异算子 × 对象族，输出 `KILL_RATE` 并进 CI |
@@ -102,11 +112,11 @@
 | pip 安装 | **Available** | `pip install .`（PyPI 发布待九步批准） |
 | 机读判定输出 | **Available** | `specnotary check --json`：含 `fail_by_layer`（machine/source/human/prototype，直接告诉集成方该改哪个产物） |
 | 英文人读视图 | **Available** | `specnotary human --lang en`；中文输出逐字节不变 |
-| pre-commit 钩子 | **Available** | `.pre-commit-hooks.yaml`，`specnotary precommit` 多文件门禁 |
-| GitHub Action | **Experimental** | `action.yml`：PR 上按文件标注 FAIL/WARN（发布后生效） |
-| MCP server | **Experimental** | `specnotary mcp`：stdio 协议，Agent 可把门禁当工具调用 |
-| 浏览器 Playground | **Experimental** | `playground/`：Pyodide 零安装试用 |
-| 任意原料一键转机读 | **Planned** | Skill + 人工确认 |
+| pre-commit 钩子 | **维护者可选** | 助手本机检查即可。不是产品经理路径，也不做团队线上协同 |
+| GitHub Action | **非产品路径** | 代码里有。当前用法是把文件夹交给助手在本机检查，不走 GitHub 协同 |
+| MCP server | **非产品路径** | 代码里有。助手按 Skill 跑命令即可，不必再开一条协议 |
+| 浏览器里点着试 | **Available** | [`playground/`](playground/index.html)：零安装，点按钮看不合格需求怎么被拦住 |
+| 交给 Agent 安装后写自己的需求 | **Available** | 产品经理只提供原料并确认；Agent 按 Skill 起草并验收 |
 | Node 等价硬门禁 | **Deferred** | stub 直接拒绝，绝不冒充 hard PASS |
 | Web 服务端 | **Deferred** | — |
 
@@ -116,11 +126,13 @@
 
 ## Overview · 工具长什么样
 
+产品经理不必读这一节。下面写的是助手实际用到的内部结构。
+
 **载体：**
 
 | 层 | 是什么 | 职责 |
 |----|--------|------|
-| **CLI**（主 · Python） | `specnotary check / human / report / sync`（或 `cli/run-*.sh` 免安装） | 硬门禁；机读 → 人读；覆盖报告；哈希链同步 |
+| **CLI**（主 · Python） | `specnotary new / ingest / check / human / report / confirm / sync`（或 `cli/run-*.sh` 免安装） | 建案钉原料；硬门禁；机读 → 人读；覆盖报告；WARN 账本；哈希链同步 |
 | **Scaffold**（主） | `templates/` · `examples/` | 字段体例与施工图级样例 |
 | **Skill**（辅） | `skills/` | 起草机读；无运行时的降级检查 |
 
@@ -177,39 +189,21 @@
 
 ## Quick Start
 
-**安装（二选一）：**
+**产品经理**
 
-```bash
-pip install .                     # 得到 specnotary 命令
-# 或零安装：pip install pyyaml jsonschema 后直接用 ./cli/run-*.sh
+1. 打开 [`playground/index.html`](playground/index.html)，点两个样例按钮（一份会被拦住，一份可以通过）。不用输入任何命令。
+2. 感兴趣后，把**本机文件夹**交给 Cursor、Codex 或其他能改文件、能跑命令的 AI 助手，请它帮你安装，并按 [`skills/SKILL.md`](skills/SKILL.md) 工作。你和开发同事不需要在 GitHub 上一起改同一份规格。
+3. 把你的需求草稿发给它。你只需补全缺的说明、确认写得对不对，然后拿评审材料去开会。
+
+可以复制下面这段给助手（你自己不用执行）：
+
+```text
+请安装这个项目里的 SpecNotary（pip install .），并严格按 skills/SKILL.md 工作。
+对我（产品经理）只问三件事：还缺什么原料、结果对不对、评审材料在哪。
+不要让我操作内部工具，不要让我改内部文件。
 ```
 
-**跑一遍样例：**
-
-```bash
-# 1) 硬门禁 — FAIL 必须清零（自动核对人读与原型）
-specnotary check examples/case-order-cancel-raw/machine/spec.yaml
-
-# 2) 看假详细如何被拦下
-specnotary check examples/case-order-cancel-bad/machine/spec.yaml
-
-# 3) 非订单域样例（通用 action_matrix）
-specnotary check examples/case-list-search/machine/spec.yaml
-
-# 4) 评审就绪报告（原料覆盖 + 原型归桶）
-specnotary report examples/case-order-cancel-raw/machine/spec.yaml
-```
-
-**开一个新规格：**
-
-```bash
-mkdir -p my-feature/machine && cp templates/machine/spec.template.yaml my-feature/machine/spec.yaml
-specnotary check my-feature/machine/spec.yaml --explain   # draft 即 PASS；READY-GAP 告诉你距 ready 差什么
-# ……填内容；改完机读后重新生成人读（真派生物）：
-specnotary sync my-feature/machine/spec.yaml
-# 原型不由本命令重生成——复核原型后再显式背书：
-specnotary sync my-feature/machine/spec.yaml --attest-prototype
-```
+**助手要执行的步骤**写在 [`skills/SKILL.md`](skills/SKILL.md)。仓库自带样例在 `examples/`。
 
 **回归：**
 
@@ -218,10 +212,9 @@ python3 tests/test_cli.py
 ```
 
 > [!NOTE]
-> **量级预期**：把含糊压成确定性规格是有成本的——样例里 12 行运营原料展开为约 430 行机读、310 行人读施工图。适合多状态多异常的复杂需求；极小改动别用它。  
-> 无 Python：用 `skills/` 做降级检查，必须写明 `gate_mode: degraded`。  
-> 非 Cursor 用户：把 `skills/SKILL.md` 当提示词喂给任意 LLM 起草机读，再用 CLI 判定；CLI 本身不解析自然语言。  
-> Node CLI = **Deferred**，不是等价硬门禁。
+> **量级预期**：把含糊压成可开发规格是有成本的——样例里 12 行运营说明会展开成很长的说明书。适合多状态、多异常的复杂需求；极小改动不必用它。  
+> 助手若环境里没有 Python，只能做降级检查，必须写明 `gate_mode: degraded`。  
+> Node 运行时 = **Deferred**，不能冒充正式判定。
 
 ---
 
@@ -239,9 +232,9 @@ python3 tests/test_cli.py
 
 | 层 | 含义 | 对 RESULT 的影响 |
 |----|------|------------------|
-| **FAIL** | 硬阻塞（空话 then/AC、占位 ui/defaults、引用断裂、原料文件缺失、人读/原型漂移…） | 任意 1 条 → **FAIL** |
-| **WARN** | 质量债（缺 empty_states、缺 step_id、assumption 待确认…） | 单独不否决；建议清零 |
-| **Pending** | 未决项须含五字段：`id` / `missing` / `impact` / `owner` / `status` | 挂在 `ready` 上且未闭合 → **FAIL** |
+| **FAIL**（给人看时叫「必须改」） | 硬阻塞（空话 then/AC、占位 ui/defaults、引用断裂、原料文件缺失、人读/原型漂移…） | 任意 1 条 → **FAIL** |
+| **WARN**（给人看时叫「需要你拍板」） | 规格补了原文没有的猜测、可点页面稿还未核实等 | 单独不否决；记下是谁认的之后不再刷屏 |
+| **Pending**（给人看时叫「还没定」） | 未决项须含五字段：`id` / `missing` / `impact` / `owner` / `status` | 挂在 `ready` 上且未闭合 → **FAIL** |
 
 详解：[`docs/gate-modes.md`](docs/gate-modes.md)
 
@@ -258,7 +251,7 @@ python3 tests/test_cli.py
 | Order cancel · FAQ | 客服 FAQ 反推 | PASS | [打开](examples/case-order-cancel-ops-faq/) |
 | List search | 商品列表搜索（非订单域） | PASS | [打开](examples/case-list-search/) |
 
-坏稿会被哪些规则打死（示例）：Schema 非法 status、缺 `ui` / `states` / `actors`、引用断裂、then 含「智能/尽快/体验好」、AC 不可观察、`ready` 仍留 `open_questions`。
+坏稿会被哪些规则打死（示例）：Schema 非法 status、缺 `ui` / `states` / `actors`、引用断裂、then 含「智能搜索/尽快/体验好」、AC 命中已知空话词表、`ready` 仍留 `open_questions`。
 
 更多说明：[`examples/README.md`](examples/README.md)
 
@@ -280,6 +273,7 @@ python3 tests/test_cli.py
 | [`examples/`](examples/) | 施工图级样例（含对齐与漂移双原型） |
 | [`skills/`](skills/) | 辅：起草与降级 |
 | [`docs/what-is-dev-ready.md`](docs/what-is-dev-ready.md) | 「可开发」定义 |
+| [`docs/human-view.md`](docs/human-view.md) | 人读正文用中文；机读 ID 只对账 |
 
 **产物分工**
 
@@ -301,7 +295,8 @@ python3 tests/test_cli.py
 |-----|------|
 | [`docs/what-is-dev-ready.md`](docs/what-is-dev-ready.md) | 什么叫「可开发」 |
 | [`docs/gate-modes.md`](docs/gate-modes.md) | hard / degraded；原料覆盖与 stale |
-| [`docs/positioning.md`](docs/positioning.md) | 与 GitHub spec-kit / OpenSpec 的关系 |
+| [`docs/positioning.md`](docs/positioning.md) | 与 GitHub spec-kit / OpenSpec 的关系（对方文档可 ingest，无一键转 YAML） |
+| [`docs/empty-talk-corpus.md`](docs/empty-talk-corpus.md) | 空话好坏句子校准集（已知词表，不是一般 NLP） |
 | [`docs/skill-boundary.md`](docs/skill-boundary.md) | CLI 与 Skill 边界 |
 | [`docs/release-checklist.md`](docs/release-checklist.md) | 公开前技术就绪清单（九步之外的部分） |
 | [`CHANGELOG.md`](CHANGELOG.md) · [`CONTRIBUTING.md`](CONTRIBUTING.md) · [`SECURITY.md`](SECURITY.md) | 版本 · 贡献 · 安全 |
@@ -312,4 +307,4 @@ python3 tests/test_cli.py
 
 ## Status
 
-OwenBell · SpecNotary 本地建设中 · 上传 GitHub 前走九步复核（**上传即公开**）
+OwenBell · SpecNotary 未公开（experimental preview）· 上传 GitHub 前走九步复核（**上传即公开**）

@@ -1,0 +1,12 @@
+---
+description: Point to OwenBell Hermes evolve (assets live outside this tree; user hooks inject)
+alwaysApply: true
+---
+
+# Hermes 式进化（指针）
+
+进化资产在维护者自己的运营目录，**不在** SpecNotary 产品树内。
+
+- 本机若已安装用户级 hooks，由其注入近因 / 用词短表（静默）。
+- 纠错与可复用流程：在运营目录执行 evolve，直接写入，不打扰用户。
+- **禁止**把运营目录里的 MEMORY / USER / 敏感约定复制进 SpecNotary 产品树。

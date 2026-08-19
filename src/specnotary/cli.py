@@ -5,8 +5,10 @@ from __future__ import annotations
 import sys
 
 from . import __version__
+from .case import ingest_main, new_main
 from .check import gate
 from .check import main as check_main
+from .confirm import main as confirm_main
 from .generate_human import main as human_main
 from .markers import main as markers_main
 from .mcp import main as mcp_main
@@ -35,9 +37,12 @@ def precommit_main(argv: list[str] | None = None) -> int:
 
 
 COMMANDS = {
+    "new": (new_main, "Start a case from raw material: copy source, pin hash, scaffold draft YAML"),
+    "ingest": (ingest_main, "Register another raw file as a source (Spec Kit/OpenSpec markdown included)"),
     "check": (check_main, "Hard gate: schema + rules + evidence chain (--explain, --json)"),
     "human": (human_main, "Generate human construction-grade view (--lang zh|en)"),
-    "report": (report_main, "Write review-readiness report (coverage + prototype buckets)"),
+    "report": (report_main, "Write the product-manager self-check report"),
+    "confirm": (confirm_main, "Record who accepted remaining WARNs and stamp review confirmation"),
     "sync": (sync_main, "Regenerate the human view after machine edits (prototype needs --attest-prototype)"),
     "markers": (markers_main, "Diff data-spec-id markers in a source tree against spec entities (retrofit helper)"),
     "precommit": (precommit_main, "Gate multiple specs at once (pre-commit hook entry)"),

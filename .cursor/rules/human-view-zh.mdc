@@ -1,0 +1,36 @@
+---
+description: 人读说明书必须用中文讲文案/状态/动作；禁止把机读 ID 当正文，禁止只改 human/spec.md
+alwaysApply: true
+---
+
+# 人读视图：中文正文，机读 ID 只对账
+
+人读说明书给产品/测试看（练习规格用沙箱绝对路径，样例用 `examples/<case>/human/spec.md`，禁止只写 `human/spec.md`）。机读 YAML 里的键名、枚举值、动作 ID 是给开发和门禁对账的，**不能冒充界面文案或状态名**。
+
+## 错（已反复发生）
+
+- 正文写「展示 `file_too_large` / `audit_failed`」
+- 正文写「状态变为 `terminated`，若为 `succeeded/failed`」
+- 第 7 章只写 `create_import_task`，看不出是业务动作还是接口
+- 用户指出后**只改那一句 Markdown**，下次换一个 ID 家族又漏
+
+## 对
+
+1. 改 **渲染器** `spec_render.py` 的 glossary（`empty_states`、`states.labels`、`action_labels`、`value_labels`、lifecycle 后缀别名、actors、controls），人读所有叙述字段都走展开。
+2. 机读补中文：`empty_states.*.zh`、`states.labels`、`action_labels`、必要时 `value_labels`（`created` → 已创建）。
+3. 递增 `RENDERER_VERSION`，重生 `examples/**/human/spec.md`，练习规格用 `specnotary sync`。
+4. **禁止**手改人读正文；禁止只展开其中一类 ID。跟用户指路：反引号写带空格的绝对路径；不要只写 `human/spec.md`，不要把空格写成 `%20`。
+
+界面文案用「」；状态/动作写中文，机读 ID 放括号：已终止（`terminated`）。
+
+## 输出自检报告和聊天（同一套说法）
+
+给产品经理看的时候禁止只甩 WARN / FAIL / PASS / covered / assumption / SRC-CLM 不解释。
+
+- WARN → 需要你拍板（原文没写、规格补了猜测，或不核实就过不了心里那关）
+- FAIL → 必须改（有一条就不能当终稿）
+- PASS → 结构通过（可以开会，不表示业务已拍板）
+- 处理结果列用中文；落到哪一段展开成功能名/按钮文案
+- 原料条目编号：从原始说明拆出来的对账编号，不是页面编号
+
+改报告渲染器 `report.py` + `pm_view.py`，禁止手改 `reports/review-readiness.md`。

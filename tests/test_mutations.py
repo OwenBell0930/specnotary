@@ -57,7 +57,9 @@ MUTANTS = [
     ("shape-states", "states", "type", BASE_SPEC, _set("states", [1, 2]), "must be an object"),
     ("shape-behaviors", "behaviors", "type", BASE_SPEC, _set("behaviors", {"id": "B1"}), "must be an array"),
     ("shape-defaults", "defaults", "type", BASE_SPEC, _set("defaults", "s"), "must be an object"),
-    ("shape-acceptance", "acceptance", "type", BASE_SPEC, _set("acceptance", "s"), "must be an array"),
+    ("shape-behavior-item", "behaviors", "type", BASE_SPEC,
+     lambda d: (d["behaviors"].__setitem__(0, "oops-not-an-object"), d)[1],
+     "must be an object"),
     ("shape-decisions", "decisions", "type", RICH_SPEC, _set("decisions", "s"), "must be an array"),
     ("shape-contracts", "data_contracts", "type", RICH_SPEC, _set("data_contracts", {}), "must be an array"),
 
@@ -69,6 +71,8 @@ MUTANTS = [
      _append("acceptance", {"id": "AC-01", "behavior": "B1", "zh": "dup"}), "duplicate acceptance id"),
     ("uniq-control", "ui.controls", "uniqueness", BASE_SPEC,
      _append("ui.controls", {"id": "btn_search", "zh": "dup"}), "duplicate control id"),
+    ("uniq-actor", "actors", "uniqueness", BASE_SPEC,
+     _append("actors", {"id": "merchant_ops", "zh": "dup"}), "duplicate actor id"),
     ("uniq-lifecycle", "states.lifecycle", "uniqueness", BASE_SPEC,
      _append("states.lifecycle", "idle"), "duplicate lifecycle state"),
     ("uniq-errorcode", "error_codes", "uniqueness", RICH_SPEC,
@@ -129,8 +133,9 @@ MUTANTS = [
     ("ready-open-pending", "pending", "completeness", BASE_SPEC,
      _set("pending", [{"id": "P-1", "missing": "m", "impact": "i", "owner": "o", "status": "open"}]),
      "still open"),
-    ("ready-undecided", "decisions", "completeness", RICH_SPEC,
-     _append("decisions", {"id": "D-99", "question": {"zh": "未拍板"}, "status": "pending"}), "undecided"),
+    ("shell-decided-no-chosen", "decisions", "completeness", RICH_SPEC,
+     lambda d: (d["decisions"][0].pop("chosen", None), d["decisions"][0].__setitem__("status", "decided"), d)[2],
+     "marked decided but has no chosen"),
 
     # ---- shells and placeholders (third-round audit: matrix scored 100% and
     # still missed all of these) ----
@@ -175,6 +180,13 @@ MUTANTS = [
     ("evid-unpinned-source", "sources", "evidence", BASE_SPEC,
      lambda d: (d["sources"][0].pop("content_hash", None), d)[1],
      "ready requires claims pinned"),
+    ("evid-ready-no-path", "sources", "evidence", BASE_SPEC,
+     lambda d: (d["sources"][0].pop("path", None), d["sources"][0].pop("content_hash", None), d)[2],
+     "missing path"),
+    ("shape-accepted-warnings", "accepted_warnings", "type", BASE_SPEC,
+     _set("accepted_warnings", "not-a-list"), "must be an array"),
+    ("accepted-incomplete-ready", "accepted_warnings", "completeness", BASE_SPEC,
+     _set("accepted_warnings", [{"id": "assumption:X"}]), "need id, by, date, reason"),
 ]
 
 # Mutations that must be rejected at parse time, before any rule runs.
@@ -192,6 +204,7 @@ def _apply(mutation, data):
 
 def _run_load_mutants(verbose: bool) -> list[str]:
     """Parse-time mutants: the loader must refuse them outright."""
+    import json
     import tempfile
 
     survivors: list[str] = []
@@ -211,6 +224,33 @@ def _run_load_mutants(verbose: bool) -> list[str]:
                 survivors.append(f"{mid} [{klass}/{family}] wrong error: {exc}")
         finally:
             tmp.unlink(missing_ok=True)
+
+    # JSON is a first-class machine format; the same ambiguity must FAIL.
+    payload = {
+        "spec_version": "0.1",
+        "id": "X",
+        "title": {"zh": "t"},
+        "status": "draft",
+        "behaviors": [{"id": "B1"}],
+        "acceptance": [{"id": "AC-01"}],
+    }
+    raw = json.dumps(payload).replace(
+        '"status": "draft"', '"status": "banana", "status": "draft"', 1
+    )
+    with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False, encoding="utf-8") as fh:
+        fh.write(raw)
+        tmp = Path(fh.name)
+    try:
+        load_spec(tmp)
+        survivors.append("parse-duplicate-key-json [ambiguity/json] SURVIVED: loaded without error")
+    except Exception as exc:  # noqa: BLE001
+        if "duplicate key" in str(exc):
+            if verbose:
+                print("  killed parse-duplicate-key-json [ambiguity/json]")
+        else:
+            survivors.append(f"parse-duplicate-key-json [ambiguity/json] wrong error: {exc}")
+    finally:
+        tmp.unlink(missing_ok=True)
     return survivors
 
 
@@ -234,7 +274,7 @@ def run_matrix(verbose: bool = True) -> tuple[int, int, list[str]]:
         elif verbose:
             print(f"  killed {mid:26} [{klass}/{family}]")
     survivors += _run_load_mutants(verbose)
-    total = len(MUTANTS) + len(LOAD_MUTANTS)
+    total = len(MUTANTS) + len(LOAD_MUTANTS) + 1  # + JSON duplicate-key parse mutant
     return total - len(survivors), total, survivors
 
 
@@ -245,15 +285,52 @@ def test_mutation_matrix_full_kill():
 
 
 def test_matrix_covers_every_object_family():
-    """Guard against adding a spec object without adding its mutants."""
+    """Guard against adding a spec object without adding its mutants.
+
+    Families are discovered from the JSON Schema (array-of-object properties,
+    including one level of nesting). A handwritten required-set cannot see a
+    field that was added only to the schema.
+    """
+    from specnotary.libspec import load_schema
+
     families = {m[1] for m in MUTANTS}
-    required = {
-        "behaviors", "acceptance", "ui.controls", "states", "permissions",
-        "source_claims", "sources", "decisions", "data_contracts",
-        "error_codes", "responsibilities", "in_scope", "pending",
+    # Nested arrays whose parent family already covers them.
+    covered_by = {
+        "states.action_matrix": "states",
+        "states.cancel_matrix": "states",
+        "data_contracts.fields": "data_contracts",
     }
-    missing = required - families
-    assert not missing, f"object families with no mutation coverage: {sorted(missing)}"
+    discovered = _schema_object_arrays(load_schema())
+    missing = []
+    for path in sorted(discovered):
+        if path in families:
+            continue
+        alias = covered_by.get(path)
+        if alias and alias in families:
+            continue
+        missing.append(path)
+    assert not missing, (
+        "schema object-arrays with no mutation family — add mutants or covered_by: "
+        + ", ".join(missing)
+    )
+
+
+def _schema_object_arrays(schema: dict, path: str = "") -> set[str]:
+    found: set[str] = set()
+    props = schema.get("properties") or {}
+    for key, spec in props.items():
+        if not isinstance(spec, dict):
+            continue
+        here = f"{path}.{key}" if path else key
+        raw_type = spec.get("type")
+        types = raw_type if isinstance(raw_type, list) else [raw_type]
+        items = spec.get("items") if isinstance(spec.get("items"), dict) else {}
+        if "array" in types and items.get("type") == "object":
+            found.add(here)
+            found |= _schema_object_arrays(items, here)
+        if "object" in types:
+            found |= _schema_object_arrays(spec, here)
+    return found
 
 
 def test_matrix_covers_every_operator_class():
@@ -273,6 +350,17 @@ def test_real_ui_literals_are_not_placeholders():
     result = validate(data, {}, spec_path=BASE_SPEC, check_human=False)
     offenders = [e for e in result["fail"] if "placeholder" in e]
     assert not offenders, f"real UI copy misread as placeholder: {offenders}"
+    # 「待补充」 is a real status word; the template token is 「待补」.
+    data["acceptance"][0]["zh"] = "材料状态变为待补充，页面展示缺失材料清单"
+    result2 = validate(data, {}, spec_path=BASE_SPEC, check_human=False)
+    offenders2 = [e for e in result2["fail"] if "placeholder" in e]
+    assert not offenders2, f"待补充 misread as 待补: {offenders2}"
+    data["behaviors"][0]["then"] = {
+        "zh": "智能识别置信度低于 0.80 时转人工复核并记录 score"
+    }
+    result3 = validate(data, {}, spec_path=BASE_SPEC, check_human=False)
+    offenders3 = [e for e in result3["fail"] if "too vague" in e]
+    assert not offenders3, f"智能识别 as a product name misread as empty talk: {offenders3}"
 
 
 if __name__ == "__main__":

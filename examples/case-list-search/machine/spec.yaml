@@ -32,6 +32,22 @@ states:
     - searching
     - results
     - empty
+  labels:
+    idle:
+      zh: 空闲
+      of: 商品列表
+    searching:
+      zh: 检索中
+      of: 商品列表
+    results:
+      zh: 有结果
+      of: 商品列表
+    empty:
+      zh: 无结果
+      of: 商品列表
+  action_labels:
+    submit_search:
+      zh: 提交搜索
   action_matrix:
     - state: idle
       action: submit_search

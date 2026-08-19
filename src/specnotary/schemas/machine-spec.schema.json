@@ -51,6 +51,18 @@
       "type": "object",
       "properties": {
         "lifecycle": { "type": "array", "items": { "type": "string" } },
+        "labels": {
+          "type": "object",
+          "description": "Chinese (and of/subject) for lifecycle ids. Human view shows 已终止（`import_terminated`）, never the raw id alone."
+        },
+        "action_labels": {
+          "type": "object",
+          "description": "Chinese for business actions (not API paths). Human view shows 创建导入任务（`create_import_task`）."
+        },
+        "value_labels": {
+          "type": "object",
+          "description": "Chinese for enum values used in prose (created/running/terminated). Optional if the value is the suffix of a labelled lifecycle id (import_terminated → terminated)."
+        },
         "action_matrix": {
           "type": "array",
           "items": {
@@ -280,6 +292,30 @@
         },
         "additionalProperties": true
       }
+    },
+    "accepted_warnings": {
+      "type": "array",
+      "description": "Who accepted which remaining WARN, when, and why. Excluded from spec_hash.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "by": { "type": "string", "minLength": 1 },
+          "date": { "type": "string", "minLength": 1 },
+          "reason": { "type": "string", "minLength": 1 }
+        },
+        "additionalProperties": true
+      }
+    },
+    "review": {
+      "type": "object",
+      "description": "Last confirm() stamp. Excluded from spec_hash.",
+      "properties": {
+        "confirmed_by": { "type": "string" },
+        "confirmed_at": { "type": "string" },
+        "reason": { "type": "string" }
+      },
+      "additionalProperties": true
     }
   }
 }

@@ -28,7 +28,9 @@ DOCS = [
     ROOT / "docs/gate-modes.md",
     ROOT / "docs/proof-boundary.md",
     ROOT / "docs/positioning.md",
+    ROOT / "docs/empty-talk-corpus.md",
     ROOT / "docs/release-checklist.md",
+    ROOT / "docs/human-view.md",
     ROOT / "CONTRIBUTING.md",
     ROOT / "CHANGELOG.md",
     ROOT / "SECURITY.md",
@@ -83,6 +85,14 @@ def test_documented_flags_exist():
         "--lang": ROOT / "src/specnotary/generate_human.py",
         "--allow-invalid": ROOT / "src/specnotary/generate_human.py",
         "--attest-prototype": ROOT / "src/specnotary/sync.py",
+        "--from": ROOT / "src/specnotary/case.py",
+        "--id": ROOT / "src/specnotary/case.py",
+        "--kind": ROOT / "src/specnotary/case.py",
+        "--spec": ROOT / "src/specnotary/case.py",
+        "--by": ROOT / "src/specnotary/confirm.py",
+        "--reason": ROOT / "src/specnotary/confirm.py",
+        "--accept-all-warn": ROOT / "src/specnotary/confirm.py",
+        "--accept": ROOT / "src/specnotary/confirm.py",
     }
     documented = set()
     for text in _doc_text().values():
@@ -308,6 +318,53 @@ def test_brand_is_consistent():
     assert not stale, f"old brand outside naming-history context: {stale}"
 
 
+def test_schema_and_known_top_level_agree():
+    """Adding a schema field must show up as a known top-level key, and vice versa.
+
+    `content_hash` is a legacy root alias excluded from the schema on purpose.
+    """
+    from specnotary.libspec import KNOWN_TOP_LEVEL, load_schema
+
+    schema_keys = set(load_schema().get("properties") or {})
+    code_only = {"content_hash"}
+    missing_in_known = schema_keys - KNOWN_TOP_LEVEL
+    missing_in_schema = KNOWN_TOP_LEVEL - schema_keys - code_only
+    assert not missing_in_known, f"schema properties not in KNOWN_TOP_LEVEL: {sorted(missing_in_known)}"
+    assert not missing_in_schema, f"KNOWN_TOP_LEVEL not in schema: {sorted(missing_in_schema)}"
+
+
+def test_shape_sanitizer_matches_schema_containers():
+    """Wrong-shape FAIL keys must be the schema's objects and arrays."""
+    from specnotary.libspec import _DICT_KEYS, _LIST_KEYS, load_schema
+
+    props = load_schema().get("properties") or {}
+
+    def types_of(key: str) -> set[str]:
+        spec = props.get(key) or {}
+        raw = spec.get("type")
+        if isinstance(raw, list):
+            return {str(x) for x in raw}
+        return {str(raw)} if raw else set()
+
+    for key in _DICT_KEYS:
+        assert key in props, f"_DICT_KEYS {key} is not a schema property"
+        assert "object" in types_of(key), f"_DICT_KEYS {key} is not a schema object"
+    for key in _LIST_KEYS:
+        assert key in props, f"_LIST_KEYS {key} is not a schema property"
+        assert "array" in types_of(key), f"_LIST_KEYS {key} is not a schema array"
+
+
+def test_security_support_matches_package_minor():
+    """SECURITY.md '当前 x.y.x' must be this package's minor line."""
+    from specnotary import __version__
+
+    text = (ROOT / "SECURITY.md").read_text(encoding="utf-8")
+    m = re.search(r"当前\s+(\d+\.\d+)\.x", text)
+    assert m, "SECURITY.md must declare the supported minor as 当前 N.N.x"
+    minor = ".".join(__version__.split(".")[:2])
+    assert m.group(1) == minor, f"SECURITY supports {m.group(1)}.x but package is {__version__}"
+
+
 TESTS = [
     test_documented_subcommands_exist,
     test_documented_flags_exist,
@@ -319,6 +376,9 @@ TESTS = [
     test_no_hardcoded_test_counts,
     test_capability_table_commands_runnable,
     test_brand_is_consistent,
+    test_schema_and_known_top_level_agree,
+    test_shape_sanitizer_matches_schema_containers,
+    test_security_support_matches_package_minor,
 ]
 
 if __name__ == "__main__":

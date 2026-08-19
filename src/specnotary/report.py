@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Write a review-readiness report from a machine spec."""
+"""Write the product-manager self-check report from a machine spec."""
 from __future__ import annotations
 
 import sys
@@ -16,8 +16,29 @@ from .libspec import (
     spec_hash,
     validate,
 )
+from .pm_view import (
+    disposition_label,
+    disposition_meaning,
+    format_landing,
+    humanize_finding,
+    humanize_warning_id,
+    proto_bucket_label,
+    proto_bucket_meaning,
+    status_label,
+)
 
 USAGE = "Usage: specnotary report <machine-spec> [out.md]"
+
+DISPOSITION_ORDER = (
+    "covered",
+    "omitted",
+    "assumption",
+    "conflict",
+    "out_of_scope",
+    "pending",
+    "undisposed",
+)
+PROTO_ORDER = ("missing", "extra", "stale", "mismatch", "unverified")
 
 
 def render_report(
@@ -30,58 +51,153 @@ def render_report(
     root = find_repo_root(spec_path)
     buckets = claim_summary(data)
     digest = spec_hash(data)
+    must_fix = list(result.get("fail") or [])
+    needs_call = list(result.get("warn") or [])
+    spec_id = data.get("id") or "—"
+    title = ""
+    raw_title = data.get("title")
+    if isinstance(raw_title, dict):
+        title = str(raw_title.get("zh") or raw_title.get("en") or "").strip()
+    elif raw_title:
+        title = str(raw_title).strip()
+
     lines = [
-        "# 评审就绪报告 / Review-readiness report",
+        "# 输出自检报告",
         "",
-        f"- 机读：`{relpath_from_root(spec_path, root)}`",
-        f"- 规格 ID：`{data.get('id')}` · 状态：`{data.get('status')}`",
-        f"- 机读哈希：`{digest}`",
-        f"- 人读：`{relpath_from_root(human_path, root)}`" if human_path else "- 人读：未提供",
-        f"- 原型：`{relpath_from_root(manifest_path, root)}`" if manifest_path else "- 原型：未提供",
-        f"- FAIL：{len(result['fail'])} · WARN：{len(result['warn'])}",
+        "这份报告给产品经理开会用：对照原始需求说明，看规格写了什么、猜了什么、哪里打架、可点页面稿有没有对不上。",
+        "结构检查的结论在文末。**这份报告本身不是检查工具**；有必须改的问题，由助手改规格，你不用操作内部文件。",
         "",
-        "## 原料覆盖汇总",
+        "## 这份规格是哪一份",
         "",
-        "| 处置 | 条数 |",
-        "|------|------|",
+        f"- 规格名称：{title or '（未写中文名称）'}",
+        f"- 规格编号：`{spec_id}`（内部对账用，不是界面上的编号）",
+        f"- 当前进度：{status_label(str(data.get('status') or ''))}",
+        f"- 说明书：`{relpath_from_root(human_path, root)}`" if human_path else "- 说明书：还没有生成",
+        f"- 内部规格文件：`{relpath_from_root(spec_path, root)}`（给开发和检查用，开会时看说明书即可）",
+        f"- 内容指纹：`{digest}`（用来确认开会时看的是同一版，不是给人读的）",
+        f"- 可点页面稿清单：`{relpath_from_root(manifest_path, root)}`"
+        if manifest_path
+        else "- 可点页面稿清单：还没有提供",
+        "",
+        "## 结构检查两档，不要混",
+        "",
+        "| 档 | 条数 | 意思 | 你要做什么 |",
+        "|----|------|------|------------|",
+        (
+            f"| 必须改 | {len(must_fix)} |"
+            " 有一条就不能当终稿交出。"
+            " 开发和检查工具里对应英文 FAIL。"
+            " | 不用你改内部文件；让助手改到这一档为 0。 |"
+        ),
+        (
+            f"| 需要你拍板 | {len(needs_call)} |"
+            " 规格里写了原始说明没有的猜测，或可点页面稿还没核实。"
+            " 不挡「结构过关」，但业务上你还没认。"
+            " 开发和检查工具里对应英文 WARN。"
+            " | 认或不认。认了由助手记下是谁、哪天、为什么。 |"
+        ),
+        "",
+        "下文如果出现英文 PASS / FAIL，只是给开发和检查工具对账；对人一律用上表的中文。",
+        "",
     ]
-    for key in ("covered", "omitted", "assumption", "conflict", "out_of_scope", "pending", "undisposed"):
-        lines.append(f"| `{key}` | {len(buckets.get(key) or [])} |")
-    lines += ["", "## 明细", ""]
+    review = data.get("review") if isinstance(data.get("review"), dict) else {}
+    if review.get("confirmed_by"):
+        lines += [
+            f"- 最近一次确认人：{review.get('confirmed_by')} · 日期：{review.get('confirmed_at') or '—'}",
+            "",
+        ]
+    accepted = [x for x in (data.get("accepted_warnings") or []) if isinstance(x, dict)]
+    if accepted:
+        lines += [
+            "## 已经拍过板的提醒",
+            "",
+            "这些曾经需要你拍板，已经记下是谁认的。开会时可以抽查理由，不需要再认一遍。",
+            "",
+            "| 提醒编号 | 确认人 | 日期 | 理由 |",
+            "|----------|--------|------|------|",
+        ]
+        for item in accepted:
+            lines.append(
+                f"| {humanize_warning_id(str(item.get('id') or ''))} | {item.get('by') or '—'} | {item.get('date') or '—'} | {item.get('reason') or '—'} |"
+            )
+        lines.append("")
+    lines += [
+        "## 原始说明落到规格里了吗（汇总）",
+        "",
+        "每一条都来自原始需求说明。处理结果用中文；英文词只在内部文件里出现。",
+        "",
+        "| 处理结果 | 这条是什么意思 | 条数 |",
+        "|----------|----------------|------|",
+    ]
+    for key in DISPOSITION_ORDER:
+        count = len(buckets.get(key) or [])
+        lines.append(
+            f"| {disposition_label(key)} | {disposition_meaning(key)} | {count} |"
+        )
+    lines += [
+        "",
+        "## 逐条明细",
+        "",
+        "**原料条目编号**是从原始需求说明里拆出来的每一条（例如 `SRC-CLM-001`）。",
+        "这个编号只用来和内部规格对账，**不是**页面上的编号，也**不是**功能编号。",
+        "",
+    ]
     claims = data.get("source_claims") or []
     if not claims:
-        lines.append("无 SourceClaim。覆盖未证明（`status: ready` 为 FAIL）。")
+        lines.append("还没有从原始说明拆出条目。终稿要求至少拆出并写进规格一条，否则结构检查不会通过。")
     else:
-        lines.append("| ID | 处置 | 摘要 | 引用 / 闭合 |")
-        lines.append("|----|------|------|-------------|")
+        lines.append("| 原料条目编号 | 处理结果 | 这条在说什么 | 落到说明书的哪一段 |")
+        lines.append("|--------------|----------|--------------|--------------------|")
         for c in claims:
             if not isinstance(c, dict):
                 continue
-            extra = ", ".join(c.get("spec_refs") or []) or (c.get("resolution") or "—")
+            cid = c.get("id") or "—"
+            disp = str(c.get("disposition") or "").strip()
+            summary = c.get("quote_or_summary") or c.get("evidence") or "—"
+            landing = format_landing(c, data)
             lines.append(
-                f"| {c.get('id')} | {c.get('disposition')} | {c.get('quote_or_summary') or '—'} | {extra} |"
+                f"| `{cid}` | {disposition_label(disp)} | {summary} | {landing} |"
             )
-    proto = classify_proto_issues(result["fail"], result["warn"])
-    proto_fail = [e for e in result["fail"] if e.startswith("prototype")]
+    proto = classify_proto_issues(must_fix, needs_call)
+    proto_fail = [e for e in must_fix if e.startswith("prototype")]
     if proto_fail or any(proto[k] for k in proto):
-        lines += ["", "## 原型一致性", ""]
-        lines.append("| 类型 | 条数 |")
-        lines.append("|------|------|")
-        for key in ("missing", "extra", "stale", "mismatch", "unverified"):
-            lines.append(f"| `{key}` | {len(proto[key])} |")
-        for key in ("missing", "extra", "stale", "mismatch", "unverified"):
+        lines += [
+            "",
+            "## 可点页面稿对得上吗",
+            "",
+            "| 情况 | 这条是什么意思 | 条数 |",
+            "|------|----------------|------|",
+        ]
+        for key in PROTO_ORDER:
+            lines.append(
+                f"| {proto_bucket_label(key)} | {proto_bucket_meaning(key)} | {len(proto[key])} |"
+            )
+        details = []
+        for key in PROTO_ORDER:
             for item in proto[key]:
                 if item.startswith("prototype") or "unverified" in item:
-                    lines.append(f"- `{key}`: {item}")
-    lines += ["", "## 门禁", ""]
-    if result["fail"]:
-        lines.append("**RESULT: FAIL**")
-        for e in result["fail"]:
-            lines.append(f"- FAIL: {e}")
+                    details.append(f"- {proto_bucket_label(key)}：{humanize_finding(item)}")
+        if details:
+            lines += ["", "明细：", ""]
+            lines += details
+    lines += ["", "## 结构检查结论", ""]
+    if must_fix:
+        lines.append(
+            f"**结论：结构未通过。RESULT: FAIL** 有 {len(must_fix)} 条必须先改掉，还不能当终稿交出。"
+        )
+        lines.append("")
+        for e in must_fix:
+            lines.append(f"- 必须改：{humanize_finding(e)}")
     else:
-        lines.append("**RESULT: PASS**")
-    for w in result["warn"]:
-        lines.append(f"- WARN: {w}")
+        lines.append(
+            "**结论：结构通过。RESULT: PASS** 规格在既定规则里自洽，可以拿去开会。"
+            "这不表示业务已经拍板，也不表示页面已经验收。"
+        )
+    if needs_call:
+        lines.append("")
+        lines.append("还需要你拍板：")
+        for w in needs_call:
+            lines.append(f"- {humanize_finding(w)}")
     lines.append("")
     return "\n".join(lines)
 

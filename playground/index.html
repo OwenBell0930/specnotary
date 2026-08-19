@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>SpecNotary Playground — 需求规格的 ESLint，浏览器直接跑</title>
+<title>SpecNotary 试用 — 点按钮看不合格需求怎么被拦住</title>
 <style>
   :root{--bg:#0b1220;--panel:#0f172a;--line:#1e293b;--text:#e2e8f0;--muted:#94a3b8;
         --red:#f87171;--amber:#fbbf24;--green:#4ade80;--blue:#60a5fa;}
@@ -36,25 +36,25 @@
 </head>
 <body>
 <header>
-  <h1>SpecNotary Playground</h1>
-  <span class="tag">确定性门禁在你的浏览器里跑（Pyodide）· 零安装 · 不上传任何内容</span>
-  <a href="../README.md">← 回 README</a>
+  <h1>SpecNotary 试用</h1>
+  <span class="tag">在浏览器里点按钮即可 · 不用安装 · 内容不上传</span>
+  <a href="../README.md">← 回说明</a>
 </header>
 <div class="bar">
-  <button id="btn-bad" class="secondary" disabled>载入坏稿样例（会 FAIL）</button>
-  <button id="btn-good" class="secondary" disabled>载入修好稿（会 PASS）</button>
-  <button id="btn-check" disabled>跑门禁 check</button>
-  <button id="btn-human" class="secondary" disabled>生成人读视图</button>
+  <button id="btn-bad" class="secondary" disabled>试一份不合格的需求</button>
+  <button id="btn-good" class="secondary" disabled>试一份合格的需求</button>
+  <button id="btn-check" disabled>再检查一次</button>
+  <button id="btn-human" class="secondary" disabled>看人能读的说明书</button>
 </div>
 <main>
-  <div class="panel"><h2>machine spec (YAML) — 唯一准据</h2>
-    <textarea id="src" spellcheck="false" placeholder="# 粘贴你的机读规格，或点上方按钮载入样例"></textarea>
+  <div class="panel"><h2>需求规格（内部格式，试用时可忽略）</h2>
+    <textarea id="src" spellcheck="false" placeholder="点上方按钮即可，这里会自动填入样例"></textarea>
   </div>
-  <div class="panel"><h2>gate verdict</h2>
-    <div id="out"><span class="mut">正在加载 Python 运行时（首次约 10–20 秒）…</span></div>
+  <div class="panel"><h2>检查结果</h2>
+    <div id="out"><span class="mut">正在准备试用环境（首次大约十几秒）…</span></div>
   </div>
 </main>
-<footer>门禁零 LLM：Schema + 确定性规则。Playground 只做机读本体校验（人读/原型防漂需本地文件系统，请用 CLI）。</footer>
+<footer>试用只检查规格正文。要用在自己的需求上：把这个项目发给 Cursor 或 Codex，请它按 skills/SKILL.md 帮你安装。</footer>
 <script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
 <script>
 const $ = (id) => document.getElementById(id);
@@ -62,7 +62,7 @@ const out = $("out");
 const show = (html) => { out.innerHTML = html; };
 const esc = (s) => s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 
-const SOURCES = ["__init__.py","libspec.py","libproto.py","check.py","generate_human.py","report.py","sync.py","markers.py","mcp.py","cli.py"];
+const SOURCES = ["__init__.py","spec_io.py","spec_render.py","pm_view.py","libspec.py","libproto.py","check.py","generate_human.py","report.py","sync.py","markers.py","mcp.py","cli.py"];
 const SCHEMAS = ["machine-spec.schema.json","prototype-manifest.schema.json"];
 const EXAMPLES = {
   bad:  "../examples/case-order-cancel-bad/machine/spec.yaml",
@@ -80,9 +80,9 @@ async function fetchText(url){
 async function boot(){
   try{
     pyodide = await loadPyodide();
-    show('<span class="mut">运行时就绪，加载依赖（pyyaml / jsonschema）…</span>');
+    show('<span class="mut">正在加载检查能力…</span>');
     await pyodide.loadPackage(["pyyaml","jsonschema"]);
-    show('<span class="mut">加载 SpecNotary 源码…</span>');
+    show('<span class="mut">正在加载样例检查器…</span>');
     pyodide.FS.mkdirTree("/lib/specnotary/schemas");
     for(const f of SOURCES){
       pyodide.FS.writeFile(`/lib/specnotary/${f}`, await fetchText(`../src/specnotary/${f}`));
@@ -95,6 +95,7 @@ import sys
 sys.path.insert(0, "/lib")
 import yaml, json
 from specnotary.libspec import validate, ready_gap, render_human
+from specnotary.pm_view import humanize_finding, status_label
 
 def _load(text):
     return yaml.safe_load(text)
@@ -109,8 +110,10 @@ def pg_check(text):
     result = validate(data, {})
     gap = ready_gap(data, {}) if data.get("status") != "ready" else []
     return json.dumps({
-        "status": data.get("status"), "id": data.get("id"),
-        "fail": result["fail"], "warn": result["warn"], "ready_gap": gap,
+        "status": status_label(str(data.get("status") or "")), "id": data.get("id"),
+        "fail": [humanize_finding(e) for e in result["fail"]],
+        "warn": [humanize_finding(w) for w in result["warn"]],
+        "ready_gap": gap,
     }, ensure_ascii=False)
 
 def pg_human(text):
@@ -123,37 +126,43 @@ def pg_human(text):
     return render_human(data, source="playground", gate_mode="degraded")
 `);
     for(const id of ["btn-bad","btn-good","btn-check","btn-human"]) $(id).disabled = false;
-    show('<span class="mut">就绪。载入样例或粘贴你的机读 YAML，然后跑门禁。\n\n注：Playground 属降级环境（gate_mode: degraded 语义）——只校验机读本体；\n人读/原型防漂涉及本地文件，请用 CLI 获得完整 hard 判定。</span>');
+    show('<span class="mut">就绪。点「试一份不合格的需求」或「试一份合格的需求」即可。\n\n要用在自己的需求上：把这个项目发给 Cursor 或 Codex，请它按 skills/SKILL.md 帮你安装。</span>');
   }catch(err){
-    show(`<span class="fail">加载失败：${esc(String(err))}</span>\n<span class="mut">Playground 需要网络加载 Pyodide CDN 与仓库源码。</span>`);
+    show(`<span class="fail">加载失败：${esc(String(err))}</span>\n<span class="mut">试用需要能上网。失败后刷新页面再试一次。</span>`);
   }
 }
 
 function renderVerdict(raw){
   const v = JSON.parse(raw);
   if(v.error) return `<span class="fail">${esc(v.error)}</span>`;
-  let html = `<span class="mut">id: ${esc(String(v.id))} · status: ${esc(String(v.status))}</span>\n`;
-  html += `FAIL_COUNT: ${v.fail.length}\nWARN_COUNT: ${v.warn.length}\n`;
-  for(const e of v.fail) html += `<span class="fail">FAIL: ${esc(e)}</span>\n`;
-  for(const w of v.warn) html += `<span class="warn">WARN: ${esc(w)}</span>\n`;
+  let html = `<span class="mut">规格编号：${esc(String(v.id))} · 进度：${esc(String(v.status))}</span>\n`;
+  html += `必须改：${v.fail.length} 条\n需要你拍板：${v.warn.length} 条\n`;
+  for(const e of v.fail) html += `<span class="fail">必须改：${esc(e)}</span>\n`;
+  for(const w of v.warn) html += `<span class="warn">需要你拍板：${esc(w)}</span>\n`;
   if(v.ready_gap && v.ready_gap.length){
-    html += `<span class="mut">READY_GAP_COUNT: ${v.ready_gap.length}（翻成 ready 还会新增）</span>\n`;
-    for(const g of v.ready_gap) html += `<span class="gap">READY-GAP: ${esc(g)}</span>\n`;
+    html += `<span class="mut">翻成终稿前还差 ${v.ready_gap.length} 条</span>\n`;
+    for(const g of v.ready_gap) html += `<span class="gap">还差：${esc(g)}</span>\n`;
   }
-  html += v.fail.length ? `\n<span class="fail">RESULT: FAIL</span>` : `\n<span class="pass">RESULT: PASS</span>`;
-  if(!v.fail.length && v.warn.length) html += `\n<span class="mut">NOTE: PASS with WARN</span>`;
+  html += v.fail.length ? `\n<span class="fail">结论：结构未通过。RESULT: FAIL</span>` : `\n<span class="pass">结论：结构通过。RESULT: PASS</span>`;
+  if(!v.fail.length && v.warn.length) html += `\n<span class="mut">结构可以过关，但仍有需要你拍板的条目</span>`;
   return html;
 }
 
-$("btn-bad").onclick  = async () => { $("src").value = await fetchText(EXAMPLES.bad);  show('<span class="mut">坏稿已载入——跑门禁看它怎么被打死。</span>'); };
-$("btn-good").onclick = async () => { $("src").value = await fetchText(EXAMPLES.good); show('<span class="mut">修好稿已载入——跑门禁应 PASS。</span>'); };
+$("btn-bad").onclick  = async () => {
+  $("src").value = await fetchText(EXAMPLES.bad);
+  $("btn-check").click();
+};
+$("btn-good").onclick = async () => {
+  $("src").value = await fetchText(EXAMPLES.good);
+  $("btn-check").click();
+};
 $("btn-check").onclick = () => {
   const fn = pyodide.globals.get("pg_check");
   try { show(renderVerdict(fn($("src").value))); } finally { fn.destroy(); }
 };
 $("btn-human").onclick = () => {
   const fn = pyodide.globals.get("pg_human");
-  try { show(`<span class="mut"># 人读视图（markdown 原文；CLI 版含 hard 哈希链）</span>\n\n${esc(fn($("src").value))}`); }
+  try { show(`<span class="mut">说明书原文如下（试用环境不钉内容指纹）</span>\n\n${esc(fn($("src").value))}`); }
   finally { fn.destroy(); }
 };
 

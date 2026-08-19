@@ -21,4 +21,4 @@ SpecNotary 是本地 CLI：读取 YAML/JSON/Markdown/HTML，写 Markdown。它�
 
 ## 支持版本
 
-只支持最新 minor 版本（当前 0.2.x）。
+只支持最新 minor 版本（当前 0.3.x）。

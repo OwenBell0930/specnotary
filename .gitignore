@@ -13,5 +13,8 @@ dist/
 # Local launch drafts — never ship marketing drafts in the public tree
 launch/
 
-# Local Cursor config — never ship personal/ops assets in the public tree
-.cursor/
+# Cursor local/ops assets stay out; product rules in rules/*.mdc are tracked
+.cursor/*
+!.cursor/rules/
+.cursor/rules/*
+!.cursor/rules/*.mdc

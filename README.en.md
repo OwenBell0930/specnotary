@@ -5,8 +5,9 @@
 <h1 align="center">SpecNotary</h1>
 
 <p align="center">
-  <strong>ESLint for your specs — a deterministic hard gate that rejects vague requirements before anyone (or any agent) writes code.</strong><br/>
-  Machine-readable YAML as the single source of truth · generated human construction-grade view · FAIL / WARN / Pending verdicts · zero LLM in the gate
+  <strong>Forge vague requirements into dev-ready specs — writing + a hard gate in one suite.</strong><br/>
+  You do three things: hand over raw material, confirm the result, take the pack to review.<br/>
+  Try it in the browser first, then give this repo to Cursor or Codex and ask it to install.
 </p>
 
 <p align="center">
@@ -30,7 +31,7 @@ Specs fail teams in ways linters never let code fail them:
 
 | Pain | What SpecNotary does |
 |------|---------------------|
-| "smart search, great UX, as fast as possible" shipped as a spec | Hard `FAIL`: vague given/when/then, unobservable acceptance criteria, placeholder ui/defaults |
+| "smart search, great UX, as fast as possible" shipped as a spec | Hard `FAIL`: vague given/when/then, known empty-talk / placeholder AC phrasing, placeholder ui/defaults |
 | Human doc and machine truth drift apart | Human view is **generated** from machine YAML; hand-editing it fails the gate (`body_hash`) |
 | Nobody can show what the source material became | SourceClaim ledger over a **pinned source snapshot** (`content_hash`): touch the source file and every claim goes stale; every required entity needs a claim |
 | Prototype quietly diverges from the spec | Manifest + `data-spec-id` DOM markers; re-attesting after machine edits is an **explicit action** (`sync --attest-prototype`), never a side effect |
@@ -42,45 +43,39 @@ The gate is **deterministic**: schema + rules + hash chains. No LLM, no API key,
 
 ## Quick start
 
-```bash
-pip install .            # or: uvx specnotary ... (after PyPI release)
+1. Open [`playground/index.html`](playground/index.html) and click the two sample buttons (one is rejected, one passes). No commands.
+2. Copy this folder to Cursor, Codex, or another assistant that can edit files and run commands, and ask it to install and follow [`skills/SKILL.md`](skills/SKILL.md). You do not need GitHub collaboration with engineering.
+3. Send it your draft. You only fill in what's missing, confirm the write-up, and take the review pack to the meeting.
 
-# Watch a fake-detailed PRD get rejected
-specnotary check examples/case-order-cancel-bad/machine/spec.yaml
+Paste this to the assistant (you do not run it):
 
-# And its fixed version pass
-specnotary check examples/case-order-cancel-bad/machine/spec.fixed.yaml
-
-# Start your own spec
-cp templates/machine/spec.template.yaml my-feature/machine/spec.yaml
-specnotary check my-feature/machine/spec.yaml --explain   # READY-GAP tells you what ready still needs
-
-# After editing the machine source: regenerate the human view (a real derivation)
-specnotary sync my-feature/machine/spec.yaml
-# The prototype is not regenerated here — re-verify it, then endorse explicitly:
-specnotary sync my-feature/machine/spec.yaml --attest-prototype
-
-# English human view
-specnotary human my-feature/machine/spec.yaml out.md --lang en
+```text
+Install SpecNotary from this repo (`pip install .`) and follow skills/SKILL.md strictly.
+Ask me only: what raw material is still missing, whether the result is right, and where the review pack is.
+Do not ask me to operate internal tools or edit internal files.
 ```
+
+Commands the assistant runs are in [`skills/SKILL.md`](skills/SKILL.md).
 
 ## What you get
 
+- **`specnotary new`** / **`ingest`** — start a case from a raw file, or register another source (GitHub spec-kit markdown included). Pins `content_hash`; does not invent claims or YAML body.
 - **`specnotary check`** — the hard gate; `--json` for CI, `--explain` for the ready gap.
 - **`specnotary human`** — a construction-grade human view (TOC, overview, architecture diagram, responsibilities, data contracts, state matrix, numbered main path, error codes, decision log) rendered from the machine source; diagrams are auto-generated or stored in the spec, so they cannot drift.
-- **`specnotary report`** — review-readiness evidence: source coverage buckets + prototype drift buckets.
+- **`specnotary report`** — product-manager self-check report: Chinese handling labels, source-item ids explained, PASS/FAIL glossed.
+- **`specnotary confirm`** — record who accepted remaining WARNs (`--by`, `--reason`, `--accept-all-warn` or `--accept <id>`).
 - **`specnotary sync`** — one command to keep the hash chain intact after edits.
 - **`specnotary markers`** — retrofit helper: diff `data-spec-id` markers in an existing HTML/React/Vue tree against spec entities.
-- **`specnotary mcp`** — stdio MCP server so agents can call the gate as a tool (experimental).
-- **GitHub Action** (`action.yml`) — PR annotations from gate verdicts; **pre-commit hook** included.
+- **`specnotary mcp`** — optional maintainer adapter so an agent can call the gate as a tool. Not the product-manager path; not team online collaboration.
+- **GitHub Action** (`action.yml`) — optional if someone later puts specs on GitHub. Current use is: give the folder to an assistant that runs the CLI locally.
 
 ## How it relates to GitHub spec-kit / OpenSpec
 
-They orchestrate *how humans and agents work through* specs; SpecNotary verifies *whether the spec itself is buildable and review-ready*. Use them together: their output is SpecNotary's raw material. Details: [`docs/positioning.md`](docs/positioning.md).
+They orchestrate *how humans and agents work through* specs; SpecNotary is the writing + gate suite that verifies *whether the spec itself is buildable and review-ready*. Register their `spec.md` with `specnotary ingest … --kind speckit` (hash pin only — no Markdown-to-YAML import). Details: [`docs/positioning.md`](docs/positioning.md).
 
 ## Honest capability tiers
 
-Everything advertised above is implemented and regression-tested; the gate has been adversarially hardened — negative cases from an external red-team audit are now regression tests. Node runtime and web UI are explicitly **Deferred** — the stubs refuse to fake a hard PASS rather than shipping a second rule set. Proof boundary: [`docs/proof-boundary.md`](docs/proof-boundary.md).
+Everything advertised above is implemented and regression-tested; the gate has been adversarially hardened — negative cases from an external red-team audit are now regression tests. Node runtime is explicitly **Deferred** (stubs refuse to fake a hard PASS). The in-browser try page is the first-class demo (client-side, not a hosted web service). Proof boundary: [`docs/proof-boundary.md`](docs/proof-boundary.md).
 
 ## License
 

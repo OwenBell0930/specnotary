@@ -14,6 +14,7 @@ from .libspec import (
     ready_gap,
     spec_hash,
     validate,
+    warning_id,
 )
 
 USAGE = "Usage: specnotary check <machine-spec.yaml|json> [human.md] [prototype.manifest.yaml] [--explain] [--json]"
@@ -90,6 +91,7 @@ def gate(
             "prototype": str(resolved_manifest) if resolved_manifest is not None else None,
             "fail": result["fail"],
             "warn": result["warn"],
+            "warn_ids": result.get("warn_ids") or [warning_id(w) for w in result["warn"]],
             # Findings carry different evidence strengths and different fixes
             # (edit the spec vs regenerate a derivation vs re-verify and endorse
             # the prototype). Integrations should not have to reverse-engineer
@@ -184,7 +186,12 @@ def main(argv: list[str] | None = None) -> int:
         return 1
     print("RESULT: PASS")
     if verdict["warn"]:
-        print("NOTE: PASS with WARN — resolve or accept explicitly before treating as review-ready")
+        ids = " ".join(verdict.get("warn_ids") or [])
+        print(
+            "NOTE: PASS with WARN — accept with "
+            "`specnotary confirm <spec> --by NAME --accept-all-warn --reason \"...\"`"
+            + (f" (ids: {ids})" if ids else "")
+        )
     return 0
 
 

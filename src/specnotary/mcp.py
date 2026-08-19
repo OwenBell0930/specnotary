@@ -43,7 +43,7 @@ TOOLS = [
     },
     {
         "name": "review_report",
-        "description": "Render the review-readiness report (source coverage + prototype buckets) as markdown.",
+        "description": "Render the product-manager self-check report (Chinese headings; machine ids in parentheses).",
         "inputSchema": {
             "type": "object",
             "properties": {"path": {"type": "string", "description": "Path to machine spec YAML/JSON"}},

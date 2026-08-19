@@ -53,6 +53,28 @@ states:
   - shipped
   - completed
   - cancelled
+  labels:
+    unpaid:
+      zh: 待支付
+      of: 订单
+    paid_unshipped:
+      zh: 已支付未发货
+      of: 订单
+    fulfilling:
+      zh: 履约中
+      of: 订单
+    shipped:
+      zh: 已发货
+      of: 订单
+    completed:
+      zh: 已完成
+      of: 订单
+    cancelled:
+      zh: 已取消
+      of: 订单
+  action_labels:
+    buyer_self_cancel:
+      zh: 买家自助取消
   action_matrix:
   - state: unpaid
     action: buyer_self_cancel

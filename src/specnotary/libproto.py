@@ -12,7 +12,7 @@ try:
 except ImportError:  # pragma: no cover
     jsonschema = None
 
-from .libspec import known_entity_ids, load_spec, spec_hash
+from .libspec import claim_spec_ref_ids, known_entity_ids, load_spec, spec_hash
 
 SCHEMA_PATH = Path(__file__).resolve().parent / "schemas" / "prototype-manifest.schema.json"
 EXTRA_EXEMPT_ROLES = {"decoration", "visual"}
@@ -45,21 +45,34 @@ def _iter_controls(manifest: dict) -> list[tuple[dict, dict | None]]:
 
 
 _CODE_SUFFIXES = {".tsx", ".jsx", ".ts", ".js", ".vue", ".svelte", ".mjs", ".cjs"}
+# Attribute-position only: a JS string like ['data-spec-id="btn_cancel"'] must
+# not count as a DOM/JSX landing. Negative lookbehind rejects a quote immediately
+# before the attribute name.
+_ATTR_SPEC_ID = re.compile(
+    r"(?<!['\"])\bdata-spec-id(?:\s*=\s*|\s*=\s*\{\s*)['\"]([^'\"]+)['\"]"
+)
 
 
 def _html_spec_ids(html_path: Path) -> set[str]:
-    """Extract data-spec-id markers, ignoring commented-out ones.
+    """Extract data-spec-id markers that are real attributes, not string literals.
 
     Works for plain HTML and for SPA sources (React/Vue/Svelte): manifest
     screen.path may point at a component file when no static HTML exists.
+    Comments, <script>, and <style> are stripped first.
     """
     if not html_path.is_file():
         return set()
-    text = re.sub(r"<!--.*?-->", "", html_path.read_text(encoding="utf-8"), flags=re.DOTALL)
+    try:
+        text = html_path.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError):
+        return set()
+    text = re.sub(r"<!--.*?-->", "", text, flags=re.DOTALL)
+    text = re.sub(r"<script\b[^>]*>.*?</script>", "", text, flags=re.DOTALL | re.IGNORECASE)
+    text = re.sub(r"<style\b[^>]*>.*?</style>", "", text, flags=re.DOTALL | re.IGNORECASE)
     if html_path.suffix.lower() in _CODE_SUFFIXES:
         text = re.sub(r"/\*.*?\*/", "", text, flags=re.DOTALL)
         text = re.sub(r"^\s*//.*$", "", text, flags=re.MULTILINE)
-    return set(re.findall(r'data-spec-id=["\']([^"\']+)["\']', text))
+    return set(_ATTR_SPEC_ID.findall(text))
 
 
 def _required_spec_controls(data: dict) -> list[str]:
@@ -138,7 +151,8 @@ def validate_prototype(
             f"prototype stale: hash {recorded[:12]}… != machine {expected[:12]}… — regenerate"
         )
 
-    entities = known_entity_ids(data)
+    all_ids = known_entity_ids(data)
+    proto_refs = claim_spec_ref_ids(data)
     behavior_ids = {str((b or {}).get("id")) for b in (data.get("behaviors") or []) if (b or {}).get("id")}
     spec_control_ids = {
         str(c["id"])
@@ -148,6 +162,8 @@ def validate_prototype(
     mapped_controls: set[str] = set()
     mapped_behaviors: set[str] = set()
     proto_ids: set[str] = set()
+    ctrl_to_screen: dict[str, str] = {}
+    witnessed_screens: set[str] = set()
 
     declared_ids: set[str] = set()
     for screen in manifest.get("screens") or []:
@@ -158,9 +174,22 @@ def validate_prototype(
         for ctrl in screen.get("controls") or []:
             if isinstance(ctrl, dict) and ctrl.get("id"):
                 declared_ids.add(str(ctrl["id"]))
+                if screen.get("id"):
+                    ctrl_to_screen[str(ctrl["id"])] = str(screen["id"])
     for item in manifest.get("interactions") or []:
         if isinstance(item, dict) and item.get("id"):
             declared_ids.add(str(item["id"]))
+
+    def _ref_ok(where: str, ref: str) -> None:
+        if ref in proto_refs:
+            return
+        if ref in all_ids:
+            fail.append(
+                f"prototype {where}: spec_ref {ref} is not a mappable spec entity "
+                "(source/claim/actor ids cannot witness UI)"
+            )
+        else:
+            fail.append(f"prototype {where}: spec_ref missing: {ref}")
 
     for screen in manifest.get("screens") or []:
         if not isinstance(screen, dict):
@@ -171,20 +200,23 @@ def validate_prototype(
                 fail.append(f"prototype duplicate id: {sid}")
             proto_ids.add(str(sid))
         for ref in screen.get("spec_refs") or []:
-            if str(ref) not in entities:
-                fail.append(f"prototype screen {sid}: spec_ref missing: {ref}")
+            _ref_ok(f"screen {sid}", str(ref))
         if screen.get("required") is True and not screen.get("path"):
             fail.append(f"prototype screen {sid}: required but has no path")
         html_ids: set[str] = set()
         rel = screen.get("path")
+        screen_witnessed = False
         if rel and manifest_path is not None:
             html_path = (manifest_path.parent / rel).resolve()
             if not html_path.is_file():
                 fail.append(f"prototype screen {sid}: html missing: {rel}")
             else:
                 html_ids = _html_spec_ids(html_path)
+                screen_witnessed = True
+                if sid:
+                    witnessed_screens.add(str(sid))
 
-        for ctrl, _scr in [(c, screen) for c in (screen.get("controls") or []) if isinstance(c, dict)]:
+        for ctrl in [c for c in (screen.get("controls") or []) if isinstance(c, dict)]:
             cid = ctrl.get("id")
             if cid:
                 if cid in proto_ids:
@@ -194,12 +226,18 @@ def validate_prototype(
             role = str(ctrl.get("role") or "control")
             if not refs and role not in EXTRA_EXEMPT_ROLES:
                 fail.append(f"prototype extra: control {cid} has no spec_refs")
+            maps_spec = any(r in spec_control_ids or r in behavior_ids for r in refs)
+            if maps_spec and not screen_witnessed:
+                fail.append(
+                    f"prototype control {cid}: maps spec entities but screen {sid} "
+                    "has no verifiable file"
+                )
             for ref in refs:
-                if ref not in entities:
-                    fail.append(f"prototype control {cid}: spec_ref missing: {ref}")
-                mapped_controls.add(ref)
-                if ref in behavior_ids:
-                    mapped_behaviors.add(ref)
+                _ref_ok(f"control {cid}", ref)
+                if screen_witnessed:
+                    mapped_controls.add(ref)
+                    if ref in behavior_ids:
+                        mapped_behaviors.add(ref)
             selector = str(ctrl.get("selector") or "")
             mark = None
             m = re.search(r"data-spec-id=['\"]([^'\"]+)['\"]", selector)
@@ -213,12 +251,24 @@ def validate_prototype(
                     )
             elif mark and not rel:
                 fail.append(f"prototype mismatch: {cid} has data-spec-id but screen has no path")
-            if rel and html_ids:
+            if screen_witnessed:
                 for ref in refs:
                     if ref in spec_control_ids and ref not in html_ids:
                         fail.append(
                             f"prototype mismatch: mapped control {ref} not found in html"
                         )
+
+    def _interaction_witnessed(item: dict) -> bool:
+        for link in ("from", "to", "trigger"):
+            target = item.get(link)
+            if not target:
+                continue
+            if str(target) in witnessed_screens:
+                return True
+            sid = ctrl_to_screen.get(str(target))
+            if sid and sid in witnessed_screens:
+                return True
+        return False
 
     for item in manifest.get("interactions") or []:
         if not isinstance(item, dict):
@@ -232,10 +282,16 @@ def validate_prototype(
         role = str(item.get("role") or "flow")
         if not refs and role not in EXTRA_EXEMPT_ROLES:
             fail.append(f"prototype extra: interaction {iid} has no spec_refs")
+        witnessed = _interaction_witnessed(item)
+        maps_behavior = any(r in behavior_ids for r in refs)
+        if maps_behavior and not witnessed:
+            fail.append(
+                f"prototype interaction {iid}: maps behaviors but is not attached "
+                "to a screen with a verifiable file"
+            )
         for ref in refs:
-            if ref not in entities:
-                fail.append(f"prototype interaction {iid}: spec_ref missing: {ref}")
-            if ref in behavior_ids:
+            _ref_ok(f"interaction {iid}", ref)
+            if witnessed and ref in behavior_ids:
                 mapped_behaviors.add(ref)
         for link in ("from", "to", "trigger"):
             target = item.get(link)
@@ -245,17 +301,14 @@ def validate_prototype(
     for deco in manifest.get("decorations") or []:
         if not isinstance(deco, dict):
             continue
-        # decoration without spec_refs is allowed
         for ref in deco.get("spec_refs") or []:
-            if str(ref) not in entities:
-                fail.append(f"prototype decoration {deco.get('id')}: spec_ref missing: {ref}")
+            _ref_ok(f"decoration {deco.get('id')}", str(ref))
 
     for copy in manifest.get("copy_refs") or []:
         if not isinstance(copy, dict):
             continue
         for ref in copy.get("spec_refs") or []:
-            if str(ref) not in entities:
-                fail.append(f"prototype copy {copy.get('id')}: spec_ref missing: {ref}")
+            _ref_ok(f"copy {copy.get('id')}", str(ref))
 
     for cid in _required_spec_controls(data):
         if cid not in mapped_controls:

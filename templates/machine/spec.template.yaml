@@ -14,6 +14,9 @@ permissions: []
 defaults: {}
 states:
   lifecycle: []
+  labels: {}          # {state_id: {zh, of}} 人读用中文，禁止只写英文 id
+  action_labels: {}   # {action_id: {zh}} 业务动作中文名
+  value_labels: {}    # {created: {zh: 已创建}} 枚举值中文；也可由 lifecycle 前缀推导
   action_matrix: []   # [{state, action, allowed, zh}]
 ui:
   entry:

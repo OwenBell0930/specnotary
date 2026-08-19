@@ -8,18 +8,18 @@
 
 `RESULT: PASS` **不**表示：需求在业务上完整、真实、正确，或原型行为已被验证。
 
-关于「原料登记基于未变化的快照」这一句：它是 `status: ready` 的硬条件——ready 规格的每个 `sources[].path` 都必须带 `content_hash`，否则 FAIL。draft 上未钉死只给 WARN（起草期允许原料还在变）。**一句写进 PASS 定义的话，必须有一条 FAIL 规则兜着**，否则定义就是营销。
+关于「原料登记基于未变化的快照」这一句：它是 `status: ready` 的硬条件——ready 规格的**每个** `sources[]` 都必须有真实存在的 `path` 且带匹配的 `content_hash`，否则 FAIL。**删除 path 不能比提交了错误哈希更容易通过。** draft 上未钉死只给 WARN（起草期允许原料还在变）。**一句写进 PASS 定义的话，必须有一条 FAIL 规则兜着**，否则定义就是营销。
 
 ## 逐项边界
 
 | 说法 | 门禁能证明 | 门禁不能证明 | 补位机制 |
 |------|-----------|--------------|----------|
-| 机读通过硬门禁 | Schema 合法；ID 唯一（含跨类型不撞车）、引用闭合、不自相矛盾（scope / 矩阵 / 职责）；ready 完备性（无空话、无占位、无未决） | 业务语义正确、方案合理 | 人的评审；假设/决策显式登记后供人拍板 |
-| 人读没漂 | 人读正文与当前机读、当前渲染器逐字同源（spec_hash + body_hash + renderer_version）；来源声明 `generated_from` 确指被检查的机读文件 | 机读本身正确 | 上一行 |
-| 原料没漏 | 原料文件内容快照（content_hash）未变；`evidence` 引文与 `source_ref` 指向的文件名一致（换文件即暴露）；已登记 claims 处置合法、引用真实；每个必选实体被 claim 引用 | 原料的每一句话都被登记（账本由起草方自报） | 原料一变即全体 claims stale；评审报告逐条列账供人抽查 |
-| 方案没编 | assumption / conflict / pending / 未拍板 decision 均显式登记，且在 ready 上被硬拦 | 起草方没有把猜测直接写成 covered 事实 | 起草与审查分离（双 Agent / 人审）；SourceClaim 需带证据位置 |
-| 原型没跑偏 | manifest 与机读同源（hash）；必选实体映射齐全；`data-spec-id` 在 DOM/JSX 真实落点；声明的交互链路 ID 闭合 | 文案、视觉、交互行为、业务结果与规格一致 | `semantic_warnings`（WARN 层）；人工走查；背书须显式（`sync --attest-prototype`） |
-| PASS 即评审就绪 | 结构与证据链已闭合，评审可以聚焦语义 | 事实为真、利益相关方已确认 | 评审会本身 |
+| 机读通过硬门禁 | Schema 合法；ID 唯一（含跨类型不撞车）、引用闭合、不自相矛盾（scope / 矩阵 / 职责）；ready 完备性（无空话词典命中、无占位、无未决） | 业务语义正确、方案合理；一般性的「可观察性」判定（当前是已知空话／占位词表，不是语义公证）。「本模块治理到位」这类漏网词表拦不住 | 助手按 Skill 用语义拦住漏网假详细，标假设或未决，问产品经理；人的评审 |
+| 人读没漂 | 人读正文与当前机读、当前渲染器逐字同源（spec_hash + body_hash + renderer_version）；头部 `body_hash` / `gate_mode` 不得与正文或生成方式矛盾；来源声明 `generated_from` 确指被检查的机读文件 | 机读本身正确 | 上一行 |
+| 原料没漏 | 每个 ready source 指向真实文件；原料文件内容快照（content_hash）未变；`evidence` 引文与 `source_ref` 指向的文件名一致（换文件即暴露）；已登记 claims 处置合法、引用真实；每个必选实体被 claim 引用 | 原料的每一句话都被登记（账本由起草方自报） | 原料一变即全体 claims stale；评审报告逐条列账供人抽查 |
+| 方案没编 | conflict / pending / 未拍板 decision（含 `status: decided` 却无 chosen）在 ready 上被硬拦；assumption 在 ready 上 **WARN**（显式猜测，不挡 PASS）；对得上的 `accepted_warnings`（谁/何时/为何）不再刷屏，缺字段或过期 id 在 ready 上 FAIL | 起草方没有把猜测直接写成 covered 事实 | 起草与审查分离（双 Agent / 人审）；SourceClaim 需带证据位置；旗舰样例示范把源外推断标成 assumption；用户 `specnotary confirm` 入账 |
+| 原型没跑偏 | manifest 与机读同源（hash）；必选实体映射齐全；映射必须落在真实文件的属性位 `data-spec-id`（注释、`<script>` 字符串、source/claim ID 不能当落点）；声明的交互链路 ID 闭合 | 文案、视觉、交互行为、业务结果与规格一致 | `semantic_warnings`（WARN 层）；人工走查；背书须显式（`sync --attest-prototype`）；无 manifest 时跳过并 WARN，不把自报当成证明 |
+| PASS 即评审就绪 | 结构与证据链已闭合，评审可以聚焦语义；若 WARN 已入账，报告列出谁/何时/为何 | 事实为真、利益相关方已确认业务内容正确 | 评审会本身；`specnotary confirm` 只证明有人接受了质量债，不证明债已消失 |
 
 ## 两类哈希的不同效力（重要）
 

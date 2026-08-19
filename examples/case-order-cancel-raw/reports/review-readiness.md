@@ -1,42 +1,62 @@
-# 评审就绪报告 / Review-readiness report
+# 输出自检报告
 
-- 机读：`examples/case-order-cancel-raw/machine/spec.yaml`
-- 规格 ID：`SPEC-ORDER-CANCEL-001` · 状态：`ready`
-- 机读哈希：`fc0cc2a042ab1180648dd08570b42a9970eb296ad80ec28f6a9bb20f03c635d6`
-- 人读：`examples/case-order-cancel-raw/human/spec.md`
-- 原型：`examples/case-order-cancel-raw/prototype/prototype.manifest.yaml`
-- FAIL：0 · WARN：6
+这份报告给产品经理开会用：对照原始需求说明，看规格写了什么、猜了什么、哪里打架、可点页面稿有没有对不上。
+结构检查的结论在文末。**这份报告本身不是检查工具**；有必须改的问题，由助手改规格，你不用操作内部文件。
 
-## 原料覆盖汇总
+## 这份规格是哪一份
 
-| 处置 | 条数 |
-|------|------|
-| `covered` | 6 |
-| `omitted` | 0 |
-| `assumption` | 0 |
-| `conflict` | 0 |
-| `out_of_scope` | 1 |
-| `pending` | 0 |
-| `undisposed` | 0 |
+- 规格名称：电商订单 · 未发货自助取消
+- 规格编号：`SPEC-ORDER-CANCEL-001`（内部对账用，不是界面上的编号）
+- 当前进度：已定稿，结构已过关，可以开会（`ready`）
+- 说明书：`examples/case-order-cancel-raw/human/spec.md`
+- 内部规格文件：`examples/case-order-cancel-raw/machine/spec.yaml`（给开发和检查用，开会时看说明书即可）
+- 内容指纹：`01c35b3cd7ce60f3517430b28f6c62bc42d65486186b9a1b9a7b1ba1407829f2`（用来确认开会时看的是同一版，不是给人读的）
+- 可点页面稿清单：`examples/case-order-cancel-raw/prototype/prototype.manifest.yaml`
 
-## 明细
+## 结构检查两档，不要混
 
-| ID | 处置 | 摘要 | 引用 / 闭合 |
-|----|------|------|-------------|
-| SRC-CLM-001 | covered | 待支付订单取消后应关闭，并释放优惠券（若已锁定） | B1, AC-01, btn_cancel, dlg_confirm_title, dlg_confirm_ok, dlg_confirm_cancel |
-| SRC-CLM-002 | covered | 已支付未发货取消后须原路退款、库存回库，2小时内退款状态可查 | B2, AC-02, AC-03, btn_cancel |
-| SRC-CLM-003 | covered | 履约中买家不可自助取消，只能联系客服 | B3, AC-04, btn_cancel_disabled |
-| SRC-CLM-004 | covered | 风控命中订单禁止自助取消 | B4, AC-05 |
-| SRC-CLM-005 | out_of_scope | 部分取消、改地址、跨境税、订阅购不在本期 | — |
-| SRC-CLM-006 | covered | 背景与痛点：日单量约 8 万；客服被「点错想取消」工单淹没；库存被无效占用 | B1, B2, D-01 |
-| SRC-CLM-007 | covered | 已发货走售后，不在本期 | B3, D-02 |
+| 档 | 条数 | 意思 | 你要做什么 |
+|----|------|------|------------|
+| 必须改 | 0 | 有一条就不能当终稿交出。 开发和检查工具里对应英文 FAIL。 | 不用你改内部文件；让助手改到这一档为 0。 |
+| 需要你拍板 | 2 | 规格里写了原始说明没有的猜测，或可点页面稿还没核实。 不挡「结构过关」，但业务上你还没认。 开发和检查工具里对应英文 WARN。 | 认或不认。认了由助手记下是谁、哪天、为什么。 |
 
-## 门禁
+下文如果出现英文 PASS / FAIL，只是给开发和检查工具对账；对人一律用上表的中文。
 
-**RESULT: PASS**
-- WARN: permission buyer: can=cancel_unpaid is not an action in states.action_matrix — confirm it is a capability label, not a state-machine action
-- WARN: permission buyer: can=cancel_paid_unshipped is not an action in states.action_matrix — confirm it is a capability label, not a state-machine action
-- WARN: permission buyer: can=view_refund_progress is not an action in states.action_matrix — confirm it is a capability label, not a state-machine action
-- WARN: permission cs_agent: can=force_cancel_with_reason is not an action in states.action_matrix — confirm it is a capability label, not a state-machine action
-- WARN: permission seller_ops: can=view_cancel_logs is not an action in states.action_matrix — confirm it is a capability label, not a state-machine action
-- WARN: permission risk_engine: can=flag_block_self_cancel is not an action in states.action_matrix — confirm it is a capability label, not a state-machine action
+## 原始说明落到规格里了吗（汇总）
+
+每一条都来自原始需求说明。处理结果用中文；英文词只在内部文件里出现。
+
+| 处理结果 | 这条是什么意思 | 条数 |
+|----------|----------------|------|
+| 已写入规格 | 原始说明里的这条，已经写进说明书对应条目 | 6 |
+| 原文有、规格没写 | 原始说明要求了，说明书里没有对应写法，也没有说明为什么不写 | 0 |
+| 原文没写、规格补了猜测 | 原始说明没写死，起草时补上了；结构检查不挡，但需要你认或不认 | 2 |
+| 原文互相打架 | 同一份原始说明前后说法不一致，必须先拍板才能当终稿 | 0 |
+| 本期不做 | 已经明确不在这一期做 | 1 |
+| 还没定 | 已经登记为未决事项，终稿前必须收口 | 0 |
+| 还没登记怎么处理 | 从原始说明拆出来了，但还没标明怎么处理 | 0 |
+
+## 逐条明细
+
+**原料条目编号**是从原始需求说明里拆出来的每一条（例如 `SRC-CLM-001`）。
+这个编号只用来和内部规格对账，**不是**页面上的编号，也**不是**功能编号。
+
+| 原料条目编号 | 处理结果 | 这条在说什么 | 落到说明书的哪一段 |
+|--------------|----------|--------------|--------------------|
+| `SRC-CLM-001` | 已写入规格 | 待支付订单取消后应关闭，并释放优惠券（若已锁定） | 功能「取消待支付订单」（`B1`）；验收句「Given 待支付订单 When 确认取消 Then 状态=cance…」（`AC-01`）；页面控件「取消订单」（`btn_cancel`）；页面控件「取消订单？」（`dlg_confirm_title`）；页面控件「确认取消」（`dlg_confirm_ok`）；页面控件「再想想」（`dlg_confirm_cancel`） |
+| `SRC-CLM-002` | 已写入规格 | 已支付未发货取消后须原路退款、库存回库，2小时内退款状态可查 | 功能「取消已支付未发货订单」（`B2`）；验收句「Given 已支付未发货且购买数量=1 When 确认取消 Then …」（`AC-02`）；验收句「Given 取消成功 When 买家打开退款进度 Then 2 小时内…」（`AC-03`）；页面控件「取消订单」（`btn_cancel`） |
+| `SRC-CLM-003` | 已写入规格 | 履约中买家不可自助取消，只能联系客服 | 功能「履约中/已发货拦截」（`B3`）；验收句「Given 履约中 When 点击取消 Then 状态仍为 fulfi…」（`AC-04`）；页面控件「取消订单（置灰）」（`btn_cancel_disabled`） |
+| `SRC-CLM-004` | 已写入规格 | 风控命中订单禁止自助取消 | 功能「风控拦截」（`B4`）；验收句「Given 风控拦截单 When 点击取消 Then 展示 risk_…」（`AC-05`） |
+| `SRC-CLM-005` | 本期不做 | 部分取消、改地址、跨境税、订阅购不在本期 | 本期不做，不落到说明书具体条目 |
+| `SRC-CLM-006` | 已写入规格 | 背景与痛点：日单量约 8 万；客服被「点错想取消」工单淹没；库存被无效占用 | 功能「取消待支付订单」（`B1`）；功能「取消已支付未发货订单」（`B2`） |
+| `SRC-CLM-007` | 已写入规格 | 已发货走售后，不在本期 | 功能「履约中/已发货拦截」（`B3`）；已拍板事项「履约中订单是否开放自助取消？」（`D-02`） |
+| `SRC-CLM-008` | 原文没写、规格补了猜测 | 已支付取消后优惠券不自动退回（原料只写待支付释券，已支付回券未规定） | 已拍板事项「已支付订单取消后，锁定的优惠券是否自动回券？」（`D-01`）；功能「取消已支付未发货订单」（`B2`） |
+| `SRC-CLM-009` | 原文没写、规格补了猜测 | 确认弹窗、双入口、置灰而非隐藏、登录且为下单人——原料未写，产品为可开发补全 | 页面控件「取消订单」（`btn_cancel`）；页面控件「取消订单？」（`dlg_confirm_title`）；页面控件「确认取消」（`dlg_confirm_ok`）；页面控件「再想想」（`dlg_confirm_cancel`） |
+
+## 结构检查结论
+
+**结论：结构通过。RESULT: PASS** 规格在既定规则里自洽，可以拿去开会。这不表示业务已经拍板，也不表示页面已经验收。
+
+还需要你拍板：
+- 原料条目 SRC-CLM-008：原文没写、规格补了猜测，需要你确认认不认。
+- 原料条目 SRC-CLM-009：原文没写、规格补了猜测，需要你确认认不认。

@@ -1,0 +1,22 @@
+---
+description: 跟人读/机读路径时写带空格的绝对路径；禁止短名、禁止把空格写成 %20
+alwaysApply: true
+---
+
+# 规格文件路径
+
+当前工作区是 SpecNotary 产品仓。聊天里的短名 `` `human/spec.md` `` 只在工作区内解析，会打开虚构商城样例 `examples/case-list-search/human/spec.md`。
+
+练习规格在产品仓同级沙箱 `specnotary-sandbox/corpus-import-vdb/`（不在当前工作区）。对人说出完整绝对路径时，**空格就是空格**。
+
+## 错
+
+- 只写 `human/spec.md`
+- 写成 Markdown 链接并把空格换成 `%20`（`Cursor%20Projects`）。Cursor 会按字面去找这个路径，提示 File not found
+- 让用户去点聊天里的超链接，而助手自己不打开文件
+
+## 对
+
+- 路径写在反引号里，**空格就是空格**，不要 URL 编码，不要包 `[文字](路径)`。
+- 需要她看见文件时：助手用打开资源工具，`file://` URI 里空格保持为空格（不要 `%20`）。
+- 产品仓样例写从根起的唯一相对路径，例如 `examples/case-list-search/human/spec.md`。

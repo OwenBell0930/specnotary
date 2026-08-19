@@ -54,7 +54,7 @@ def main(argv: list[str] | None = None) -> int:
         out = Path(args[1])
     elif src.resolve().parent.name == "machine":
         # Standard layout: write where the gate will look for it.
-        out = expected_human_path(src)
+        out = expected_human_path(src) or src.with_suffix(".human.md")
     else:
         out = src.with_suffix(".human.md")
     try:

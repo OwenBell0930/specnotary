@@ -25,18 +25,13 @@ actors:
 permissions:
 - actor: buyer
   can:
-  - cancel_unpaid
-  - cancel_paid_unshipped
-  - view_refund_progress
+  - buyer_self_cancel
 - actor: cs_agent
-  can:
-  - force_cancel_with_reason
+  can: []
 - actor: seller_ops
-  can:
-  - view_cancel_logs
+  can: []
 - actor: risk_engine
-  can:
-  - flag_block_self_cancel
+  can: []
 defaults:
   refund_path: original
   refund_visible_sla_hours: 2
@@ -53,6 +48,28 @@ states:
   - shipped
   - completed
   - cancelled
+  labels:
+    unpaid:
+      zh: 待支付
+      of: 订单
+    paid_unshipped:
+      zh: 已支付未发货
+      of: 订单
+    fulfilling:
+      zh: 履约中
+      of: 订单
+    shipped:
+      zh: 已发货
+      of: 订单
+    completed:
+      zh: 已完成
+      of: 订单
+    cancelled:
+      zh: 已取消
+      of: 订单
+  action_labels:
+    buyer_self_cancel:
+      zh: 买家自助取消
   action_matrix:
   - state: unpaid
     action: buyer_self_cancel
@@ -345,7 +362,7 @@ decisions:
     status: decided
     date: "2026-08-07"
     note:
-      zh: 与运营约束第 2 条一致；回券涉及营销预算，本期不自动化
+      zh: 原料只写了待支付释券，未规定已支付取消是否回券；本期按不自动回券处理，属产品补全，不是原料原文。
   - id: D-02
     question:
       zh: 履约中订单是否开放自助取消？
@@ -417,7 +434,7 @@ source_claims:
     evidence: ops-request.zh.txt:背景/痛点
     kind: context
     disposition: covered
-    spec_refs: [B1, B2, D-01]
+    spec_refs: [B1, B2]
     confidence: high
   - id: SRC-CLM-007
     source_ref: SRC-001
@@ -427,3 +444,19 @@ source_claims:
     disposition: covered
     spec_refs: [B3, D-02]
     confidence: high
+  - id: SRC-CLM-008
+    source_ref: SRC-001
+    quote_or_summary: 已支付取消后优惠券不自动退回（原料只写待支付释券，已支付回券未规定）
+    evidence: ops-request.zh.txt:约束第1条（待支付释券）；已支付回券为产品补全
+    kind: decision
+    disposition: assumption
+    spec_refs: [D-01, B2]
+    confidence: medium
+  - id: SRC-CLM-009
+    source_ref: SRC-001
+    quote_or_summary: 确认弹窗、双入口、置灰而非隐藏、登录且为下单人——原料未写，产品为可开发补全
+    evidence: 原料未出现弹窗/入口形态/置灰/登录校验
+    kind: assumption
+    disposition: assumption
+    spec_refs: [btn_cancel, dlg_confirm_title, dlg_confirm_ok, dlg_confirm_cancel]
+    confidence: medium

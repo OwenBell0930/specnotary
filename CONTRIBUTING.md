@@ -15,15 +15,17 @@ python3 tests/test_doc_consistency.py # 文档声明与实现一致性
 ## 改动规则
 
 1. **每条新 FAIL/WARN 规则必须带一个会失败的测试。** 只有样例全绿不算证据；测试必须证明「坏输入确实被拦下」。
-2. **新增机读对象必须同时在 `tests/test_mutations.py` 补变异算子**（唯一性 / 引用闭合 / 自相矛盾，按适用性）。两轮审计的洞都出自「新对象没继承老规则家族」；`test_matrix_covers_every_object_family` 会拦下漏补。
+2. **新增机读对象必须同时在 `tests/test_mutations.py` 补变异算子**（唯一性 / 引用闭合 / 自相矛盾，按适用性）。Schema 里新增的「对象数组」字段若没有对应变异家族，`test_matrix_covers_every_object_family` 会从 Schema 发现并 FAIL，不必再手抄名单。
 3. **文档承诺变了，`tests/test_doc_consistency.py` 必须同步跟上。** 卖防漂的工具不能自己漂：能力表语义、渲染器版本、CLI 子命令与 flag 都由该测试对着代码校验。
 4. **断言产物，不要只断言退出码。** `sync` 曾因原型 stale 而根本不写人读，而当时的测试只断言 `returncode == 1`，于是 bug 被认证成了预期行为。写文件的命令必须回读文件内容。
 5. **收紧或放宽任何规则时，两个方向都要有测试。** 为消除误报而加的豁免最容易把规则改成废纸（曾豁免任何含「不」的行）；为收紧而改的判据最容易误伤真实内容（占位检测差点打死「智能识别」）。参照 `test_sync_semantics_detector_is_calibrated` 与 `test_real_ui_literals_are_not_placeholders` 的成对写法。
 6. **注意规则之间的豁免共用。** 空话检测豁免 `「…」`，占位检测不豁免——两者共用豁免曾放过全部模板空壳。新增豁免时问一句：别的规则会不会顺着这个豁免漏掉东西。
 7. **机读 Schema / 规则语义变化必须同步三处**：`src/specnotary/schemas/`、`docs/gate-modes.md`、README 能力表。
 8. **改了渲染器（`render_human`）必须递增 `RENDERER_VERSION`** 并重新生成 `examples/**/human/spec.md`，否则所有人读会以费解的方式 stale。
-9. **Node 目录只允许存在拒绝执行的 stub。** 不要提交任何第二套规则实现。
-10. 样例一律虚构业务；禁止提交真实公司 PRD、内部资料或本机绝对路径。
+9. **人读正文禁止用机读 ID 冒充文案/状态/动作。** 修法是渲染器 glossary 全量展开 + 机读补中文标签，不是手改 `human/spec.md`。口径见 [`docs/human-view.md`](docs/human-view.md)。
+10. **Node 目录只允许存在拒绝执行的 stub。** 不要提交任何第二套规则实现。
+11. **改空话 / 占位词表必须同步 [`docs/empty-talk-corpus.md`](docs/empty-talk-corpus.md)**，并由 `test_empty_talk_corpus` 回放。那是公开校准集，不是一般 NLP 引擎。词表漏网的假详细由 Skill 语义拦，不得写进硬检查。
+12. 样例一律虚构业务；禁止提交真实公司 PRD、内部资料或本机绝对路径。
 
 ## 提交前自查
 
