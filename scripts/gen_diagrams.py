@@ -150,7 +150,7 @@ def before_after():
 
 def architecture():
     svg = header(1280, 620)
-    svg += label(640, 40, "What's in the box / 仓库里有什么", 26)
+    svg += label(640, 40, "What's in the box / 套件里有什么", 26)
 
     svg += box(60, 100, 360, 140, "Scaffold 脚手架", "templates · examples · docs", fill=BLUE_LIGHT)
     svg += box(460, 100, 360, 140, "CLI 硬门禁", "check · human · report · sync", fill=WHITE)
@@ -163,7 +163,7 @@ def architecture():
     svg += line(640, 240, 640, 300)
     svg += line(1040, 240, 940, 300, color=ORANGE)
 
-    svg += label(640, 530, "Python 硬门禁 · Node Deferred · 优先 YAML · 上传 GitHub 前仍须走九步复核", 15, bold=False, color=TEXT_MUTED)
+    svg += label(640, 530, "Python 硬门禁 · Node Deferred · 优先 YAML", 15, bold=False, color=TEXT_MUTED)
     svg += footer()
     path = os.path.join(OUT, "architecture.svg")
     with open(path, "w", encoding="utf-8") as f:

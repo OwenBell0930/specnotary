@@ -306,16 +306,62 @@ def test_capability_table_commands_runnable():
 
 
 def test_brand_is_consistent():
-    """Old brands may only appear in explicit naming-history sentences."""
-    history_markers = ("曾用名", "Formerly", "原工作名", "更名", "命名")
+    """Abandoned working names must not appear on the public surface."""
+    patterns = (
+        re.compile(r"曾用名"),
+        re.compile(r"\bFormerly\b"),
+        re.compile(r"原工作名"),
+        re.compile(r"SpecAnvil"),
+        re.compile(r"specanvil", re.I),
+        re.compile(r"Spec Kit"),
+        re.compile(r"spec-kit-node"),
+    )
     stale = []
-    for path, text in _doc_text().items():
+    scanned = dict(_doc_text())
+    lock = ROOT / "cli/node/package-lock.json"
+    if lock.is_file():
+        scanned[lock] = lock.read_text(encoding="utf-8")
+    for path, text in scanned.items():
         for i, line in enumerate(text.splitlines(), 1):
-            if re.search(r"SpecAnvil|specanvil|Spec Kit(?!\s*/)", line) and not any(
-                m in line for m in history_markers
-            ):
+            if any(p.search(line) for p in patterns):
                 stale.append(f"{path.name}:{i}")
-    assert not stale, f"old brand outside naming-history context: {stale}"
+                break
+    assert not stale, "abandoned brand or rename history: " + "; ".join(stale)
+
+
+def test_english_readme_has_front_door_sections():
+    """The English front door must keep the same section anchors as the Chinese one."""
+    zh = (ROOT / "README.md").read_text(encoding="utf-8")
+    en = (ROOT / "README.en.md").read_text(encoding="utf-8")
+    missing = []
+    for anchor in ("value", "overview", "demo", "quick-start", "gates", "examples", "structure", "docs"):
+        needle = f'id="{anchor}"'
+        if needle not in zh:
+            missing.append(f"README.md #{anchor}")
+        if needle not in en:
+            missing.append(f"README.en.md #{anchor}")
+    assert not missing, "front-door section missing: " + "; ".join(missing)
+
+
+def test_no_process_theater():
+    """First public surface must not narrate audit rounds or release choreography."""
+    forbidden = re.compile(
+        r"第[一二三四五六七八九十\d]+轮|红队修复|外部审计发现|九步复核|发布前建设|P0-P2"
+    )
+    stale = []
+    extra = [ROOT / "docs/assets/architecture.svg", ROOT / "scripts/gen_diagrams.py"]
+    scanned = dict(_doc_text())
+    for path in extra:
+        if path.is_file():
+            scanned[path] = path.read_text(encoding="utf-8")
+    for path, text in scanned.items():
+        for i, line in enumerate(text.splitlines(), 1):
+            if forbidden.search(line):
+                stale.append(f"{path.name}:{i}")
+    archive = ROOT / "docs/archive"
+    if archive.exists() and any(p.is_file() for p in archive.rglob("*")):
+        stale.append("docs/archive must not ship")
+    assert not stale, "process narrative on public surface: " + "; ".join(stale)
 
 
 def test_schema_and_known_top_level_agree():
@@ -376,6 +422,8 @@ TESTS = [
     test_no_hardcoded_test_counts,
     test_capability_table_commands_runnable,
     test_brand_is_consistent,
+    test_english_readme_has_front_door_sections,
+    test_no_process_theater,
     test_schema_and_known_top_level_agree,
     test_shape_sanitizer_matches_schema_containers,
     test_security_support_matches_package_minor,

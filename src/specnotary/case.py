@@ -138,7 +138,7 @@ def new_main(argv: list[str] | None = None) -> int:
 
 
 def ingest_main(argv: list[str] | None = None) -> int:
-    """Register another raw file as a source (Spec Kit / OpenSpec markdown included)."""
+    """Register another raw file as a source (GitHub spec-kit / OpenSpec markdown included)."""
     argv = list(sys.argv[1:] if argv is None else argv)
     try:
         positional, flags = _parse_kv(argv)

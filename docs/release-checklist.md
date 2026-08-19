@@ -15,9 +15,9 @@
 | 6 | LICENSE / CHANGELOG / CONTRIBUTING / SECURITY | 根目录 | ✅ |
 | 7 | 无本机绝对路径入库 | `git grep "/Users/" -- ':!*.svg' ':!docs/release-checklist.md'` | ✅ 2026-08-19 复查 |
 | 8 | 无真实公司资料 / 未脱敏内容 | 样例为虚构商城；`launch/` 不入库 | ✅ 2026-08-19 复查 |
-| 9 | 名称无混淆 | **SpecNotary**：GitHub 无同名仓/用户/组织；npm/PyPI/crates.io 无 `specnotary`；与 CNCF Notary Project、公证网站 notary.io 领域不同（README 已声明） | ✅ 2026-08-19 终查 |
+| 9 | 名称无混淆 | **SpecNotary**：GitHub 无同名仓/用户/组织；npm/PyPI/crates.io 无 `specnotary`；与 CNCF Notary Project 领域不同（README 已声明） | ✅ 2026-08-19 |
 | 10 | 个人资产隔离 | 运营仓 MEMORY 不入 git；仅 `.cursor/rules/*.mdc` 产品规则 | ✅ |
-| 11 | 外部无上下文测试 | 换未参与开发的 Codex 按说明书安装试用，用户确认通过 | ✅ 2026-08-19 |
+| 11 | 按说明书独立安装试用 | 未参与开发的助手按 README 安装并打开试用页 | ✅ 2026-08-19 |
 | 12 | 承诺与证明对齐 | README 中英承诺语句逐条对照 `docs/proof-boundary.md` | ✅ |
 | 13 | 变异矩阵与文档自检绿 | `python3 tests/test_mutations.py`（KILL_RATE 100%）· `python3 tests/test_doc_consistency.py` | ✅ 2026-08-19 |
 | 14 | 版本单一来源 | 包 / CLI / tag `v0.3.0` | ✅ 发布时打 tag |

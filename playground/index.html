@@ -54,7 +54,7 @@
     <div id="out"><span class="mut">正在准备试用环境（首次大约十几秒）…</span></div>
   </div>
 </main>
-<footer>试用只检查规格正文。要用在自己的需求上：把这个项目发给 Cursor 或 Codex，请它按 skills/SKILL.md 帮你安装。</footer>
+<footer>试用只检查规格正文。要用在自己的需求上：把这个文件夹发给 Cursor 或 Codex，请它按 skills/SKILL.md 帮你安装。</footer>
 <script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
 <script>
 const $ = (id) => document.getElementById(id);
@@ -126,7 +126,7 @@ def pg_human(text):
     return render_human(data, source="playground", gate_mode="degraded")
 `);
     for(const id of ["btn-bad","btn-good","btn-check","btn-human"]) $(id).disabled = false;
-    show('<span class="mut">就绪。点「试一份不合格的需求」或「试一份合格的需求」即可。\n\n要用在自己的需求上：把这个项目发给 Cursor 或 Codex，请它按 skills/SKILL.md 帮你安装。</span>');
+    show('<span class="mut">就绪。点「试一份不合格的需求」或「试一份合格的需求」即可。\n\n要用在自己的需求上：把这个文件夹发给 Cursor 或 Codex，请它按 skills/SKILL.md 帮你安装。</span>');
   }catch(err){
     show(`<span class="fail">加载失败：${esc(String(err))}</span>\n<span class="mut">试用需要能上网。失败后刷新页面再试一次。</span>`);
   }

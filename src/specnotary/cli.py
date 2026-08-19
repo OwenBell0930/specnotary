@@ -38,7 +38,7 @@ def precommit_main(argv: list[str] | None = None) -> int:
 
 COMMANDS = {
     "new": (new_main, "Start a case from raw material: copy source, pin hash, scaffold draft YAML"),
-    "ingest": (ingest_main, "Register another raw file as a source (Spec Kit/OpenSpec markdown included)"),
+    "ingest": (ingest_main, "Register another raw file as a source (GitHub spec-kit / OpenSpec markdown included)"),
     "check": (check_main, "Hard gate: schema + rules + evidence chain (--explain, --json)"),
     "human": (human_main, "Generate human construction-grade view (--lang zh|en)"),
     "report": (report_main, "Write the product-manager self-check report"),

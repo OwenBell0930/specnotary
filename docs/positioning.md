@@ -21,9 +21,9 @@
 - **中游**：Skill/LLM 按 `skills/SKILL.md` 起草机读 YAML、人读与原型（CLI 不解析自然语言）。
 - **下游**：助手跑检查；产品经理确认假设后拿报告去开会。不覆盖多人在线改同一份文件。
 
-## 名称由来
+## 名称
 
-曾用名 Spec Kit（与 GitHub 官方 spec-kit 同名，检索上等于不存在）、SpecAnvil（与 specanvil.com 的同定位产品撞名，外部审计发现后弃用）。套件里 **CLI 仍是公证人**：不创作内容，只钉快照、验签章、出证明——原料内容哈希是公证存档，`--attest-prototype` 是公证背书，PASS 是限定范围内的公证书。写作在 Skill 层。与 CNCF Notary Project（OCI 容器制品签名规范）无关联，领域不同。
+套件里 **CLI 是公证人**：不创作内容，只钉快照、验签章、出证明——原料内容哈希是公证存档，`--attest-prototype` 是公证背书，PASS 是限定范围内的公证书。写作在 Skill 层。与 CNCF Notary Project（OCI 容器制品签名规范）无关联，领域不同。
 
 ## 边界（不做什么）
 

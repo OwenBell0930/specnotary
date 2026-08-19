@@ -34,7 +34,7 @@
   <img alt="author" src="https://img.shields.io/badge/by-OwenBell-0F172A"/>
 </p>
 
-> 曾用名 Spec Kit、SpecAnvil，均因与现有项目撞名而更名（github/spec-kit、specanvil.com）。与工作流类 SDD 工具的关系见 [`docs/positioning.md`](docs/positioning.md)；与 CNCF Notary Project（OCI 制品签名）无关。
+> 与工作流类 SDD 工具的关系见 [`docs/positioning.md`](docs/positioning.md)。与 CNCF Notary Project（OCI 制品签名）无关。
 
 ---
 
@@ -87,7 +87,7 @@
 
 ### 能力状态（诚实分层）
 
-> 产品经理看上面三步即可。下表给 AI 助手和仓库维护者对照，不是给你操作的清单。
+> 产品经理看上面三步即可。下表给 AI 助手和维护者对照，不是给你操作的清单。
 
 | 能力 | 状态 | 说明 |
 |------|------|------|
@@ -198,12 +198,12 @@
 可以复制下面这段给助手（你自己不用执行）：
 
 ```text
-请安装这个项目里的 SpecNotary（pip install .），并严格按 skills/SKILL.md 工作。
+请安装这份 SpecNotary（pip install .），并严格按 skills/SKILL.md 工作。
 对我（产品经理）只问三件事：还缺什么原料、结果对不对、评审材料在哪。
 不要让我操作内部工具，不要让我改内部文件。
 ```
 
-**助手要执行的步骤**写在 [`skills/SKILL.md`](skills/SKILL.md)。仓库自带样例在 `examples/`。
+**助手要执行的步骤**写在 [`skills/SKILL.md`](skills/SKILL.md)。自带样例在 `examples/`。
 
 **回归：**
 
@@ -283,7 +283,7 @@ python3 tests/test_cli.py
 | 人读 Markdown | 同一规格的说明书 / 施工图视图（由 CLI 生成） |
 | 上游 PRD / 工单 / FAQ | **原料**，不是 SpecNotary 的正式产出名 |
 
-**纪律：** 外部 PRD 脚手架仅作只读灵感；业务母版不写入本工具目录。
+**纪律：** 样例一律虚构；不要把真实业务母版放进 SpecNotary 产品树。
 
 ---
 
