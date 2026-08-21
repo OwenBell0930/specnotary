@@ -1,7 +1,7 @@
 # 发布检查清单（GitHub 公开）
 
 > 当前状态：**已公开**。[github.com/OwenBell0930/specnotary](https://github.com/OwenBell0930/specnotary) · tag `v0.3.0`。
-> 产品路径仍是：试用页 + 把文件夹交给 Cursor / Codex。不做团队线上改稿。
+> 产品路径仍是：试用页 + 把 GitHub 网址发给 Cursor / Codex。规格写在正在用的文件夹里即可。不做团队线上改稿。
 
 ## 技术就绪（可自动验证）
 
@@ -24,7 +24,7 @@
 
 ## 增长面就绪（**不是产品经理路径**）
 
-GitHub Action / MCP / pre-commit 给维护者。当前用法：把文件夹交给助手在本机检查。
+GitHub Action / MCP / pre-commit 给维护者。当前用法：把网址发给助手在本机检查。
 
 | 项 | 位置 | 状态 |
 |----|------|------|

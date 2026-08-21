@@ -10,7 +10,13 @@ description: >
 
 产品经理只做三件事：**交出原料、确认结果、拿材料去评审**。检查步骤由你来跑，不要让她操作内部工具或改内部文件。
 
-用户请你安装时执行 `pip install .`，然后按下面顺序工作。对她只问：还缺什么原料、这几条假设认不认、评审材料在哪个文件。
+用户把 GitHub 网址发给你时：不必要求她把 SpecNotary 设成当前工作区。在她已经打开的文件夹里写规格即可。安装：
+
+```bash
+pip install "git+https://github.com/OwenBell0930/specnotary.git"
+```
+
+若她已经克隆了源码，也可用 `pip install .`。然后按下面顺序工作。对她只问：还缺什么原料、这几条假设认不认、评审材料在哪个文件。
 
 ```bash
 specnotary new <case-dir> --from <raw-file> [--kind ops|prd|faq|speckit|ticket|raw] [--id]

@@ -7,7 +7,7 @@
 <p align="center">
   <strong>Forge vague requirements into dev-ready specs — writing + a hard gate in one suite.</strong><br/>
   <strong>For product managers.</strong> You do three things: <strong>hand over raw material, confirm the result, take the pack to review.</strong><br/>
-  <strong>Recommended: Cursor or Codex</strong> (can edit files and run commands). Try the playground first; for your own work, hand the <strong>local folder</strong> to the assistant. You do not operate internal tools.
+  <strong>Recommended: Cursor or Codex</strong> (can edit files and run commands). Send the assistant the <a href="https://github.com/OwenBell0930/specnotary">GitHub URL</a> and ask it to install and follow [`skills/SKILL.md`](skills/SKILL.md). Use whatever folder you already have open — SpecNotary does not need to be the current workspace.
 </p>
 
 <p align="center">
@@ -74,7 +74,7 @@
 2. **Confirm the result** — check the spec and the page draft; assumptions that were not in the source need your yes
 3. **Take it to review** — bring the assistant's self-check report to the meeting
 
-Start with [`playground/index.html`](playground/index.html) and click the sample buttons. For your own work: hand the <strong>local folder</strong> to Cursor or Codex and ask it to install and follow [`skills/SKILL.md`](skills/SKILL.md). Product managers do not operate internal tools.
+Start with [`playground/index.html`](playground/index.html) and click the sample buttons. For your own work: send Cursor or Codex the [GitHub URL](https://github.com/OwenBell0930/specnotary) and ask it to install and follow [`skills/SKILL.md`](skills/SKILL.md). Specs live in whatever folder you already use; SpecNotary does not need to be the current workspace. Product managers do not operate internal tools.
 
 | Situation | What you do |
 |-----------|-------------|
@@ -110,11 +110,11 @@ Start with [`playground/index.html`](playground/index.html) and click the sample
 | Dangling-id check | **Available** | Prose mentions of `P-*`/`AC-*`/`SRC-*` must exist |
 | Mutation coverage metric | **Available** | `tests/test_mutations.py`: operator × object family, prints `KILL_RATE`, runs in CI |
 | Docs-do-not-drift self-check | **Available** | `tests/test_doc_consistency.py`: capability wording / version / subcommands / flags vs code |
-| pip install | **Available** | After clone, `pip install .` (not on PyPI yet) |
+| pip install | **Available** | `pip install "git+https://github.com/OwenBell0930/specnotary.git"` (SpecNotary need not be the workspace; not on PyPI yet) |
 | Machine verdict output | **Available** | `specnotary check --json` includes `fail_by_layer` (machine/source/human/prototype) |
 | English human view | **Available** | `specnotary human --lang en`; Chinese output is byte-stable |
 | pre-commit hook | **Maintainer optional** | The assistant can run the CLI locally. Not the product-manager path, and not team online collaboration |
-| GitHub Action | **Not the product path** | Code exists. Current use: give the folder to an assistant that runs the check locally |
+| GitHub Action | **Not the product path** | Code exists. Current use: send the URL to an assistant that runs the check locally |
 | MCP server | **Not the product path** | Code exists. The assistant follows the Skill and runs commands; no extra protocol required |
 | Try it in the browser | **Available** | [`playground/`](playground/index.html): zero install; click to see a bad spec get rejected |
 | Hand to an agent to write your own spec | **Available** | PM supplies raw material and confirms; the agent drafts and gates per the Skill |
@@ -193,13 +193,15 @@ Full sample:
 **Product manager**
 
 1. Open [`playground/index.html`](playground/index.html) and click the two sample buttons (one is rejected, one passes). No commands.
-2. If it looks useful, give the **local folder** to Cursor, Codex, or another assistant that can edit files and run commands. Ask it to install and follow [`skills/SKILL.md`](skills/SKILL.md). You and engineering do not need to co-edit the spec on GitHub.
+2. If it looks useful, send Cursor, Codex, or another assistant that can edit files and run commands the [GitHub URL](https://github.com/OwenBell0930/specnotary). Ask it to install and follow [`skills/SKILL.md`](skills/SKILL.md). Specs live in whatever folder you already use; SpecNotary does not need to be the current workspace. You and engineering do not need to co-edit the spec on GitHub.
 3. Send it your draft. You fill in what's missing, confirm the write-up, and take the review pack to the meeting.
 
 Paste this to the assistant (you do not run it):
 
 ```text
-Install SpecNotary from this folder (`pip install .`) and follow skills/SKILL.md strictly.
+Install SpecNotary from https://github.com/OwenBell0930/specnotary (it does not need to be the current workspace):
+pip install "git+https://github.com/OwenBell0930/specnotary.git"
+Follow that repo's skills/SKILL.md strictly. Write the spec in the folder I already have open.
 Ask me only: what raw material is still missing, whether the result is right, and where the review pack is.
 Do not ask me to operate internal tools or edit internal files.
 ```
@@ -308,4 +310,4 @@ More: [`examples/README.md`](examples/README.md)
 
 ## Status
 
-OwenBell · SpecNotary public preview (v0.3.0) · [GitHub](https://github.com/OwenBell0930/specnotary) · Product path: playground + hand the folder to Cursor / Codex
+OwenBell · SpecNotary public preview (v0.3.0) · [GitHub](https://github.com/OwenBell0930/specnotary) · Product path: playground + send the URL to Cursor / Codex; SpecNotary need not be the workspace

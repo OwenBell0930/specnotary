@@ -332,8 +332,8 @@ def test_brand_is_consistent():
 def test_front_door_states_audience_and_tools():
     """Audience and recommended tools must be visible above the first thematic break."""
     specs = (
-        ("README.md", "产品经理", ("Cursor", "Codex")),
-        ("README.en.md", "product manager", ("Cursor", "Codex")),
+        ("README.md", "产品经理", ("Cursor", "Codex", "github.com/OwenBell0930/specnotary", "工作区")),
+        ("README.en.md", "product manager", ("Cursor", "Codex", "github.com/OwenBell0930/specnotary", "workspace")),
     )
     missing = []
     for name, audience, tools in specs:

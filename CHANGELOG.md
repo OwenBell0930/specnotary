@@ -34,7 +34,7 @@ SpecNotary 遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)；
 
 - **人读裸 ID**：按机读标签全量展开状态/动作/文案键（含 lifecycle 后缀别名、`value_labels`、角色 id、默认值列表、控件显示条件、字段说明），并用测试钉住；禁止只改人读 Markdown。
 - **输出自检报告给人看（渲染器 v11）**：标题「输出自检报告」；结构检查两档写成「必须改 / 需要你拍板」；处理结果、落到说明书哪一段、结论都用中文。试用页检查结果同步。
-- **使用方式**：产品经理路径是试用页 + 把本机文件夹交给 Cursor / Codex；GitHub Action、MCP 标为非产品路径。
+- **使用方式**：产品经理路径是试用页 + 把 GitHub 网址发给 Cursor / Codex；规格写在她正在用的文件夹里，不必把 SpecNotary 设成工作区；GitHub Action、MCP 标为非产品路径。
 - **假详细两层**：词表补「形成闭环」「治理体系」「赋能」「抓手」等；词表漏网由助手按 Skill 用语义拦住，禁止写进硬检查的结构通过。
 - **证据单调性**：ready 删除 `sources[].path` 不再绕过快照；原型自报 manifest 不能替代真实文件 `data-spec-id` 落点；YAML 与 JSON 重复键同等拒绝；嵌套非对象 item / 非 UTF-8 人读稳定 FAIL；人读头部 `body_hash` / `gate_mode` 不得伪造；空话规则是已知词表；旗舰订单样例把源外推断标成 assumption。
 - **文档自检判据**：豁免改为「被引号引用，或否定紧邻该短语」；占位检测扫原文，不与空话的 `「…」` 豁免共用；写文件的命令必须回读产物。

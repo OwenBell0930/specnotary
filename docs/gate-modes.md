@@ -23,7 +23,7 @@
 4. **人读 stale** — 人读头 `spec_hash` 必须等于当前机读内容哈希；`renderer_version` 必须等于当前渲染器版本（版本不符给出单条「重新生成」提示）；正文须与按机读重渲染逐字一致（只改正文也 FAIL）；头部 `body_hash` 若存在必须等于正文哈希；`gate_mode` 若存在必须为 `hard`，除非同时有 `forced`（此时必须为 `degraded`）  
 5. **原型一致性** — 若存在 `prototype/prototype.manifest.yaml`：manifest 哈希、必需控件/行为映射、禁止无规格业务动作、映射必须落在真实文件的属性位 `data-spec-id`（HTML 与 React/Vue/Svelte 源文件均可；注释、`<script>` 字符串不算命中；source/claim ID 不能给 UI 控件背书）、interaction `from/to/trigger` 不得断链、`required` screen 必须有 path；`semantic_warnings` 仅为 WARN。无 manifest 时跳过（ready 下 WARN，不挡 PASS）。自报 mapping 而无文件 ≠ 原型层 PASS。
 
-依赖：`pip install .`（或仅 `pip install pyyaml jsonschema` 走 `cli/run-*.sh`）
+依赖：`pip install "git+https://github.com/OwenBell0930/specnotary.git"`（或源码目录里 `pip install .`；或仅 `pip install pyyaml jsonschema` 走 `cli/run-*.sh`）
 
 ## 结论分层（按「该改哪个产物」归类）
 
@@ -38,7 +38,7 @@
 
 ## 集成出口
 
-这些给维护者和助手，**不是产品经理的使用方式**。产品经理把文件夹交给助手；助手默认跑 `specnotary check` / `report`。不覆盖和开发同事在 GitHub 上一起改稿。
+这些给维护者和助手，**不是产品经理的使用方式**。产品经理把 GitHub 网址发给助手；规格写在她正在用的文件夹里。助手默认跑 `specnotary check` / `report`。不覆盖和开发同事在 GitHub 上一起改稿。
 
 - **`specnotary check --json`**：机读判定（fail/warn/`fail_by_layer`/ready_gap/exit_code），本机脚本可调用。
 - **`specnotary precommit <spec...>`**：多文件聚合检查，配 `.pre-commit-hooks.yaml` 一行接入（维护者可选）。

@@ -7,7 +7,7 @@
 <p align="center">
   <strong>把含糊需求变成可开发规格——写作 + 质检全套。</strong><br/>
   <strong>面向产品经理。</strong>你只做三步：<strong>交出原料、确认结果、拿材料去评审</strong>。<br/>
-  <strong>推荐 Cursor 或 Codex</strong>（能改文件、能跑命令）。先打开试用页；自己的需求把<strong>本机文件夹</strong>交给助手，不必自己操作内部工具。
+  <strong>推荐 Cursor 或 Codex</strong>（能改文件、能跑命令）。把 <a href="https://github.com/OwenBell0930/specnotary">GitHub 网址</a>发给助手，请它安装并按 [`skills/SKILL.md`](skills/SKILL.md) 工作。你正在用的文件夹即可，不必把 SpecNotary 设成当前工作区。
 </p>
 
 <p align="center">
@@ -73,7 +73,7 @@
 2. **确认结果** — 看说明书和页面稿对不对；原料没写清的假设需要你点头
 3. **拿去评审** — 带上助手给出的输出自检报告去开会
 
-先打开 [`playground/index.html`](playground/index.html) 点按钮看样例。自己的需求：把<strong>本机文件夹</strong>交给 Cursor 或 Codex，请它按 [`skills/SKILL.md`](skills/SKILL.md) 帮你安装并工作。产品经理不必操作内部工具。
+先打开 [`playground/index.html`](playground/index.html) 点按钮看样例。自己的需求：把 [GitHub 网址](https://github.com/OwenBell0930/specnotary) 发给 Cursor 或 Codex，请它安装并按 [`skills/SKILL.md`](skills/SKILL.md) 工作。规格写在你正在用的文件夹里即可，不必把 SpecNotary 设成当前工作区。产品经理不必操作内部工具。
 
 | 场景 | 做什么 |
 |------|--------|
@@ -109,11 +109,11 @@
 | 悬空引用检查 | **Available** | 文本提及 `P-*`/`AC-*`/`SRC-*` 必须真实存在 |
 | 变异覆盖率度量 | **Available** | `tests/test_mutations.py`：变异算子 × 对象族，输出 `KILL_RATE` 并进 CI |
 | 文档不漂自检 | **Available** | `tests/test_doc_consistency.py`：能力表语义/版本/子命令/flag 对着代码校验 |
-| pip 安装 | **Available** | 克隆后 `pip install .`（PyPI 尚未发布） |
+| pip 安装 | **Available** | `pip install "git+https://github.com/OwenBell0930/specnotary.git"`（不必把 SpecNotary 设成工作区；PyPI 尚未发布） |
 | 机读判定输出 | **Available** | `specnotary check --json`：含 `fail_by_layer`（machine/source/human/prototype，直接告诉集成方该改哪个产物） |
 | 英文人读视图 | **Available** | `specnotary human --lang en`；中文输出逐字节不变 |
 | pre-commit 钩子 | **维护者可选** | 助手本机检查即可。不是产品经理路径，也不做团队线上协同 |
-| GitHub Action | **非产品路径** | 代码里有。当前用法是把文件夹交给助手在本机检查，不走 GitHub 协同 |
+| GitHub Action | **非产品路径** | 代码里有。当前用法是把网址发给助手在本机检查，不走 GitHub 协同 |
 | MCP server | **非产品路径** | 代码里有。助手按 Skill 跑命令即可，不必再开一条协议 |
 | 浏览器里点着试 | **Available** | [`playground/`](playground/index.html)：零安装，点按钮看不合格需求怎么被拦住 |
 | 交给 Agent 安装后写自己的需求 | **Available** | 产品经理只提供原料并确认；Agent 按 Skill 起草并验收 |
@@ -192,13 +192,15 @@
 **产品经理**
 
 1. 打开 [`playground/index.html`](playground/index.html)，点两个样例按钮（一份会被拦住，一份可以通过）。不用输入任何命令。
-2. 感兴趣后，把**本机文件夹**交给 Cursor、Codex 或其他能改文件、能跑命令的 AI 助手，请它帮你安装，并按 [`skills/SKILL.md`](skills/SKILL.md) 工作。你和开发同事不需要在 GitHub 上一起改同一份规格。
+2. 感兴趣后，把 [GitHub 网址](https://github.com/OwenBell0930/specnotary) 发给 Cursor、Codex 或其他能改文件、能跑命令的 AI 助手，请它安装并按 [`skills/SKILL.md`](skills/SKILL.md) 工作。规格写在你正在用的文件夹里即可，不必把 SpecNotary 设成当前工作区。你和开发同事不需要在 GitHub 上一起改同一份规格。
 3. 把你的需求草稿发给它。你只需补全缺的说明、确认写得对不对，然后拿评审材料去开会。
 
 可以复制下面这段给助手（你自己不用执行）：
 
 ```text
-请安装这份 SpecNotary（pip install .），并严格按 skills/SKILL.md 工作。
+请从 https://github.com/OwenBell0930/specnotary 安装 SpecNotary（不必把它设成当前工作区）：
+pip install "git+https://github.com/OwenBell0930/specnotary.git"
+并严格按该仓 skills/SKILL.md 工作。规格写在我现在这个文件夹里即可。
 对我（产品经理）只问三件事：还缺什么原料、结果对不对、评审材料在哪。
 不要让我操作内部工具，不要让我改内部文件。
 ```
@@ -307,4 +309,4 @@ python3 tests/test_cli.py
 
 ## Status
 
-OwenBell · SpecNotary 公开预览（v0.3.0）· [GitHub](https://github.com/OwenBell0930/specnotary) · 产品路径：试用页 + 把文件夹交给 Cursor / Codex
+OwenBell · SpecNotary 公开预览（v0.3.0）· [GitHub](https://github.com/OwenBell0930/specnotary) · 产品路径：试用页 + 把网址发给 Cursor / Codex；不必把 SpecNotary 设成工作区
