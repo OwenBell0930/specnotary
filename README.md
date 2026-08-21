@@ -7,7 +7,7 @@
 <p align="center">
   <strong>把含糊需求变成可开发规格——写作 + 质检全套。</strong><br/>
   <strong>面向产品经理。</strong>你只做三步：<strong>交出原料、确认结果、拿材料去评审</strong>。<br/>
-  <strong>推荐 Cursor 或 Codex</strong>（能改文件、能跑命令）。把 <a href="https://github.com/OwenBell0930/specnotary">GitHub 网址</a>发给助手，请它安装并按 [`skills/SKILL.md`](skills/SKILL.md) 工作。你正在用的文件夹即可，不必把 SpecNotary 设成当前工作区。
+  <strong>推荐 Cursor 或 Codex</strong>（能改文件、能跑命令）。把 <a href="https://github.com/OwenBell0930/specnotary">GitHub 网址</a>发给助手，请它安装并按 [`skills/specnotary/SKILL.md`](skills/specnotary/SKILL.md) 工作。你正在用的文件夹即可，不必把 SpecNotary 设成当前工作区。
 </p>
 
 <p align="center">
@@ -73,7 +73,7 @@
 2. **确认结果** — 看说明书和页面稿对不对；原料没写清的假设需要你点头
 3. **拿去评审** — 带上助手给出的输出自检报告去开会
 
-先打开 [`playground/index.html`](playground/index.html) 点按钮看样例。自己的需求：把 [GitHub 网址](https://github.com/OwenBell0930/specnotary) 发给 Cursor 或 Codex，请它安装并按 [`skills/SKILL.md`](skills/SKILL.md) 工作。规格写在你正在用的文件夹里即可，不必把 SpecNotary 设成当前工作区。产品经理不必操作内部工具。
+先打开 [`playground/index.html`](playground/index.html) 点按钮看样例。自己的需求：把 [GitHub 网址](https://github.com/OwenBell0930/specnotary) 发给 Cursor 或 Codex，请它安装并按 [`skills/specnotary/SKILL.md`](skills/specnotary/SKILL.md) 工作。规格写在你正在用的文件夹里即可，不必把 SpecNotary 设成当前工作区。产品经理不必操作内部工具。
 
 | 场景 | 做什么 |
 |------|--------|
@@ -192,7 +192,7 @@
 **产品经理**
 
 1. 打开 [`playground/index.html`](playground/index.html)，点两个样例按钮（一份会被拦住，一份可以通过）。不用输入任何命令。
-2. 感兴趣后，把 [GitHub 网址](https://github.com/OwenBell0930/specnotary) 发给 Cursor、Codex 或其他能改文件、能跑命令的 AI 助手，请它安装并按 [`skills/SKILL.md`](skills/SKILL.md) 工作。规格写在你正在用的文件夹里即可，不必把 SpecNotary 设成当前工作区。你和开发同事不需要在 GitHub 上一起改同一份规格。
+2. 感兴趣后，把 [GitHub 网址](https://github.com/OwenBell0930/specnotary) 发给 Cursor、Codex 或其他能改文件、能跑命令的 AI 助手，请它安装并按 [`skills/specnotary/SKILL.md`](skills/specnotary/SKILL.md) 工作。规格写在你正在用的文件夹里即可，不必把 SpecNotary 设成当前工作区。你和开发同事不需要在 GitHub 上一起改同一份规格。
 3. 把你的需求草稿发给它。你只需补全缺的说明、确认写得对不对，然后拿评审材料去开会。
 
 可以复制下面这段给助手（你自己不用执行）：
@@ -200,12 +200,12 @@
 ```text
 请从 https://github.com/OwenBell0930/specnotary 安装 SpecNotary（不必把它设成当前工作区）：
 pip install "git+https://github.com/OwenBell0930/specnotary.git"
-并严格按该仓 skills/SKILL.md 工作。规格写在我现在这个文件夹里即可。
+并严格按该仓 skills/specnotary/SKILL.md 工作。规格写在我现在这个文件夹里即可。
 对我（产品经理）只问三件事：还缺什么原料、结果对不对、评审材料在哪。
 不要让我操作内部工具，不要让我改内部文件。
 ```
 
-**助手要执行的步骤**写在 [`skills/SKILL.md`](skills/SKILL.md)。自带样例在 `examples/`。
+**助手要执行的步骤**写在 [`skills/specnotary/SKILL.md`](skills/specnotary/SKILL.md)。自带样例在 `examples/`。
 
 **回归：**
 
@@ -217,6 +217,10 @@ python3 tests/test_cli.py
 > **量级预期**：把含糊压成可开发规格是有成本的——样例里 12 行运营说明会展开成很长的说明书。适合多状态、多异常的复杂需求；极小改动不必用它。  
 > 助手若环境里没有 Python，只能做降级检查，必须写明 `gate_mode: degraded`。  
 > Node 运行时 = **Deferred**，不能冒充正式判定。
+
+### Cursor Customize
+
+Cursor 侧栏 **Customize** 上的官方目录是 [Marketplace](https://cursor.com/marketplace)。SpecNotary 已带 `.cursor-plugin/plugin.json`（Skill + `/write-spec` 命令，不含 MCP）。上架须把公开 Git 地址提交到 [cursor.com/marketplace/publish](https://cursor.com/marketplace/publish)，由 Cursor 人工审核，通过后才会出现在 Customize 里。未上架前：把 GitHub 网址发给助手即可。
 
 ---
 
@@ -303,7 +307,7 @@ python3 tests/test_cli.py
 | [`docs/release-checklist.md`](docs/release-checklist.md) | 公开前技术就绪清单 |
 | [`CHANGELOG.md`](CHANGELOG.md) · [`CONTRIBUTING.md`](CONTRIBUTING.md) · [`SECURITY.md`](SECURITY.md) | 版本 · 贡献 · 安全 |
 | [`examples/README.md`](examples/README.md) | 案例索引 |
-| [`skills/SKILL.md`](skills/SKILL.md) | Skill 规则 |
+| [`skills/specnotary/SKILL.md`](skills/specnotary/SKILL.md) | Skill 规则 |
 
 ---
 

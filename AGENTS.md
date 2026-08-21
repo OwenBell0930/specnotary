@@ -10,4 +10,4 @@
 
 跟用户指路：反引号里写带真实空格的绝对路径，禁止只写 `human/spec.md`，禁止把空格写成 `%20` 再做成超链接。短名会打开商城样例；`%20` 会 File not found。需要她看文件时由助手打开，不要让她点聊天链接。
 
-详见 `docs/human-view.md`、`skills/SKILL.md`、`.cursor/rules/human-view-zh.mdc`、`.cursor/rules/cite-spec-path.mdc`。
+详见 `docs/human-view.md`、`skills/specnotary/SKILL.md`、`.cursor/rules/human-view-zh.mdc`、`.cursor/rules/cite-spec-path.mdc`。

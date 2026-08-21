@@ -34,7 +34,7 @@ DOCS = [
     ROOT / "CONTRIBUTING.md",
     ROOT / "CHANGELOG.md",
     ROOT / "SECURITY.md",
-    ROOT / "skills/SKILL.md",
+    ROOT / "skills/specnotary/SKILL.md",
     ROOT / "src/specnotary/cli.py",
     ROOT / "src/specnotary/sync.py",
     ROOT / "action.yml",
@@ -417,6 +417,21 @@ def test_shape_sanitizer_matches_schema_containers():
         assert "array" in types_of(key), f"_LIST_KEYS {key} is not a schema array"
 
 
+def test_cursor_plugin_manifest_is_valid():
+    """Marketplace listing needs a Cursor plugin manifest at the documented path."""
+    import json
+
+    manifest_path = ROOT / ".cursor-plugin" / "plugin.json"
+    assert manifest_path.is_file(), "missing .cursor-plugin/plugin.json"
+    data = json.loads(manifest_path.read_text(encoding="utf-8"))
+    assert data.get("name") == "specnotary"
+    logo = ROOT / data["logo"]
+    assert logo.is_file(), f"plugin logo missing: {data['logo']}"
+    assert (ROOT / "skills" / "specnotary" / "SKILL.md").is_file()
+    assert (ROOT / "commands" / "write-spec.md").is_file()
+    assert not (ROOT / "mcp.json").is_file(), "MCP is not the product path; do not ship mcp.json in the plugin"
+
+
 def test_security_support_matches_package_minor():
     """SECURITY.md '当前 x.y.x' must be this package's minor line."""
     from specnotary import __version__
@@ -444,6 +459,7 @@ TESTS = [
     test_no_process_theater,
     test_schema_and_known_top_level_agree,
     test_shape_sanitizer_matches_schema_containers,
+    test_cursor_plugin_manifest_is_valid,
     test_security_support_matches_package_minor,
 ]
 

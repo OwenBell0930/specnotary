@@ -6,7 +6,8 @@ SpecNotary 遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)；
 
 ### Added
 
-- **对外入口**：产品经理在试用页点按钮即可；感兴趣后把文件夹发给 AI 助手安装。产品经理只面对原料、确认、评审材料。不覆盖多人在线改稿。
+- **Cursor Plugin 清单**：`.cursor-plugin/plugin.json` + `skills/specnotary/SKILL.md` + `/write-spec`，供提交 Cursor Marketplace / Customize。不含 MCP。
+- **对外入口**：产品经理在试用页点按钮即可；感兴趣后把 GitHub 网址发给 Cursor / Codex 安装。规格写在正在用的文件夹里即可。不覆盖多人在线改稿。
 - **维护边界**：机读装载（`spec_io`）/ 规则与证据（`libspec`）/ 人读渲染（`spec_render`）分文件；Schema 对象数组与变异家族、顶层键、形状消毒表互相发现遗漏。
 - **WARN 最小接受账本**：`accepted_warnings`（谁/何时/为何）对得上则不再刷屏；缺字段或过期 id 在 ready 上 FAIL。账本与 `review` 不进 `spec_hash`，入账不打断人读/原型背书。
 - **公开空话语料**：[`docs/empty-talk-corpus.md`](docs/empty-talk-corpus.md) 好坏句子集接到门禁测试（已知词表，不是一般可观察性 NLP）。

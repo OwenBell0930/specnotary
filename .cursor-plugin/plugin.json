@@ -1,0 +1,24 @@
+{
+  "name": "specnotary",
+  "displayName": "SpecNotary",
+  "version": "0.3.0",
+  "description": "Writing plus a deterministic hard gate for specs. For product managers using Cursor: install the CLI from GitHub, draft from raw material, confirm, take the review pack to the meeting. SpecNotary does not need to be the current workspace.",
+  "author": {
+    "name": "OwenBell"
+  },
+  "homepage": "https://owenbell0930.github.io/specnotary/playground/",
+  "repository": "https://github.com/OwenBell0930/specnotary",
+  "license": "MIT",
+  "keywords": [
+    "spec",
+    "prd",
+    "requirements",
+    "linter",
+    "quality-gate",
+    "yaml",
+    "documentation"
+  ],
+  "logo": "assets/logo.svg",
+  "skills": "skills",
+  "commands": "commands"
+}

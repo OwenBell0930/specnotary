@@ -18,7 +18,7 @@
 ## 怎么搭配用
 
 - **上游**：用 GitHub spec-kit / OpenSpec / 任意 PRD 流程产出原料。把对方 `spec.md` 当文件登记：`specnotary ingest spec.md --spec machine/spec.yaml --kind speckit`。不解析、不生成 claims。
-- **中游**：Skill/LLM 按 `skills/SKILL.md` 起草机读 YAML、人读与原型（CLI 不解析自然语言）。
+- **中游**：Skill/LLM 按 `skills/specnotary/SKILL.md` 起草机读 YAML、人读与原型（CLI 不解析自然语言）。
 - **下游**：助手跑检查；产品经理确认假设后拿报告去开会。不覆盖多人在线改同一份文件。
 
 ## 名称

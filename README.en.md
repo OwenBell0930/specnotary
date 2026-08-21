@@ -7,7 +7,7 @@
 <p align="center">
   <strong>Forge vague requirements into dev-ready specs — writing + a hard gate in one suite.</strong><br/>
   <strong>For product managers.</strong> You do three things: <strong>hand over raw material, confirm the result, take the pack to review.</strong><br/>
-  <strong>Recommended: Cursor or Codex</strong> (can edit files and run commands). Send the assistant the <a href="https://github.com/OwenBell0930/specnotary">GitHub URL</a> and ask it to install and follow [`skills/SKILL.md`](skills/SKILL.md). Use whatever folder you already have open — SpecNotary does not need to be the current workspace.
+  <strong>Recommended: Cursor or Codex</strong> (can edit files and run commands). Send the assistant the <a href="https://github.com/OwenBell0930/specnotary">GitHub URL</a> and ask it to install and follow [`skills/specnotary/SKILL.md`](skills/specnotary/SKILL.md). Use whatever folder you already have open — SpecNotary does not need to be the current workspace.
 </p>
 
 <p align="center">
@@ -74,7 +74,7 @@
 2. **Confirm the result** — check the spec and the page draft; assumptions that were not in the source need your yes
 3. **Take it to review** — bring the assistant's self-check report to the meeting
 
-Start with [`playground/index.html`](playground/index.html) and click the sample buttons. For your own work: send Cursor or Codex the [GitHub URL](https://github.com/OwenBell0930/specnotary) and ask it to install and follow [`skills/SKILL.md`](skills/SKILL.md). Specs live in whatever folder you already use; SpecNotary does not need to be the current workspace. Product managers do not operate internal tools.
+Start with [`playground/index.html`](playground/index.html) and click the sample buttons. For your own work: send Cursor or Codex the [GitHub URL](https://github.com/OwenBell0930/specnotary) and ask it to install and follow [`skills/specnotary/SKILL.md`](skills/specnotary/SKILL.md). Specs live in whatever folder you already use; SpecNotary does not need to be the current workspace. Product managers do not operate internal tools.
 
 | Situation | What you do |
 |-----------|-------------|
@@ -193,7 +193,7 @@ Full sample:
 **Product manager**
 
 1. Open [`playground/index.html`](playground/index.html) and click the two sample buttons (one is rejected, one passes). No commands.
-2. If it looks useful, send Cursor, Codex, or another assistant that can edit files and run commands the [GitHub URL](https://github.com/OwenBell0930/specnotary). Ask it to install and follow [`skills/SKILL.md`](skills/SKILL.md). Specs live in whatever folder you already use; SpecNotary does not need to be the current workspace. You and engineering do not need to co-edit the spec on GitHub.
+2. If it looks useful, send Cursor, Codex, or another assistant that can edit files and run commands the [GitHub URL](https://github.com/OwenBell0930/specnotary). Ask it to install and follow [`skills/specnotary/SKILL.md`](skills/specnotary/SKILL.md). Specs live in whatever folder you already use; SpecNotary does not need to be the current workspace. You and engineering do not need to co-edit the spec on GitHub.
 3. Send it your draft. You fill in what's missing, confirm the write-up, and take the review pack to the meeting.
 
 Paste this to the assistant (you do not run it):
@@ -201,12 +201,12 @@ Paste this to the assistant (you do not run it):
 ```text
 Install SpecNotary from https://github.com/OwenBell0930/specnotary (it does not need to be the current workspace):
 pip install "git+https://github.com/OwenBell0930/specnotary.git"
-Follow that repo's skills/SKILL.md strictly. Write the spec in the folder I already have open.
+Follow that repo's skills/specnotary/SKILL.md strictly. Write the spec in the folder I already have open.
 Ask me only: what raw material is still missing, whether the result is right, and where the review pack is.
 Do not ask me to operate internal tools or edit internal files.
 ```
 
-Steps the assistant runs are in [`skills/SKILL.md`](skills/SKILL.md). Shipped samples live in `examples/`.
+Steps the assistant runs are in [`skills/specnotary/SKILL.md`](skills/specnotary/SKILL.md). Shipped samples live in `examples/`.
 
 **Regression:**
 
@@ -218,6 +218,10 @@ python3 tests/test_cli.py
 > **Scale:** compressing vague notes into a buildable spec is expensive — a 12-line ops note becomes a long spec. Use it for multi-state, multi-exception work; skip it for tiny tweaks.  
 > If the assistant has no Python, it can only run a degraded check and must write `gate_mode: degraded`.  
 > Node runtime = **Deferred**; it must not fake a formal verdict.
+
+### Cursor Customize
+
+The official catalog in Cursor's **Customize** sidebar is the [Marketplace](https://cursor.com/marketplace). SpecNotary already ships `.cursor-plugin/plugin.json` (skill + `/write-spec`; no MCP). Listing requires submitting the public Git URL at [cursor.com/marketplace/publish](https://cursor.com/marketplace/publish). Cursor reviews every plugin by hand; it appears in Customize only after that. Until then, send the GitHub URL to the assistant.
 
 ---
 
@@ -304,7 +308,7 @@ More: [`examples/README.md`](examples/README.md)
 | [`docs/release-checklist.md`](docs/release-checklist.md) | Public-release technical checklist |
 | [`CHANGELOG.md`](CHANGELOG.md) · [`CONTRIBUTING.md`](CONTRIBUTING.md) · [`SECURITY.md`](SECURITY.md) | Versions · contributing · security |
 | [`examples/README.md`](examples/README.md) | Case index |
-| [`skills/SKILL.md`](skills/SKILL.md) | Skill rules |
+| [`skills/specnotary/SKILL.md`](skills/specnotary/SKILL.md) | Skill rules |
 
 ---
 

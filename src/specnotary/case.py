@@ -132,7 +132,7 @@ def new_main(argv: list[str] | None = None) -> int:
     (case / "prototype" / "main.html").write_text(html, encoding="utf-8")
     print(f"wrote: {spec_path}")
     print(f"source: {copied} (sha256:{digest[:12]}… kind={kind})")
-    print("NEXT: Agent/Skill 按 skills/SKILL.md 起草机读、人读与原型；用户只确认结果并拿报告去评审。")
+    print("NEXT: Agent/Skill 按 skills/specnotary/SKILL.md 起草机读、人读与原型；用户只确认结果并拿报告去评审。")
     print(f"  specnotary check {spec_path} --explain")
     return 0
 
