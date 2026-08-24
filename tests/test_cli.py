@@ -1611,7 +1611,7 @@ if __name__ == "__main__":
         test_ready_no_covered_fail,
         test_uncovered_behavior_fail,
         test_node_generate_refuses_hard_stamp,
-        test_template_draft_passes_gate,
+        test_template_draft_is_not_mislabeled_pass,
         test_renderer_version_stale,
         test_explain_ready_gap,
         test_explain_flag_prints_gap,
