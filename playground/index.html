@@ -109,8 +109,16 @@ def pg_check(text):
         return json.dumps({"error": "根节点必须是对象"}, ensure_ascii=False)
     result = validate(data, {})
     gap = ready_gap(data, {}) if data.get("status") != "ready" else []
+    raw_status = str(data.get("status") or "")
+    verdict = (
+        "FAIL" if result["fail"] else
+        "DRAFT" if raw_status == "draft" else
+        "DEPRECATED" if raw_status == "deprecated" else
+        "PASS"
+    )
     return json.dumps({
         "status": status_label(str(data.get("status") or "")), "id": data.get("id"),
+        "result": verdict,
         "fail": [humanize_finding(e) for e in result["fail"]],
         "warn": [humanize_finding(w) for w in result["warn"]],
         "ready_gap": gap,
@@ -143,7 +151,10 @@ function renderVerdict(raw){
     html += `<span class="mut">翻成终稿前还差 ${v.ready_gap.length} 条</span>\n`;
     for(const g of v.ready_gap) html += `<span class="gap">还差：${esc(g)}</span>\n`;
   }
-  html += v.fail.length ? `\n<span class="fail">结论：结构未通过。RESULT: FAIL</span>` : `\n<span class="pass">结论：结构通过。RESULT: PASS</span>`;
+  if(v.result === "FAIL") html += `\n<span class="fail">结论：结构未通过。RESULT: FAIL</span>`;
+  else if(v.result === "DRAFT") html += `\n<span class="gap">结论：草稿结构可用，但不是终稿。RESULT: DRAFT</span>`;
+  else if(v.result === "DEPRECATED") html += `\n<span class="mut">结论：规格已停用。RESULT: DEPRECATED</span>`;
+  else html += `\n<span class="pass">结论：结构通过。RESULT: PASS</span>`;
   if(!v.fail.length && v.warn.length) html += `\n<span class="mut">结构可以过关，但仍有需要你拍板的条目</span>`;
   return html;
 }

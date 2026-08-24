@@ -2,18 +2,19 @@
 
 | 模式 | 何时 | 效力 |
 |------|------|------|
-| `hard` | **Python** CLI 已执行（`specnotary check` / `./cli/run-check.sh`） | 可作为本地「自动测试跑通」依据 |
+| `hard` | **Python ≥3.10** CLI 已执行（`specnotary check` / `./cli/run-check.sh`） | 可作为确定性结构检查依据；不代表研发或测试完成 |
 | `degraded` | 无 Python，Skill+LLM 代跑 | **仅参考**；不得冒充 hard PASS |
 
 > **Node CLI：Deferred。** `cli/node/` 与 `SPECNOTARY_RUNTIME=node` **拒绝**冒充 hard PASS（退出码 3），且不携带任何影子规则集。硬门禁只有 Python；无 Python 时用 Skill 并标 `gate_mode: degraded`。
 
-## hard 结果分层
+## hard 结果与问题分层
 
 | 级别 | 含义 | 处理 |
 |------|------|------|
 | **FAIL** | Schema 不通过、引用断裂、ready 却空话/占位、原料文件缺失、人读/原型漂移、Pending 未闭合等 | 必须修到 0 条 FAIL |
 | **WARN** | 缺线框/空态、legacy `cancel_matrix`、assumption 待确认等 | 尽量清零；保留须 `specnotary confirm --by --reason` 写入账本 |
-| **PASS** | FAIL_COUNT=0 | 若仍有 WARN，标注「PASS with WARN」；对得上的 `accepted_warnings`（谁/何时/为何）不再刷屏 |
+| **DRAFT** | `status: draft` 且当前 FAIL_COUNT=0 | 可带问题评审，但不是终稿；看 `READY_GAP_COUNT`，需要明细时加 `--explain` |
+| **PASS** | `status: ready` 且 FAIL_COUNT=0 | 评审材料结构已收口；若仍有 WARN，标注「PASS with WARN」；对得上的 `accepted_warnings` 不再刷屏 |
 
 ## 校验分层
 
@@ -21,7 +22,7 @@
 2. **确定性规则** — **YAML 与 JSON 重复键直接拒绝加载**（同一键两次赋值意味着准据本身歧义）；ID 唯一（含跨类型不撞车）、跨对象引用、不自相矛盾（scope / 矩阵 / 职责）；ready 完备性（占位 ui/defaults/states 不算数；`title` 非空；behavior 必须有 `name`；given/when/then 与 AC 非空、禁空话词表、禁模板占位词（占位/待补/TODO…）——注意**空话检测豁免 `「…」` 内的字面 UI 文案，占位检测不豁免**（模板把占位词写在「」里，共用豁免会放过所有模板空壳）；`待补` 不误伤 `待补充`；`in_scope` 非空）、Pending 五字段、**决策记录未拍板或 `decided` 无 chosen 在 ready 上 FAIL**、自由文本悬空引用（`P-*` / `AC-*` / `SRC-*` / `D-*` 提及即必须存在；ready FAIL，draft WARN）；ready 缺 `overview`、`permissions.can` 未出现在 `action_matrix`、未知顶层字段（`x_` 前缀豁免）均为 WARN；嵌套非对象 item 与非 UTF-8 人读稳定 FAIL，不崩溃  
 3. **原料覆盖** — ready 上每个 `sources[]` **必须有 path 且文件存在**（删除 path 不能绕过快照）；**`content_hash` 在 ready 上必填且须匹配**（PASS 的定义包含「登记基于未变化的快照」，不钉死则该定义不成立；draft 上缺 path / 缺 hash 为 WARN），原料一变全体 claims stale FAIL；`evidence` 引文文件名须与 `source_ref` 指向的文件一致（换文件即暴露）；ready 至少 1 条 `covered`；每个必选 behavior/AC/control 须被 claim 引用；`omitted` / 未闭合 `conflict` 在 `ready` 上 FAIL；`assumption` 为 WARN（可用 `accepted_warnings` 入账后不再刷屏；缺 by/date/reason 在 ready 上 FAIL；过期 id 在 ready 上 FAIL）  
 4. **人读 stale** — 人读头 `spec_hash` 必须等于当前机读内容哈希；`renderer_version` 必须等于当前渲染器版本（版本不符给出单条「重新生成」提示）；正文须与按机读重渲染逐字一致（只改正文也 FAIL）；头部 `body_hash` 若存在必须等于正文哈希；`gate_mode` 若存在必须为 `hard`，除非同时有 `forced`（此时必须为 `degraded`）  
-5. **原型一致性** — 若存在 `prototype/prototype.manifest.yaml`：manifest 哈希、必需控件/行为映射、禁止无规格业务动作、映射必须落在真实文件的属性位 `data-spec-id`（HTML 与 React/Vue/Svelte 源文件均可；注释、`<script>` 字符串不算命中；source/claim ID 不能给 UI 控件背书）、interaction `from/to/trigger` 不得断链、`required` screen 必须有 path；`semantic_warnings` 仅为 WARN。无 manifest 时跳过（ready 下 WARN，不挡 PASS）。自报 mapping 而无文件 ≠ 原型层 PASS。
+5. **原型决策与一致性** — `D-PROTOTYPE` 在 ready 前必须拍板“是否制作 + 载体”。选择不制作时不要求 manifest；选择静态 HTML、本地服务或其他载体时，`prototype/prototype.manifest.yaml` 必须存在，并核对哈希、必需控件/行为映射、禁止无规格业务动作、真实文件属性位 `data-spec-id`、interaction 闭合与 screen path。自报 mapping 而无文件 ≠ 原型层 PASS。
 
 依赖：`pip install "git+https://github.com/OwenBell0930/specnotary.git"`（或源码目录里 `pip install .`；或仅 `pip install pyyaml jsonschema` 走 `cli/run-*.sh`）
 
@@ -53,7 +54,7 @@
 specnotary check <machine.yaml> --explain
 ```
 
-对 draft 规格额外打印 `READY-GAP`：若现在把 `status` 翻成 `ready` 会新增哪些 FAIL。确定性 dry-run，判定零 LLM。
+draft 默认打印 `READY_GAP_COUNT` 且结果为 `DRAFT`；加 `--explain` 后逐条打印 `READY-GAP`：若现在把 `status` 翻成 `ready` 会新增哪些 FAIL。确定性 dry-run，判定零 LLM。
 
 ## 一键同步派生物（背书须显式）
 
@@ -100,9 +101,9 @@ specnotary confirm <machine.yaml> --by <name> --reason "<why>" --accept-all-warn
 
 `specnotary human`（或 `./cli/run-generate-human.sh`）在机读仍有 FAIL 时**拒绝写入**，除非传入 `--allow-invalid`。
 
-### 人读阅读动线（渲染器 v11）
+### 人读阅读动线（渲染器 v13）
 
-先全局后细节：目录、概览、范围、**功能说明**、架构总览、职责边界、数据契约、角色权限、状态与允许动作、页面与交互、主路径（功能说明的验收写法）、默认值文案、错误码、AC、Pending、决策记录、对象 AI、原料落在规格里的情况（附录）。章节按机读实际内容动态编号。门禁对账用的 HTML 注释放在文末，避免 Markdown 预览出现空白。人读把机读 ID **全部**展开为中文：提示文案键 → 「界面原文」；状态枚举 / lifecycle / 业务动作 / 角色 → 中文名（括号里保留机读 ID）。附录的处理结果也用中文（已写入规格，而不是 covered）。不要在说明书正文里留下 `file_too_large`、`terminated`、`create_import_task` 这种裸字段。口径见 [`human-view.md`](human-view.md)。
+先全局后细节：目录、概览、范围、**功能说明**、产品与信息架构、职责边界、数据契约、角色权限、状态与允许动作、页面与交互、主路径（功能说明的验收写法）、默认值文案、错误码、AC、Pending、决策记录、对象 AI、原料落在规格里的情况（附录）。产品/信息架构、数据契约、错误定义属于标准评审内容，不得降级成技术实现章节或随意省略。章节按机读实际内容动态编号。门禁对账用的 HTML 注释放在文末，避免 Markdown 预览出现空白。人读把机读 ID **全部**展开为中文：提示文案键 → 「界面原文」；状态枚举 / lifecycle / 业务动作 / 角色 → 中文名（括号里保留机读 ID）。附录的处理结果也用中文（已写入规格，而不是 covered）。不要在说明书正文里留下 `file_too_large`、`terminated`、`create_import_task` 这种裸字段。口径见 [`human-view.md`](human-view.md)。
 
 **图只画机读真正声明过的关系。** 这是踩过两次坑后的硬规矩：
 

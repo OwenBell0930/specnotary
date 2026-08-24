@@ -70,8 +70,8 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     verdict = gate(spec)
-    if verdict["result"] == "FAIL":
-        print("FAIL: cannot confirm a spec that does not PASS the hard gate")
+    if verdict.get("structural_result") == "FAIL":
+        print("FAIL: cannot confirm a spec that still has structural FAIL items")
         for e in verdict["fail"]:
             print(f"  FAIL: {e}")
         return 1

@@ -74,9 +74,9 @@ def flow():
     items = [
         (40, "1. Inputs", "原料 / 坏稿 / 反推"),
         (300, "2. Machine YAML", "机读唯一准据 · SSOT"),
-        (560, "3. Human MD", "人读施工图 · Generated"),
+        (560, "3. Human MD", "人读评审稿 · Generated"),
         (820, "4. CLI Gate", "hard PASS/FAIL"),
-        (1040, "5. Ready", "可开发 · Dev-ready"),
+        (1040, "5. Ready", "评审就绪 · Review-ready"),
     ]
     for x, t, s in items:
         w = 200 if x < 1000 else 200
@@ -104,8 +104,8 @@ def flow():
 
 def before_after():
     svg = header(1280, 640)
-    svg += label(640, 36, "Case demo: Fake-detailed PRD → Dev-ready machine spec", 24)
-    svg += label(640, 64, "案例：假详细需求 → 可开发机读规格（节选对照）", 14, bold=False, color=TEXT_MUTED)
+    svg += label(640, 36, "Case demo: Fake-detailed PRD → Review-ready machine spec", 24)
+    svg += label(640, 64, "案例：假详细需求 → 评审就绪机读规格（节选对照）", 14, bold=False, color=TEXT_MUTED)
 
     # left bad
     svg += f'<rect x="40" y="100" width="560" height="480" rx="16" fill="#FEF2F2" stroke="{RED}" stroke-width="2"/>'
@@ -116,7 +116,7 @@ def before_after():
         "「权限按角色区分」——未列角色",
         "「异常要有提示」——未写文案/码",
         "无默认值 · 无空结果 · 无验收",
-        "→ 研发只能猜，Agent 会瞎补",
+        "→ 评审现场只能猜，Agent 会瞎补",
     ]
     yy = 175
     for line_t in bad_lines:

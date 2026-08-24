@@ -113,7 +113,15 @@ def main(argv: list[str] | None = None) -> int:
         print(f"FAIL: {e}")
     for w in result["warn"]:
         print(f"WARN: {w}")
-    print("RESULT: FAIL" if result["fail"] else "RESULT: PASS")
+    if result["fail"]:
+        final = "FAIL"
+    elif data.get("status") == "draft":
+        final = "DRAFT"
+    elif data.get("status") == "deprecated":
+        final = "DEPRECATED"
+    else:
+        final = "PASS"
+    print(f"RESULT: {final}")
     return 1 if result["fail"] else 0
 
 

@@ -310,6 +310,49 @@ def test_self_check_report_is_pm_readable():
     assert not result["fail"]
 
 
+def test_draft_report_surfaces_open_items_full_text_and_real_paths():
+    from specnotary.report import render_report
+
+    data = load_spec(ROOT / "templates/machine/spec.template.yaml")
+    long_ac = "Given 产品经理已选择一个范围，When 点击提交评审，Then 页面保留全部关键阈值、字段约束、异常说明和待拍板事项，不得用省略号截断"
+    data["acceptance"][0]["zh"] = long_ac
+    data["source_claims"] = [{
+        "id": "SRC-CLM-001",
+        "source_ref": "SRC-001",
+        "quote_or_summary": "原料要求完整展示验收口径",
+        "disposition": "covered",
+        "spec_refs": ["AC-01"],
+    }]
+    data["pending"] = [{
+        "id": "P-01",
+        "missing": "导出范围由谁决定",
+        "impact": "无法确认评审边界",
+        "owner": "产品负责人",
+        "status": "open",
+    }]
+    spec_path = Path("/tmp/specnotary-report-case/machine/spec.yaml")
+    md = render_report(
+        data,
+        {"fail": [], "warn": [], "ready_gap": ["pending P-01 still open"]},
+        spec_path,
+        None,
+    )
+    assert "RESULT: DRAFT" in md and "RESULT: PASS" not in md
+    assert "导出范围由谁决定" in md
+    assert long_ac in md
+    assert str(spec_path.resolve()) in md
+
+
+def test_schema_error_explains_actor_vs_role():
+    data = load_spec(ROOT / "examples/case-list-search/machine/spec.yaml")
+    data["permissions"][0] = {"role": data["actors"][0]["id"], "can": []}
+    result = validate(data, {})
+    assert any(
+        "permissions[0]" in item and "actor" in item and "role" in item
+        for item in result["fail"]
+    ), result
+
+
 def test_generate_list_search_human():
     src = ROOT / "examples/case-list-search/machine/spec.yaml"
     out = ROOT / "examples/case-list-search/human/spec.md"
@@ -465,10 +508,33 @@ def test_node_generate_refuses_hard_stamp():
     assert "gate_mode: hard" not in out or "cannot stamp" in out
 
 
-def test_template_draft_passes_gate():
+def test_template_draft_is_not_mislabeled_pass():
     code, out = run(ROOT / "templates/machine/spec.template.yaml")
     assert code == 0, out
-    assert "RESULT: PASS" in out
+    assert "STRUCTURE_GATE: PASS" in out
+    assert "RESULT: DRAFT" in out
+    assert "RESULT: PASS" not in out
+    assert "READY_GAP_COUNT:" in out
+
+
+def test_packaged_template_matches_public_template():
+    from importlib.resources import files as resource_files
+
+    packaged = resource_files("specnotary").joinpath("templates/spec.template.yaml")
+    assert packaged.is_file()
+    assert packaged.read_text(encoding="utf-8") == (
+        ROOT / "templates/machine/spec.template.yaml"
+    ).read_text(encoding="utf-8")
+
+
+def test_draft_json_separates_structure_from_review_state():
+    from specnotary.check import gate
+
+    verdict = gate(ROOT / "templates/machine/spec.template.yaml")
+    assert verdict["structural_result"] == "PASS"
+    assert verdict["result"] == "DRAFT"
+    assert verdict["review_state"] == "draft"
+    assert verdict["ready_gap_count"] > 0
 
 
 def test_renderer_version_stale():
@@ -667,6 +733,39 @@ def test_decision_decided_passes():
     data = load_spec(RAW)
     result = validate(data, {})
     assert not any("undecided" in e for e in result["fail"]), result
+
+
+def test_ready_requires_standard_product_review_objects():
+    cases = (
+        ("architecture", "requires product/information architecture"),
+        ("responsibilities", "requires product module responsibilities"),
+        ("data_contracts", "requires product data contracts"),
+        ("error_codes", "requires product error definitions"),
+    )
+    for key, expected in cases:
+        data = load_spec(ROOT / "examples/case-list-search/machine/spec.yaml")
+        data.pop(key, None)
+        result = validate(data, {}, check_human=False)
+        assert any(expected in item for item in result["fail"]), (key, result)
+
+
+def test_prototype_decision_controls_manifest_requirement():
+    data = load_spec(ROOT / "examples/case-list-search/machine/spec.yaml")
+    result = validate(data, {}, check_human=False)
+    assert not any("prototype manifest not found" in item for item in result["warn"]), result
+    assert not any("prototype selected" in item for item in result["fail"]), result
+
+    decision = next(item for item in data["decisions"] if item.get("id") == "D-PROTOTYPE")
+    decision["chosen"] = "static_html"
+    decision["note"] = {"zh": "评审需要演示交互"}
+    selected = validate(data, {}, check_human=False)
+    assert any("prototype selected" in item for item in selected["fail"]), selected
+
+
+def test_prototype_carrier_is_readable_in_human_view():
+    data = load_spec(ROOT / "examples/case-list-search/machine/spec.yaml")
+    text = render_human(data, source="mem")
+    assert "不需要原型，仅评审标准文档 (`no_prototype`)" in text
 
 
 def test_overview_missing_warns_on_ready():
@@ -1364,6 +1463,8 @@ def test_new_and_ingest_pin_source():
         buf = io.StringIO()
         with redirect_stdout(buf):
             assert new_main([str(case), "--from", str(raw), "--kind", "ops", "--id", "SPEC-NEW-001"]) == 0
+        first_output = buf.getvalue()
+        assert "FIRST DECISION" in first_output and "static_html" in first_output
         spec = case / "machine" / "spec.yaml"
         assert spec.is_file()
         copied = case / "input" / "ops-note.txt"
@@ -1372,6 +1473,13 @@ def test_new_and_ingest_pin_source():
         assert data["id"] == "SPEC-NEW-001"
         assert data["sources"][0]["kind"] == "ops"
         assert data["sources"][0]["content_hash"] == file_sha256(copied)
+        prototype_decision = next(
+            item for item in data["decisions"] if item.get("id") == "D-PROTOTYPE"
+        )
+        assert prototype_decision["status"] == "pending" and not prototype_decision.get("chosen")
+        assert not (case / "prototype" / "main.html").exists(), (
+            "new must not choose a prototype carrier before the product manager does"
+        )
         result = validate(data, {}, spec_path=spec, check_human=False)
         assert not result["fail"], result
 
@@ -1519,6 +1627,9 @@ if __name__ == "__main__":
         test_v3_data_contract_error_codes_decisions,
         test_decision_undecided_blocks_ready,
         test_decision_decided_passes,
+        test_ready_requires_standard_product_review_objects,
+        test_prototype_decision_controls_manifest_requirement,
+        test_prototype_carrier_is_readable_in_human_view,
         test_overview_missing_warns_on_ready,
         test_data_contract_claimable,
         test_json_output,

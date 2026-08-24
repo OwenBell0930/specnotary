@@ -211,7 +211,7 @@
     },
     "architecture": {
       "type": "object",
-      "description": "Deterministic diagram source held in the machine spec; renderer embeds it verbatim",
+      "description": "Product and information architecture for requirement review: product objects, pages/modules and information flow; not implementation architecture",
       "properties": {
         "mermaid": { "type": "string", "minLength": 1 },
         "note": { "type": ["object", "string"] }
@@ -220,6 +220,7 @@
     },
     "responsibilities": {
       "type": "array",
+      "description": "Product modules or information areas and their explicit owns/not_owns boundaries",
       "items": {
         "type": "object",
         "required": ["role"],
@@ -234,6 +235,7 @@
     },
     "data_contracts": {
       "type": "array",
+      "description": "Product-defined business entities, inputs/outputs, field meanings and rules; not language/framework or database implementation",
       "items": {
         "type": "object",
         "required": ["id"],
@@ -263,6 +265,7 @@
     },
     "error_codes": {
       "type": "array",
+      "description": "Product-defined error states: meaning, trigger, retry policy and user-visible response",
       "items": {
         "type": "object",
         "required": ["code"],

@@ -152,7 +152,7 @@ def relpath_from_root(path: Path, root: Path) -> str:
     try:
         return str(path.resolve().relative_to(root.resolve()))
     except ValueError:
-        return path.name
+        return str(path.resolve())
 
 
 def split_human_markdown(text: str) -> tuple[dict[str, str], str]:

@@ -253,41 +253,40 @@ overview:
     - zh: 优惠券释放依赖营销服务回调，超时按未释放告警处理
 architecture:
   note:
-    zh: 取消动作由订单服务编排；支付、库存、优惠券、风控均为被调用方。
+    zh: 买家从订单入口进入详情，在取消方案中完成确认、查看拦截反馈或取消结果；退款进度属于成功结果的后续信息。
   mermaid: |-
     flowchart LR
-      Buyer["买家 · 订单详情页"] --> OrderSvc["订单服务（状态机 + 编排）"]
-      OrderSvc --> Pay["支付服务：原路退款"]
-      OrderSvc --> Stock["库存服务：回库"]
-      OrderSvc --> Coupon["营销服务：释券"]
-      OrderSvc --> Risk["风控服务：拦截判定"]
-      OrderSvc --> Copy["文案库：拦截/失败原文"]
+      Buyer["买家"] --> Entry["订单列表 / 订单详情"]
+      Entry --> Cancel["取消订单方案"]
+      Cancel --> Confirm["取消确认弹窗"]
+      Cancel --> Blocked["不可取消 / 风控拦截反馈"]
+      Confirm --> Result["取消结果"]
+      Result --> Refund["退款进度"]
 responsibilities:
-  - role: order_service
-    zh: 订单服务
+  - role: order_entry
+    zh: 订单入口
     owns:
-      - zh: 取消状态机与动作矩阵判定
-      - zh: 退款单/回库/释券的编排与补偿
-      - zh: 拦截与失败文案聚合下发
+      - zh: 在列表和详情按同一规则展示取消入口
+      - zh: 展示当前订单状态与可执行动作
     not_owns:
-      - zh: 支付通道内部实现
-      - zh: 风控命中与否的判定逻辑
-  - role: risk_service
-    zh: 风控服务
+      - zh: 售后申请与人工客服处理流程
+  - role: cancel_flow
+    zh: 取消流程
     owns:
-      - zh: 取消前拦截判定（同步接口）
+      - zh: 确认弹窗、状态分支与取消结果
+      - zh: 待支付释券、已支付退款回库的产品规则
     not_owns:
-      - zh: 拦截后的用户提示文案
-  - role: frontend
-    zh: 买家端前端
+      - zh: 已发货订单的逆向售后流程
+  - role: result_feedback
+    zh: 结果与反馈
     owns:
-      - zh: 按矩阵实现按钮显隐/置灰与弹窗
-      - zh: 逐字展示 empty_states 文案
+      - zh: 展示拦截、失败和退款处理中原文文案
+      - zh: 在两小时内提供可查询的退款进度
     not_owns:
-      - zh: 任何状态判定与重试策略
+      - zh: 支付通道、库存或风控的内部实现
 data_contracts:
   - id: CancelRequest
-    zh: 取消请求
+    zh: 取消意图
     fields:
       - name: order_id
         zh: 订单号
@@ -305,8 +304,8 @@ data_contracts:
         desc:
           zh: 枚举见运营配置；可空
     rules:
-      - zh: 幂等：同一 order_id 重复提交返回首次结果
-      - zh: 服务端以状态矩阵二次校验，不信任前端判定
+      - zh: 是否允许取消以状态×动作矩阵为唯一产品规则
+      - zh: 同一订单重复确认不得产生多个取消结果或多笔退款
   - id: CancelResult
     zh: 取消结果
     fields:
@@ -314,7 +313,7 @@ data_contracts:
         zh: 结果状态
         type: enum
         desc:
-          zh: closed / refund_pending / rejected
+          zh: 已关闭 / 退款处理中 / 已拒绝
       - name: refund_eta_hours
         zh: 退款可查时限
         type: number
@@ -324,9 +323,9 @@ data_contracts:
         zh: 文案键
         type: string
         desc:
-          zh: 指向 empty_states 键名，前端取原文展示
+          zh: 指向 empty_states 键名，界面逐字展示
     rules:
-      - zh: rejected 时 message_key 必填且必须命中已入库文案
+      - zh: 已拒绝时 message_key 必填且必须命中已定义的用户文案
 error_codes:
   - code: CANCEL_NOT_ALLOWED
     zh: 当前状态不可自助取消
@@ -376,6 +375,23 @@ decisions:
     date: "2026-08-07"
     note:
       zh: 履约成本与逆向物流复杂度高，本期锁死
+  - id: D-PROTOTYPE
+    question:
+      zh: 本次需求评审是否需要可交互原型？如需要，采用什么载体？
+    options:
+      - id: no_prototype
+        zh: 不需要原型，仅评审标准文档
+      - id: static_html
+        zh: 静态 HTML，可直接打开
+      - id: local_service
+        zh: 本地服务，可运行交互流程
+      - id: other
+        zh: 其他载体
+    chosen: static_html
+    status: decided
+    date: "2026-08-24"
+    note:
+      zh: 本样例需在评审中演示入口显隐、确认弹窗和拦截反馈，采用仓库内静态 HTML。
 project_hint:
   object_ai_weight: low
   object_ai_notes:
@@ -454,7 +470,7 @@ source_claims:
     confidence: medium
   - id: SRC-CLM-009
     source_ref: SRC-001
-    quote_or_summary: 确认弹窗、双入口、置灰而非隐藏、登录且为下单人——原料未写，产品为可开发补全
+    quote_or_summary: 确认弹窗、双入口、置灰而非隐藏、登录且为下单人——原料未写，产品为评审补全
     evidence: 原料未出现弹窗/入口形态/置灰/登录校验
     kind: assumption
     disposition: assumption

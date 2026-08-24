@@ -247,9 +247,118 @@ acceptance:
 pending: []
 overview:
   summary:
-    zh: 从客服 FAQ 反推出的订单自助取消规格：FAQ 里「怎么答用户」的口径被还原成状态矩阵与文案原文，演示非 PRD 原料同样能收口成可开发规格。
+    zh: 从客服 FAQ 反推出的订单自助取消规格：FAQ 里「怎么答用户」的口径被还原成状态矩阵与文案原文，演示非 PRD 原料同样能收口成评审规格。
   design_principles:
     - zh: FAQ 口径与规格冲突时以规格为准，FAQ 回填更新
+architecture:
+  note:
+    zh: 客服口径被还原为买家在订单入口看到的取消方案、拦截反馈和退款进度三类产品信息。
+  mermaid: |-
+    flowchart LR
+      Buyer["买家"] --> Entry["订单列表 / 订单详情"]
+      Entry --> Cancel["取消订单方案"]
+      Cancel --> Confirm["取消确认"]
+      Cancel --> Blocked["不可取消 / 风控拦截反馈"]
+      Confirm --> Result["取消结果 / 退款进度"]
+responsibilities:
+  - role: order_entry
+    zh: 订单入口
+    owns:
+      - zh: 按订单状态展示或置灰取消入口
+    not_owns:
+      - zh: 已发货后的售后申请流程
+  - role: cancel_flow
+    zh: 取消流程
+    owns:
+      - zh: 确认、取消状态分支和结果反馈
+      - zh: 待支付释券与已支付退款回库规则
+    not_owns:
+      - zh: 支付、库存与风控的内部实现
+  - role: refund_progress
+    zh: 退款进度
+    owns:
+      - zh: 两小时内展示成功、处理中或失败之一
+    not_owns:
+      - zh: 人工客服处理记录
+data_contracts:
+  - id: CancelIntent
+    zh: 订单取消意图
+    fields:
+      - name: order_id
+        zh: 订单号
+        type: string
+        desc:
+          zh: 买家准备取消的订单
+      - name: order_state
+        zh: 当前订单状态
+        type: enum
+        desc:
+          zh: 决定取消入口和允许动作
+      - name: risk_blocked
+        zh: 是否被风控拦截
+        type: boolean
+        desc:
+          zh: 为 true 时不可继续自助取消
+    rules:
+      - zh: 仅买家本人且状态允许、未被风控拦截时可确认取消
+  - id: CancelOutcome
+    zh: 订单取消结果
+    fields:
+      - name: order_state
+        zh: 取消后订单状态
+        type: enum
+        desc:
+          zh: 成功时为已取消，拦截或失败时保持原状态
+      - name: refund_state
+        zh: 退款进度状态
+        type: enum
+        desc:
+          zh: 已支付取消后为成功、处理中或失败之一
+      - name: user_message
+        zh: 用户提示文案
+        type: string
+        desc:
+          zh: 必须使用已定义的拦截、失败或退款文案原文
+error_codes:
+  - code: CANCEL_NOT_ALLOWED
+    zh: 当前状态不可自助取消
+    trigger:
+      zh: 订单处于履约中或已发货状态
+    retryable: false
+    user_copy:
+      zh: 当前订单状态不支持自助取消，请联系客服或去售后中心
+  - code: RISK_BLOCKED
+    zh: 风控拦截
+    trigger:
+      zh: 订单命中禁止自助取消的风控标签
+    retryable: false
+    user_copy:
+      zh: 订单存在风险控制，暂不可自助取消
+  - code: CANCEL_FAILED
+    zh: 取消失败
+    trigger:
+      zh: 确认后未得到取消成功结果
+    retryable: true
+    user_copy:
+      zh: 取消失败，请稍后重试
+decisions:
+  - id: D-PROTOTYPE
+    question:
+      zh: 本次需求评审是否需要可交互原型？如需要，采用什么载体？
+    options:
+      - id: no_prototype
+        zh: 不需要原型，仅评审标准文档
+      - id: static_html
+        zh: 静态 HTML，可直接打开
+      - id: local_service
+        zh: 本地服务，可运行交互流程
+      - id: other
+        zh: 其他载体
+    chosen: no_prototype
+    status: decided
+    date: "2026-08-24"
+    note:
+      zh: FAQ 反推样例用于核对规则和文案，不单独制作交互原型。
 project_hint:
   object_ai_weight: low
   object_ai_notes:

@@ -28,7 +28,7 @@ def precommit_main(argv: list[str] | None = None) -> int:
     worst = 0
     for raw in argv:
         verdict = gate(Path(raw))
-        mark = "PASS" if verdict["result"] == "PASS" else "FAIL"
+        mark = verdict["result"]
         print(f"{mark} {raw} (FAIL {len(verdict['fail'])} / WARN {len(verdict['warn'])})")
         for e in verdict["fail"]:
             print(f"  FAIL: {e}")
@@ -40,7 +40,7 @@ COMMANDS = {
     "new": (new_main, "Start a case from raw material: copy source, pin hash, scaffold draft YAML"),
     "ingest": (ingest_main, "Register another raw file as a source (GitHub spec-kit / OpenSpec markdown included)"),
     "check": (check_main, "Hard gate: schema + rules + evidence chain (--explain, --json)"),
-    "human": (human_main, "Generate human construction-grade view (--lang zh|en)"),
+    "human": (human_main, "Generate the human review view (--lang zh|en)"),
     "report": (report_main, "Write the product-manager self-check report"),
     "confirm": (confirm_main, "Record who accepted remaining WARNs and stamp review confirmation"),
     "sync": (sync_main, "Regenerate the human view after machine edits (prototype needs --attest-prototype)"),
@@ -51,7 +51,7 @@ COMMANDS = {
 
 
 def _usage() -> str:
-    lines = [f"specnotary {__version__} — forge dev-ready specs on a hard gate", "", "Commands:"]
+    lines = [f"specnotary {__version__} — turn requirement material into a review-ready product spec", "", "Commands:"]
     for name, (_fn, help_text) in COMMANDS.items():
         lines.append(f"  specnotary {name:<8} {help_text}")
     lines.append("")

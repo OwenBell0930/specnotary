@@ -1,11 +1,11 @@
 <p align="center">
-  <img src="docs/assets/hero-banner.svg" alt="SpecNotary — forge dev-ready specs" width="100%"/>
+  <img src="docs/assets/hero-banner.svg" alt="SpecNotary — review-ready product requirements" width="100%"/>
 </p>
 
 <h1 align="center">SpecNotary</h1>
 
 <p align="center">
-  <strong>Forge vague requirements into dev-ready specs — writing + a hard gate in one suite.</strong><br/>
+  <strong>Turn raw requirements into a review-ready product pack — writing + a hard gate in one suite.</strong><br/>
   <strong>For product managers.</strong> You do three things: <strong>hand over raw material, confirm the result, take the pack to review.</strong><br/>
   <strong>Recommended: Cursor or Codex</strong> (can edit files and run commands). Send the assistant the <a href="https://github.com/OwenBell0930/specnotary">GitHub URL</a> and ask it to install and follow [`skills/specnotary/SKILL.md`](skills/specnotary/SKILL.md). Use whatever folder you already have open — SpecNotary does not need to be the current workspace.
 </p>
@@ -27,7 +27,7 @@
 
 <p align="center">
   <img alt="try" src="https://img.shields.io/badge/try-browser%20playground-0B6BCB"/>
-  <img alt="gate" src="https://img.shields.io/badge/gate-FAIL%20%7C%20WARN%20%7C%20Pending-DC2626"/>
+  <img alt="gate" src="https://img.shields.io/badge/result-FAIL%20%7C%20DRAFT%20%7C%20PASS-DC2626"/>
   <img alt="runtime" src="https://img.shields.io/badge/hard%20gate-Python-159947"/>
   <img alt="llm" src="https://img.shields.io/badge/LLM%20in%20gate-zero-0B6BCB"/>
   <img alt="license" src="https://img.shields.io/badge/license-MIT-0B6BCB"/>
@@ -43,22 +43,20 @@
 
 ## Value · the problem
 
-**Both goals must hold:**
+**One product goal: review-ready requirements.** Help a product manager turn PRDs, tickets, FAQs, and rough notes into a standard requirements spec and self-check report for review. Product/information architecture, business data contracts, and product error definitions are standard content; sources, assumptions, conflicts, open questions, and any explicitly selected prototype carrier stay traceable.
 
-1. **Dev-ready** — engineering can start from the tables; QA can accept from the ACs
-2. **Review-ready** — before review you can show an evidence chain: source snapshots unchanged and the coverage ledger closed, assumptions and pendings registered and blocked when they shouldn't be, human view byte-identical to the machine source, prototype markers not dangling
-
-**One line:** forge vague PRDs / tickets / FAQs into buildable specs; slogan-grade “fake detail” fails a deterministic gate.
+**One line:** from incoming requirement material to a standard pack for requirements review; slogan-grade “fake detail” fails a deterministic gate.
 
 > What PASS does and does not prove: [`docs/proof-boundary.md`](docs/proof-boundary.md) — PASS ≠ the business is right; PASS = structure and evidence chain are closed.
 
 | Pain | What SpecNotary does |
 |------|---------------------|
-| A long write-up still leaves visibility, copy, and defaults to guesswork | Human view requires wireframes · control tables · state/action matrices · numbered main paths |
-| “smart / ASAP / great UX” shipped as a spec | Hard `FAIL`: vague given/when/then, known empty-talk / placeholder AC phrasing, placeholder ui/defaults |
+| A long write-up still leaves visibility, copy, and defaults unclear in review | The review view expands wireframes · control tables · state/action matrices · numbered main paths |
+| “smart / ASAP / great UX” presented as a complete proposal | Hard `FAIL`: vague given/when/then, known empty-talk / placeholder AC phrasing, placeholder ui/defaults |
 | Human doc and machine truth drift apart | Machine YAML is the **single source of truth**; the human view is generated; hand-editing it fails the gate |
 | Review cannot show which source sentence became which spec line | SourceClaim ledger: every **registered** source item has a disposition, every required entity has a claim, source bytes are hash-pinned (ledger completeness is sampled by humans — see [proof boundary](docs/proof-boundary.md)) |
 | Prototype and spec evolve separately | PrototypeManifest + HTML `data-spec-id` marker check |
+| Nobody confirms whether a prototype is needed or how reviewers will open it | First-round `D-PROTOTYPE` decision: none / static HTML / local service / other |
 | Open questions pretending to be ready | `Pending` needs five fields; still open on `ready` → `FAIL` |
 | No Python, so no hard gate | Skill can run a degraded check, which must be labelled `gate_mode: degraded`; Node CLI = Deferred |
 
@@ -80,11 +78,11 @@ Start with [`playground/index.html`](playground/index.html) and click the sample
 |-----------|-------------|
 | A new request lands | Hand over the original notes, confirm the spec and page draft, take the pack to the meeting |
 | Before a requirements review | Check coverage notes, confirmed assumptions, and whether fake detail was blocked |
-| Hand-off to engineering | Use the buttons, states, and acceptance sentences in the spec |
-| Hand-off to QA | Use the acceptance sentences and empty-state copy as case input |
+| Proposal review | Discuss scope, states, interactions, defaults, exceptions, and observable outcomes |
+| Prototype review (if needed) | Check that spec items and clickable screens map to one another |
 | Post-mortem on a fake-detail draft | Compare `case-order-cancel-bad`: which phrasings the gate rejects |
 
-**Not this:** not another slogan template, and not project management or multiplayer online editing. Upstream docs stay **raw material**; the formal output is a **dev-ready requirements spec** (also used to close review). Documents from other tools can be registered as sources; they are not auto-converted into SpecNotary's machine format.
+**Not this:** not another slogan template, project management, multiplayer editing, implementation planning, or QA management. Upstream docs stay **raw material**; the formal output is a **review-ready requirements specification**. Languages, implementation tasks, test strategy, and coverage evidence are outside the product boundary. Documents from other tools can be registered as sources; they are not auto-converted into SpecNotary's machine format.
 
 ### Capability status (honest tiers)
 
@@ -96,16 +94,16 @@ Start with [`playground/index.html`](playground/index.html) and click the sample
 | Start a case / register another source | **Available** | `specnotary new --from` · `specnotary ingest --spec` (pins hash; does not invent claims) |
 | WARN acceptance ledger | **Available** | `specnotary confirm --by --reason --accept-all-warn` (who / when / why; stale ids FAIL on ready) |
 | Ready-gap report | **Available** | `specnotary check --explain` prints `READY-GAP` |
-| Human construction view | **Available** | `specnotary human` (refuses to write on FAIL) |
+| Human review view | **Available** | `specnotary human` (refuses to write on FAIL) |
 | One-command derivative sync | **Available** | `specnotary sync`: regenerate human view + re-run the gate; prototype attestation needs explicit `--attest-prototype` |
-| FAIL / WARN / Pending layers | **Available** | See `docs/gate-modes.md` |
+| FAIL / DRAFT / PASS and finding layers | **Available** | See `docs/gate-modes.md`; a structurally valid draft never impersonates a final PASS |
 | Generic `action_matrix` (non-order example) | **Available** | See `examples/case-list-search/` |
 | Skill drafting / degraded check | **Available** | Degraded must be labelled `degraded` |
 | Source coverage (SourceClaim) | **Available** | On ready every source needs a real path + content_hash; deleting path cannot bypass; required entities must be cited; `specnotary report` writes the PM self-check report |
-| Global human view (TOC / overview / features / architecture / duties / data contracts / error codes / decisions) | **Available** | renderer v11; machine IDs expanded to Chinese; mermaid diagrams generated deterministically |
+| Global human view (TOC / overview / features / product & information architecture / duties / data contracts / error codes / decisions) | **Available** | renderer v13; machine IDs expanded to Chinese; mermaid diagrams generated deterministically |
 | Decision-log gate | **Available** | Undecided `decisions` FAIL on `ready` |
 | Human hash / stale detection | **Available** | `spec_hash` + byte-identical body + `renderer_version`; editing only the body still FAILs |
-| Prototype manifest consistency | **Available** | manifest hash + real-file `data-spec-id` attributes (HTML/React/Vue; script strings do not count); no manifest → skip + WARN |
+| Prototype decision + manifest consistency | **Available** | `D-PROTOTYPE` must decide none/static HTML/local service/other; a selected prototype requires a manifest, while an explicit no-prototype choice creates no missing-manifest warning |
 | Marker retrofit on existing trees | **Available** | `specnotary markers`: listed / illegal / still-to-fill `data-spec-id` |
 | Dangling-id check | **Available** | Prose mentions of `P-*`/`AC-*`/`SRC-*` must exist |
 | Mutation coverage metric | **Available** | `tests/test_mutations.py`: operator × object family, prints `KILL_RATE`, runs in CI |
@@ -134,7 +132,7 @@ Product managers can skip this section. It describes the internals the assistant
 | Layer | What it is | Duty |
 |-------|------------|------|
 | **CLI** (primary · Python) | `specnotary new / ingest / check / human / report / confirm / sync` (or `cli/run-*.sh` without install) | Pin sources; hard gate; machine → human; coverage report; WARN ledger; hash-chain sync |
-| **Scaffold** (primary) | `templates/` · `examples/` | Field conventions and construction-grade samples |
+| **Scaffold** (primary) | `templates/` · `examples/` | Field conventions and review-grade samples |
 | **Skill** (auxiliary) | `skills/` | Draft the machine source; degraded check when no runtime |
 
 <p align="center">
@@ -146,7 +144,7 @@ Product managers can skip this section. It describes the internals the assistant
 | Capability | In plain words |
 |------------|----------------|
 | Machine-first | Edit YAML/JSON; human view is generated by the CLI; default is no generate on FAIL |
-| Construction-grade human | Wireframe · control table · state/action matrix · numbered main path · AC · Pending |
+| Review-ready human | Product/information architecture · wireframe · control table · state/action matrix · numbered main path · AC · Pending |
 | Hard CLI gate | Python: `FAIL_COUNT` must be 0; schema + ID/ref checks |
 | Degraded Skill | Usable without Python; the result must be labelled `degraded` |
 
@@ -157,11 +155,11 @@ Product managers can skip this section. It describes the internals the assistant
 ## Demo · speak with a real spec
 
 <p align="center">
-  <img src="docs/assets/before-after.svg" alt="Fake detail vs construction density" width="100%"/>
+  <img src="docs/assets/before-after.svg" alt="Fake detail vs review-spec density" width="100%"/>
 </p>
 
 A slice of the “unshipped order cancel” human view — wireframe, control visibility, failure copy as written.  
-People stay because they can **build from this table**, not because of slogans.
+A review succeeds when **each proposal can be judged from this table**, not because of slogans.
 
 ### Excerpt · controls
 
@@ -215,7 +213,7 @@ python3 tests/test_cli.py
 ```
 
 > [!NOTE]
-> **Scale:** compressing vague notes into a buildable spec is expensive — a 12-line ops note becomes a long spec. Use it for multi-state, multi-exception work; skip it for tiny tweaks.  
+> **Scale:** turning vague notes into a review pack takes work — a 12-line ops note becomes a long spec. Use it for multi-state, multi-exception work; skip it for tiny tweaks.
 > If the assistant has no Python, it can only run a degraded check and must write `gate_mode: degraded`.  
 > Node runtime = **Deferred**; it must not fake a formal verdict.
 
@@ -277,9 +275,9 @@ More: [`examples/README.md`](examples/README.md)
 | [`src/specnotary/`](src/specnotary/) | Python package: gate rules, renderer, schemas (what `pip install` ships) |
 | [`cli/`](cli/) | No-install wrappers: `run-check.sh` · `run-generate-human.sh` · `run-report.sh` · `run-sync.sh` |
 | [`templates/`](templates/) | Machine / human / prototype-manifest conventions (the template itself passes the gate) |
-| [`examples/`](examples/) | Construction-grade samples (aligned + deliberately drifted prototypes) |
+| [`examples/`](examples/) | Review-grade samples (aligned + deliberately drifted prototypes) |
 | [`skills/`](skills/) | Auxiliary: drafting and degraded checks |
-| [`docs/what-is-dev-ready.md`](docs/what-is-dev-ready.md) | What “dev-ready” means |
+| [`docs/what-is-dev-ready.md`](docs/what-is-dev-ready.md) | What “review-ready” means (legacy filename retained) |
 | [`docs/human-view.md`](docs/human-view.md) | Human prose in Chinese; machine IDs only for reconciliation |
 
 **Artifact roles**
@@ -287,7 +285,7 @@ More: [`examples/README.md`](examples/README.md)
 | Artifact | Role |
 |----------|------|
 | Machine YAML/JSON | **Single source of truth** (edit here) |
-| Human Markdown | The spec / construction view of the same contract (generated by the CLI) |
+| Human Markdown | The spec / review view of the same contract (generated by the CLI) |
 | Upstream PRD / ticket / FAQ | **Raw material**, not SpecNotary's formal output name |
 
 **Rule:** samples are fictional; do not put a real business master into the SpecNotary product tree.
@@ -300,7 +298,7 @@ More: [`examples/README.md`](examples/README.md)
 
 | Doc | Contents |
 |-----|----------|
-| [`docs/what-is-dev-ready.md`](docs/what-is-dev-ready.md) | What “dev-ready” means |
+| [`docs/what-is-dev-ready.md`](docs/what-is-dev-ready.md) | What “review-ready” means |
 | [`docs/gate-modes.md`](docs/gate-modes.md) | hard / degraded; source coverage and stale |
 | [`docs/positioning.md`](docs/positioning.md) | Relation to GitHub spec-kit / OpenSpec (their docs can be ingested; no one-click Markdown-to-YAML) |
 | [`docs/empty-talk-corpus.md`](docs/empty-talk-corpus.md) | Empty-talk good/bad sentence set (known list, not general NLP) |

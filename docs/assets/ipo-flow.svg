@@ -85,15 +85,15 @@
   <line x1="736" y1="200" x2="756" y2="200" stroke="#A8B8DC" stroke-width="1.2"/>
   <line x1="736" y1="210" x2="750" y2="210" stroke="#A8B8DC" stroke-width="1.2"/>
   <rect x="736" y="218" width="16" height="6" rx="1" fill="#D6E0F5"/>
-  <text x="880" y="204" text-anchor="middle" class="t" fill="#5A6F9A" font-size="14" font-weight="700">人读施工图 Human</text>
-  <text x="880" y="224" text-anchor="middle" class="t" fill="#9AABC8" font-size="11">线框·控件·AC · Construction view</text>
+  <text x="880" y="204" text-anchor="middle" class="t" fill="#5A6F9A" font-size="14" font-weight="700">人读评审稿 Human</text>
+  <text x="880" y="224" text-anchor="middle" class="t" fill="#9AABC8" font-size="11">线框·控件·AC · Review view</text>
 
   <!-- Gate report -->
   <rect x="710" y="260" width="280" height="72" rx="14" fill="#F3F6FF" stroke="#8FA3D4" stroke-width="1.8"/>
   <circle cx="746" cy="296" r="14" fill="#E8F5E9" stroke="#7BAF9E" stroke-width="1.5"/>
   <path d="M739 296 L744 301 L755 288" fill="none" stroke="#5A9A86" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
   <text x="880" y="292" text-anchor="middle" class="t" fill="#5A6F9A" font-size="14" font-weight="700">门禁结果 Gate</text>
-  <text x="880" y="312" text-anchor="middle" class="t" fill="#9AABC8" font-size="11">PASS / FAIL · WARN · Pending</text>
+  <text x="880" y="312" text-anchor="middle" class="t" fill="#9AABC8" font-size="11">FAIL / DRAFT / PASS · WARN</text>
 
-  <text x="860" y="358" text-anchor="middle" class="t" fill="#A8B0C4" font-size="11">可开发的需求规格说明书 · Dev-ready spec</text>
+  <text x="860" y="358" text-anchor="middle" class="t" fill="#A8B0C4" font-size="11">评审就绪的需求规格说明书 · Review-ready spec</text>
 </svg>

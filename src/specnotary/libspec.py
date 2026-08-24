@@ -309,8 +309,6 @@ def warning_id(msg: str) -> str:
     m = re.match(r"source (\S+): no content_hash\b", msg)
     if m:
         return f"source-hash:{m.group(1)}"
-    if msg.startswith("prototype manifest not found"):
-        return "prototype:skipped"
     if msg.startswith("overview missing"):
         return "overview:missing"
     if msg.startswith("empty_states missing"):
@@ -617,8 +615,22 @@ def _layer_schema(data: dict, fail: list[str]) -> None:
     try:
         jsonschema.validate(instance=data, schema=load_schema())
     except jsonschema.ValidationError as exc:
-        path = ".".join(str(p) for p in exc.absolute_path) or "(root)"
-        fail.append(f"schema: {exc.message} at {path}")
+        parts = list(exc.absolute_path)
+        path = ".".join(str(p) for p in parts) or "(root)"
+        if parts and parts[0] == "permissions" and "'actor'" in exc.message:
+            index = parts[1] if len(parts) > 1 else "?"
+            fail.append(
+                f"schema: permissions[{index}] 缺少 actor；这里填写 actors[].id，"
+                "不要写 role（role 只用于 responsibilities）"
+            )
+        elif parts and parts[0] == "responsibilities" and "'role'" in exc.message:
+            index = parts[1] if len(parts) > 1 else "?"
+            fail.append(
+                f"schema: responsibilities[{index}] 缺少 role；这里填写模块/责任主体 id，"
+                "不要写 actor（actor 只用于 permissions）"
+            )
+        else:
+            fail.append(f"schema: {exc.message} at {path}")
     except Exception as exc:  # noqa: BLE001
         fail.append(f"schema validation error: {exc}")
 
@@ -633,6 +645,17 @@ KNOWN_TOP_LEVEL = frozenset(
         "content_hash", "accepted_warnings", "review",
     }
 )
+
+PROTOTYPE_DECISION_ID = "D-PROTOTYPE"
+NO_PROTOTYPE_CHOICES = {"no_prototype", "not_required", "none"}
+
+
+def _prototype_decision(data: dict) -> dict | None:
+    """Return the explicit PM decision about prototype need/carrier."""
+    for decision in data.get("decisions") or []:
+        if isinstance(decision, dict) and str(decision.get("id") or "") == PROTOTYPE_DECISION_ID:
+            return decision
+    return None
 
 
 def _warn_unknown_top_level(data: dict, warn: list[str]) -> None:
@@ -812,7 +835,7 @@ def _layer_structure(data: dict, fail: list[str], warn: list[str]) -> list[dict]
 
 
 def _layer_ready(data: dict, matrix: list[dict], fail: list[str]) -> None:
-    """Layer 3 — dev-ready completeness. Placeholders do not count."""
+    """Layer 3 — review-readiness completeness. Placeholders do not count."""
     if data.get("status") != "ready":
         return
     behaviors = data.get("behaviors") or []
@@ -849,6 +872,46 @@ def _layer_ready(data: dict, matrix: list[dict], fail: list[str]) -> None:
         fail.append("status=ready requires states (lifecycle / allowed actions)")
     elif not matrix:
         fail.append("status=ready requires states.action_matrix (lifecycle alone is not enough)")
+
+    # These are product-review definitions, not implementation design.  A
+    # ready pack must make its product/information structure, business data
+    # meaning, and user-visible error response explicit instead of silently
+    # dropping the sections.
+    architecture = data.get("architecture") if isinstance(data.get("architecture"), dict) else {}
+    arch_text = json.dumps(architecture, ensure_ascii=False, default=str)
+    if not str((architecture or {}).get("mermaid") or "").strip():
+        fail.append("status=ready requires product/information architecture (architecture.mermaid)")
+    elif _is_placeholder(arch_text):
+        fail.append("architecture is still placeholder text")
+
+    responsibilities = data.get("responsibilities") or []
+    if not responsibilities:
+        fail.append("status=ready requires product module responsibilities")
+    elif _is_placeholder(json.dumps(responsibilities, ensure_ascii=False, default=str)):
+        fail.append("responsibilities are still placeholder text")
+
+    data_contracts = data.get("data_contracts") or []
+    if not data_contracts:
+        fail.append("status=ready requires product data contracts")
+    elif _is_placeholder(json.dumps(data_contracts, ensure_ascii=False, default=str)):
+        fail.append("data_contracts are still placeholder text")
+
+    error_codes = data.get("error_codes") or []
+    if not error_codes:
+        fail.append("status=ready requires product error definitions")
+    elif _is_placeholder(json.dumps(error_codes, ensure_ascii=False, default=str)):
+        fail.append("error_codes are still placeholder text")
+
+    prototype_decision = _prototype_decision(data)
+    if prototype_decision is None:
+        fail.append(
+            f"status=ready requires {PROTOTYPE_DECISION_ID}: decide whether an interactive "
+            "prototype is needed and choose its carrier"
+        )
+    elif str(prototype_decision.get("chosen") or "").strip() == "other" and not _lang(
+        prototype_decision.get("note"), "zh"
+    ).strip():
+        fail.append(f"decision {PROTOTYPE_DECISION_ID}: chosen=other requires note with the carrier")
     for b in behaviors if isinstance(behaviors, list) else []:
         if not isinstance(b, dict):
             continue
@@ -1004,22 +1067,31 @@ def _layer_prototype(
 ) -> None:
     from .libproto import default_manifest_path, expected_manifest_path, load_and_validate_prototype  # noqa: PLC0415
 
+    decision = _prototype_decision(data)
+    choice = str((decision or {}).get("chosen") or "").strip()
+    explicitly_not_needed = choice in NO_PROTOTYPE_CHOICES
+    prototype_selected = bool(choice) and not explicitly_not_needed
     explicit_manifest = manifest_path is not None
     resolved_manifest = manifest_path if explicit_manifest else default_manifest_path(spec_path)
     if resolved_manifest is not None and resolved_manifest.is_file():
+        if explicitly_not_needed:
+            message = (
+                f"prototype decision {PROTOTYPE_DECISION_ID} says no prototype, "
+                f"but a manifest exists: {resolved_manifest}"
+            )
+            (fail if data.get("status") == "ready" else warn).append(message)
         proto = load_and_validate_prototype(data, resolved_manifest)
         fail.extend(proto["fail"])
         warn.extend(proto["warn"])
     elif explicit_manifest and resolved_manifest is not None and not resolved_manifest.is_file():
         fail.append(f"prototype manifest missing: {resolved_manifest}")
-    elif (
-        not explicit_manifest
-        and spec_path is not None
-        and data.get("status") == "ready"
-        and expected_manifest_path(spec_path) is not None
-        and not expected_manifest_path(spec_path).is_file()
-    ):
-        warn.append("prototype manifest not found — prototype consistency skipped")
+    elif prototype_selected:
+        expected = expected_manifest_path(spec_path)
+        message = (
+            f"prototype selected by {PROTOTYPE_DECISION_ID} (carrier={choice}) but manifest not found"
+            + (f": {expected}" if expected is not None else "")
+        )
+        (fail if data.get("status") == "ready" else warn).append(message)
 
 
 # Keys the rule layers dereference; wrong shapes must degrade to a FAIL,
@@ -1154,6 +1226,3 @@ def ready_gap(
             continue
         gap.append(e)
     return gap
-
-
-

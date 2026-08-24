@@ -1,11 +1,11 @@
 <p align="center">
-  <img src="docs/assets/hero-banner.svg" alt="SpecNotary — 可开发的需求规格说明书" width="100%"/>
+  <img src="docs/assets/hero-banner.svg" alt="SpecNotary — 评审就绪的标准需求规格说明书" width="100%"/>
 </p>
 
 <h1 align="center">SpecNotary</h1>
 
 <p align="center">
-  <strong>把含糊需求变成可开发规格——写作 + 质检全套。</strong><br/>
+  <strong>把需求原料变成评审就绪的标准文档——写作 + 质检全套。</strong><br/>
   <strong>面向产品经理。</strong>你只做三步：<strong>交出原料、确认结果、拿材料去评审</strong>。<br/>
   <strong>推荐 Cursor 或 Codex</strong>（能改文件、能跑命令）。把 <a href="https://github.com/OwenBell0930/specnotary">GitHub 网址</a>发给助手，请它安装并按 [`skills/specnotary/SKILL.md`](skills/specnotary/SKILL.md) 工作。你正在用的文件夹即可，不必把 SpecNotary 设成当前工作区。
 </p>
@@ -27,7 +27,7 @@
 
 <p align="center">
   <img alt="try" src="https://img.shields.io/badge/try-browser%20playground-0B6BCB"/>
-  <img alt="gate" src="https://img.shields.io/badge/gate-FAIL%20%7C%20WARN%20%7C%20Pending-DC2626"/>
+  <img alt="gate" src="https://img.shields.io/badge/result-FAIL%20%7C%20DRAFT%20%7C%20PASS-DC2626"/>
   <img alt="runtime" src="https://img.shields.io/badge/hard%20gate-Python-159947"/>
   <img alt="license" src="https://img.shields.io/badge/license-MIT-0B6BCB"/>
   <img alt="node" src="https://img.shields.io/badge/Node-Deferred-94A3B8"/>
@@ -42,22 +42,20 @@
 
 ## Value · 解决什么问题
 
-**并集目标（都要满足）：**
+**唯一产品目标：评审就绪。** 帮产品经理把 PRD / 工单 / FAQ 等需求原料，整理成可直接用于需求评审的标准规格与自检报告；产品/信息架构、数据契约、错误定义是标准内容，原料快照、覆盖关系、假设、冲突、未决和已拍板载体的可选原型都能对账。
 
-1. **可开发** — 研发能按表开工，测试能按 AC 验收  
-2. **评审就绪** — 评审前拿出证据链：原料快照未变且覆盖账本闭合、假设与未决被显式登记并硬拦、人读与准据逐字同源、原型落点未断链
-
-**一句话：** 把含糊的 PRD / 工单 / FAQ，锻成可开发规格；口号式「假详细」会被确定性门禁拦下。
+**一句话：** 从接到需求原料，到拿出标准文档去评审；口号式「假详细」会被确定性门禁拦下。
 
 > 门禁能证明什么、不能证明什么，唯一口径见 [`docs/proof-boundary.md`](docs/proof-boundary.md)——PASS ≠ 业务正确，PASS = 结构与证据链闭合。
 
 | 痛点 | SpecNotary 怎么处理 |
 |------|-------------------|
-| 需求写了很长，研发仍要猜显隐、文案、默认值 | 人读视图强制线框 · 控件表 · 状态/动作矩阵 · 编号主路径 |
-| 「智能 / 尽快 / 体验好」冒充可开发 | 硬门禁 `FAIL`：空话 given/when/then、已知空话／占位词 AC、占位 ui/defaults 直接否决 |
+| 需求写了很长，评审时仍说不清显隐、文案、默认值 | 人读评审稿展开线框 · 控件表 · 状态/动作矩阵 · 编号主路径 |
+| 「智能 / 尽快 / 体验好」冒充完整方案 | 硬门禁 `FAIL`：空话 given/when/then、已知空话／占位词 AC、占位 ui/defaults 直接否决 |
 | 人读与机读各改各的，越改越漂 | **以机读 YAML 为唯一准据**（single source of truth）；人读只由生成器产出，改正文即 FAIL |
 | 评审时说不清原料哪句落到了哪条规格 | SourceClaim 账本：**已登记**的每条原料有处置、每个必选实体有出处，原料内容被哈希钉死（账本完整性由人抽查，见[证明边界](docs/proof-boundary.md)） |
 | 原型与规格各自演化 | PrototypeManifest + HTML `data-spec-id` 落点核对 |
+| 原型到底做不做、用什么打开没人确认 | 建案后的首轮 `D-PROTOTYPE` 拍板：不制作 / 静态 HTML / 本地服务 / 其他 |
 | 未决事项假装已就绪 | `Pending` 须齐五字段；挂在 `ready` 上 → `FAIL` |
 | 没装 Python 就没法跑硬门禁 | 可用 Skill 降级检查，必须标 `gate_mode: degraded`；Node CLI = Deferred |
 
@@ -79,11 +77,11 @@
 |------|--------|
 | 收一笔需求 | 交出原始说明，确认说明书和页面稿，带材料上会 |
 | 需求评审前 | 看覆盖说明、已确认的假设、假详细有没有被拦住 |
-| 交给研发 | 用说明书里的按钮、状态、验收句子看能不能做 |
-| 交给测试 | 用验收句子和空态文案当用例输入 |
+| 方案评审 | 对照范围、状态、交互、默认值、异常和可观察结果逐项讨论 |
+| 原型评审（如有） | 看规格条目和可点页面是否一一对应 |
 | 复盘假详细稿 | 对照 `case-order-cancel-bad`：看哪些写法会被拦住 |
 
-**不是什么：** 不是又一份口号式需求模板，也不是项目管理或多人在线改稿。上游需求文档仍是**原料**；正式产出是**可开发的需求规格说明书**（并用于评审收口）。对方工具里的文档可以当原料进来，不会被自动改成我们的内部格式。
+**不是什么：** 不是又一份口号式需求模板，也不是项目管理、多人在线改稿、研发实施或测试管理工具。上游需求文档仍是**原料**；正式产出是**评审就绪的标准需求规格说明书**。开发语言、实现任务、测试策略和覆盖证据不属于产品边界。对方工具里的文档可以当原料进来，不会被自动改成我们的内部格式。
 
 ### 能力状态（诚实分层）
 
@@ -95,16 +93,16 @@
 | 从原料建案 / 再登记一份原料 | **Available** | `specnotary new --from` · `specnotary ingest --spec`（钉哈希；不生成 claims） |
 | WARN 接受账本 | **Available** | `specnotary confirm --by --reason --accept-all-warn`（谁/何时/为何；过期 id 在 ready 上 FAIL） |
 | ready 差距报告 | **Available** | `specnotary check --explain` 打印 `READY-GAP` |
-| 人读施工图生成 | **Available** | `specnotary human`（FAIL 时拒绝写入） |
+| 人读评审稿生成 | **Available** | `specnotary human`（FAIL 时拒绝写入） |
 | 一键同步派生物 | **Available** | `specnotary sync`：重生成人读 + 复跑门禁；原型背书须显式 `--attest-prototype` |
-| FAIL / WARN / Pending 分层 | **Available** | 见 `docs/gate-modes.md` |
+| FAIL / DRAFT / PASS 与问题分层 | **Available** | 见 `docs/gate-modes.md`；草稿结构通过也不会冒充终稿 PASS |
 | 通用 `action_matrix`（非订单域样例） | **Available** | 见 `examples/case-list-search/` |
 | Skill 起草 / 降级检查 | **Available** | 降级须标 `degraded` |
 | 原料覆盖（SourceClaim） | **Available** | ready 上每个 source 必须有真实 path + content_hash；删除 path 不能绕过；必选实体必须被引用；`specnotary report` 写出输出自检报告 |
-| 全局视角人读（目录/概览/功能说明/架构图/职责/数据契约/错误码/决策记录） | **Available** | 渲染器 v11；机读 ID 展开为中文；mermaid 图确定性生成，人读防漂 |
+| 全局视角人读（目录/概览/功能说明/产品与信息架构/职责/数据契约/错误码/决策记录） | **Available** | 渲染器 v13；机读 ID 展开为中文；mermaid 图确定性生成，人读防漂 |
 | 决策记录门禁 | **Available** | `decisions` 未拍板在 `ready` 上 FAIL |
 | 人读哈希 / stale 检测 | **Available** | `spec_hash` + 正文逐字对照 + `renderer_version`；只改正文也 FAIL |
-| 原型 Manifest 一致性 | **Available** | manifest 哈希 + 真实文件属性位 `data-spec-id`（HTML/React/Vue 源；script 字符串不算）；无 manifest 则跳过并 WARN |
+| 原型方案与 Manifest 一致性 | **Available** | `D-PROTOTYPE` 首轮必拍板；选择制作则 manifest 必须存在并核对哈希与真实 `data-spec-id`，选择不制作则不制造缺失告警 |
 | 存量项目标记对账 | **Available** | `specnotary markers`：列出已标/非法/待回填的 `data-spec-id` |
 | 悬空引用检查 | **Available** | 文本提及 `P-*`/`AC-*`/`SRC-*` 必须真实存在 |
 | 变异覆盖率度量 | **Available** | `tests/test_mutations.py`：变异算子 × 对象族，输出 `KILL_RATE` 并进 CI |
@@ -133,7 +131,7 @@
 | 层 | 是什么 | 职责 |
 |----|--------|------|
 | **CLI**（主 · Python） | `specnotary new / ingest / check / human / report / confirm / sync`（或 `cli/run-*.sh` 免安装） | 建案钉原料；硬门禁；机读 → 人读；覆盖报告；WARN 账本；哈希链同步 |
-| **Scaffold**（主） | `templates/` · `examples/` | 字段体例与施工图级样例 |
+| **Scaffold**（主） | `templates/` · `examples/` | 字段体例与评审规格级样例 |
 | **Skill**（辅） | `skills/` | 起草机读；无运行时的降级检查 |
 
 <p align="center">
@@ -145,7 +143,7 @@
 | Capability | 白话 |
 |------------|------|
 | Machine-first | 改 YAML/JSON；人读由 CLI 生成；有 FAIL 时默认不生成 |
-| Construction-grade human | 线框 · 控件表 · 状态/动作矩阵 · 编号主路径 · AC · Pending |
+| Review-ready human | 产品/信息架构 · 线框 · 控件表 · 状态/动作矩阵 · 编号主路径 · AC · Pending |
 | Hard CLI gate | Python：`FAIL_COUNT` 必须为 0；Schema + ID/引用校验 |
 | Degraded Skill | 无 Python 时可用，结果必须标 `degraded` |
 
@@ -156,11 +154,11 @@
 ## Demo · 用真规格说话
 
 <p align="center">
-  <img src="docs/assets/before-after.svg" alt="假详细 vs 施工图密度" width="100%"/>
+  <img src="docs/assets/before-after.svg" alt="假详细 vs 评审规格密度" width="100%"/>
 </p>
 
 打开「电商未发货取消」人读视图的一截——有线框、控件显隐、失败文案原文。  
-留人不靠空口号，靠**你能否按这张表开发**。
+评审不靠空口号，靠**每条方案能否在这张表上被逐项判断**。
 
 ### 摘录 · 控件规格
 
@@ -214,7 +212,7 @@ python3 tests/test_cli.py
 ```
 
 > [!NOTE]
-> **量级预期**：把含糊压成可开发规格是有成本的——样例里 12 行运营说明会展开成很长的说明书。适合多状态、多异常的复杂需求；极小改动不必用它。  
+> **量级预期**：把含糊原料整理成评审规格是有成本的——样例里 12 行运营说明会展开成很长的说明书。适合多状态、多异常的复杂需求；极小改动不必用它。
 > 助手若环境里没有 Python，只能做降级检查，必须写明 `gate_mode: degraded`。  
 > Node 运行时 = **Deferred**，不能冒充正式判定。
 
@@ -276,9 +274,9 @@ Cursor 侧栏 **Customize** 上的官方目录是 [Marketplace](https://cursor.c
 | [`src/specnotary/`](src/specnotary/) | Python 包：门禁规则、渲染器、Schema（pip 安装的主体） |
 | [`cli/`](cli/) | 免安装包装：`run-check.sh` · `run-generate-human.sh` · `run-report.sh` · `run-sync.sh` |
 | [`templates/`](templates/) | 机读 / 人读 / 原型 manifest 体例（模板本身过门禁） |
-| [`examples/`](examples/) | 施工图级样例（含对齐与漂移双原型） |
+| [`examples/`](examples/) | 评审规格级样例（含对齐与漂移双原型） |
 | [`skills/`](skills/) | 辅：起草与降级 |
-| [`docs/what-is-dev-ready.md`](docs/what-is-dev-ready.md) | 「可开发」定义 |
+| [`docs/what-is-dev-ready.md`](docs/what-is-dev-ready.md) | 「评审就绪」定义（保留旧文件名以兼容链接） |
 | [`docs/human-view.md`](docs/human-view.md) | 人读正文用中文；机读 ID 只对账 |
 
 **产物分工**
@@ -286,7 +284,7 @@ Cursor 侧栏 **Customize** 上的官方目录是 [Marketplace](https://cursor.c
 | 产物 | 定位 |
 |------|------|
 | 机读 YAML/JSON | **唯一准据**（改这里） |
-| 人读 Markdown | 同一规格的说明书 / 施工图视图（由 CLI 生成） |
+| 人读 Markdown | 同一规格的说明书 / 评审视图（由 CLI 生成） |
 | 上游 PRD / 工单 / FAQ | **原料**，不是 SpecNotary 的正式产出名 |
 
 **纪律：** 样例一律虚构；不要把真实业务母版放进 SpecNotary 产品树。
@@ -299,7 +297,7 @@ Cursor 侧栏 **Customize** 上的官方目录是 [Marketplace](https://cursor.c
 
 | Doc | 内容 |
 |-----|------|
-| [`docs/what-is-dev-ready.md`](docs/what-is-dev-ready.md) | 什么叫「可开发」 |
+| [`docs/what-is-dev-ready.md`](docs/what-is-dev-ready.md) | 什么叫「评审就绪」 |
 | [`docs/gate-modes.md`](docs/gate-modes.md) | hard / degraded；原料覆盖与 stale |
 | [`docs/positioning.md`](docs/positioning.md) | 与 GitHub spec-kit / OpenSpec 的关系（对方文档可 ingest，无一键转 YAML） |
 | [`docs/empty-talk-corpus.md`](docs/empty-talk-corpus.md) | 空话好坏句子校准集（已知词表，不是一般 NLP） |

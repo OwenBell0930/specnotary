@@ -17,7 +17,7 @@ Enter
 Sleep 3200ms
 Type "clear"
 Enter
-Type "# 修成可开发规格（状态矩阵 + 文案原文 + 可观察 AC）→ 再上门禁"
+Type "# 修成评审规格（状态矩阵 + 文案原文 + 可观察 AC）→ 再上门禁"
 Enter
 Sleep 800ms
 Type "specnotary check examples/case-order-cancel-bad/machine/spec.fixed.yaml"

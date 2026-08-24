@@ -1,8 +1,8 @@
-"""SpecNotary — forge dev-ready specs on a hard gate.
+"""SpecNotary — turn raw requirements into review-ready product specs.
 
-Machine YAML is the single source of truth; the human construction-grade
-view, source coverage, and prototype manifests are all verified against it
-deterministically (FAIL / WARN / Pending).
+Machine YAML is the single source of truth; the human review view, source
+coverage, and optional prototype manifests are verified
+against it deterministically (FAIL / DRAFT / PASS).
 """
 
 __version__ = "0.3.0"

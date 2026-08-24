@@ -12,6 +12,7 @@ from .libspec import (
     find_repo_root,
     load_project_for,
     load_spec,
+    ready_gap,
     relpath_from_root,
     spec_hash,
     validate,
@@ -41,6 +42,102 @@ DISPOSITION_ORDER = (
 PROTO_ORDER = ("missing", "extra", "stale", "mismatch", "unverified")
 
 
+def _plain_text(value) -> str:
+    if isinstance(value, dict):
+        for key in ("zh", "en", "label", "name", "text", "question", "missing", "id"):
+            if value.get(key):
+                return _plain_text(value[key])
+        return ""
+    if value is None:
+        return ""
+    return " ".join(str(value).split())
+
+
+def _table_cell(value) -> str:
+    return _plain_text(value).replace("|", "\\|") or "—"
+
+
+def _display_path(path: Path, root: Path) -> str:
+    """Use portable repo paths in shipped samples, absolute paths in ad-hoc cases."""
+    if (root / ".git").exists() or (root / "project.yaml").is_file():
+        return relpath_from_root(path, root)
+    return str(path.resolve())
+
+
+def _review_items(data: dict) -> list[str]:
+    """Business questions that belong in the PM review, not hidden in draft state."""
+    items: list[str] = []
+    closed = {"closed", "resolved", "done", "decided"}
+    for pending in data.get("pending") or []:
+        if not isinstance(pending, dict):
+            continue
+        if str(pending.get("status") or "").strip().lower() in closed:
+            continue
+        pid = pending.get("id") or "未编号"
+        missing = _plain_text(pending.get("missing")) or "未写清要补什么"
+        impact = _plain_text(pending.get("impact"))
+        owner = _plain_text(pending.get("owner"))
+        detail = f"未决事项 {pid}：{missing}"
+        if impact:
+            detail += f"；不拍板的影响：{impact}"
+        if owner:
+            detail += f"；拍板人：{owner}"
+        items.append(detail)
+    for decision in data.get("decisions") or []:
+        if not isinstance(decision, dict):
+            continue
+        if str(decision.get("status") or "").strip().lower() == "decided" and decision.get("chosen"):
+            continue
+        did = decision.get("id") or "未编号"
+        question = _plain_text(decision.get("question")) or "未写清要决定什么"
+        options = " / ".join(
+            _plain_text(option) for option in (decision.get("options") or []) if _plain_text(option)
+        )
+        items.append(f"待拍板 {did}：{question}" + (f"；可选：{options}" if options else ""))
+    for claim in data.get("source_claims") or []:
+        if not isinstance(claim, dict):
+            continue
+        disposition = str(claim.get("disposition") or "").strip()
+        resolution = _plain_text(claim.get("resolution"))
+        if disposition == "conflict" and resolution.lower() not in {"", "open", "pending", "tbd", "待确认", "未决"}:
+            continue
+        if disposition not in {"omitted", "conflict", "pending"}:
+            continue
+        cid = claim.get("id") or "未编号"
+        summary = _plain_text(claim.get("quote_or_summary") or claim.get("evidence")) or "未写摘要"
+        label = {
+            "omitted": "原料有但规格没写",
+            "conflict": "原料互相打架",
+            "pending": "原料处理方式还没定",
+        }[disposition]
+        items.append(f"原料条目 {cid}（{label}）：{summary}")
+    return list(dict.fromkeys(items))
+
+
+def _prototype_summary(data: dict) -> str:
+    decision = next(
+        (
+            item
+            for item in (data.get("decisions") or [])
+            if isinstance(item, dict) and str(item.get("id") or "") == "D-PROTOTYPE"
+        ),
+        None,
+    )
+    if not decision or str(decision.get("status") or "") != "decided" or not decision.get("chosen"):
+        return "待产品经理拍板是否制作及采用何种载体"
+    chosen = str(decision.get("chosen"))
+    option = next(
+        (
+            item
+            for item in (decision.get("options") or [])
+            if isinstance(item, dict) and str(item.get("id") or "") == chosen
+        ),
+        None,
+    )
+    label = _plain_text(option) or chosen
+    return f"{label}（内部选项 `{chosen}`）"
+
+
 def render_report(
     data: dict,
     result: dict,
@@ -53,6 +150,10 @@ def render_report(
     digest = spec_hash(data)
     must_fix = list(result.get("fail") or [])
     needs_call = list(result.get("warn") or [])
+    draft_gap = list(result.get("ready_gap") or [])
+    review_items = _review_items(data)
+    call_items = list(dict.fromkeys([humanize_finding(w) for w in needs_call] + review_items))
+    status = str(data.get("status") or "")
     spec_id = data.get("id") or "—"
     title = ""
     raw_title = data.get("title")
@@ -64,7 +165,7 @@ def render_report(
     lines = [
         "# 输出自检报告",
         "",
-        "这份报告给产品经理开会用：对照原始需求说明，看规格写了什么、猜了什么、哪里打架、可点页面稿有没有对不上。",
+        "这份报告给产品经理做需求评审：对照原始需求说明，看方案写了什么、猜了什么、哪里打架、可点页面稿有没有对不上。",
         "结构检查的结论在文末。**这份报告本身不是检查工具**；有必须改的问题，由助手改规格，你不用操作内部文件。",
         "",
         "## 这份规格是哪一份",
@@ -72,32 +173,41 @@ def render_report(
         f"- 规格名称：{title or '（未写中文名称）'}",
         f"- 规格编号：`{spec_id}`（内部对账用，不是界面上的编号）",
         f"- 当前进度：{status_label(str(data.get('status') or ''))}",
-        f"- 说明书：`{relpath_from_root(human_path, root)}`" if human_path else "- 说明书：还没有生成",
-        f"- 内部规格文件：`{relpath_from_root(spec_path, root)}`（给开发和检查用，开会时看说明书即可）",
+        f"- 说明书：`{_display_path(human_path, root)}`" if human_path else "- 说明书：还没有生成",
+        f"- 内部规格文件：`{_display_path(spec_path, root)}`（给助手和检查工具用，开会时看说明书即可）",
         f"- 内容指纹：`{digest}`（用来确认开会时看的是同一版，不是给人读的）",
-        f"- 可点页面稿清单：`{relpath_from_root(manifest_path, root)}`"
+        f"- 可交互原型方案：{_prototype_summary(data)}",
+        f"- 可点页面稿清单：`{_display_path(manifest_path, root)}`"
         if manifest_path
-        else "- 可点页面稿清单：还没有提供",
+        else (
+            "- 可点页面稿清单：不适用（已决定不制作原型）"
+            if "`no_prototype`" in _prototype_summary(data)
+            else "- 可点页面稿清单：还没有提供"
+        ),
         "",
-        "## 结构检查两档，不要混",
+        "## 三类信号，不要混",
         "",
         "| 档 | 条数 | 意思 | 你要做什么 |",
         "|----|------|------|------------|",
         (
             f"| 必须改 | {len(must_fix)} |"
             " 有一条就不能当终稿交出。"
-            " 开发和检查工具里对应英文 FAIL。"
+            " 检查工具里对应英文 FAIL。"
             " | 不用你改内部文件；让助手改到这一档为 0。 |"
         ),
         (
-            f"| 需要你拍板 | {len(needs_call)} |"
-            " 规格里写了原始说明没有的猜测，或可点页面稿还没核实。"
-            " 不挡「结构过关」，但业务上你还没认。"
-            " 开发和检查工具里对应英文 WARN。"
+            f"| 需要你拍板 | {len(call_items)} |"
+            " 原料冲突、未决事项、规格补的猜测，或可点页面稿还没核实。"
+            " 不一定挡结构检查，但评审会上必须说清。"
             " | 认或不认。认了由助手记下是谁、哪天、为什么。 |"
         ),
+        (
+            f"| 终稿差距 | {len(draft_gap)} |"
+            " 仅草稿有：现在若改成定稿，仍会触发的检查问题。"
+            " | 由助手补齐；不要求你处理内部字段。 |"
+        ),
         "",
-        "下文如果出现英文 PASS / FAIL，只是给开发和检查工具对账；对人一律用上表的中文。",
+        "DRAFT 表示可以带着问题评审，但不是终稿；只有标为 ready 且结构闭合时，结论才会显示 PASS。",
         "",
     ]
     review = data.get("review") if isinstance(data.get("review"), dict) else {}
@@ -118,9 +228,23 @@ def render_report(
         ]
         for item in accepted:
             lines.append(
-                f"| {humanize_warning_id(str(item.get('id') or ''))} | {item.get('by') or '—'} | {item.get('date') or '—'} | {item.get('reason') or '—'} |"
+                f"| {_table_cell(humanize_warning_id(str(item.get('id') or '')))} | {_table_cell(item.get('by'))} | {_table_cell(item.get('date'))} | {_table_cell(item.get('reason'))} |"
             )
         lines.append("")
+    lines += ["## 本次评审需要拍板或补充", ""]
+    if call_items:
+        for item in call_items:
+            lines.append(f"- {item}")
+    else:
+        lines.append("没有已登记的业务未决、原料冲突或待确认假设。")
+    if status != "ready":
+        lines += ["", "## 变成终稿前还差什么", ""]
+        if draft_gap:
+            for item in draft_gap:
+                lines.append(f"- 由助手补齐：{humanize_finding(item)}")
+        else:
+            lines.append("结构上没有新增差距；确认评审内容后，由助手把状态改为 ready 并复查。")
+    lines.append("")
     lines += [
         "## 原始说明落到规格里了吗（汇总）",
         "",
@@ -156,7 +280,7 @@ def render_report(
             summary = c.get("quote_or_summary") or c.get("evidence") or "—"
             landing = format_landing(c, data)
             lines.append(
-                f"| `{cid}` | {disposition_label(disp)} | {summary} | {landing} |"
+                f"| `{cid}` | {_table_cell(disposition_label(disp))} | {_table_cell(summary)} | {_table_cell(landing)} |"
             )
     proto = classify_proto_issues(must_fix, needs_call)
     proto_fail = [e for e in must_fix if e.startswith("prototype")]
@@ -188,16 +312,18 @@ def render_report(
         lines.append("")
         for e in must_fix:
             lines.append(f"- 必须改：{humanize_finding(e)}")
+    elif status == "draft":
+        lines.append(
+            "**结论：草稿结构可用。RESULT: DRAFT** 可以带着上面的待拍板事项去评审，"
+            "但不能把它当成已经收口的终稿。"
+        )
+    elif status == "deprecated":
+        lines.append("**结论：该规格已停用。RESULT: DEPRECATED** 仅供追溯，不应作为当前评审材料。")
     else:
         lines.append(
             "**结论：结构通过。RESULT: PASS** 规格在既定规则里自洽，可以拿去开会。"
             "这不表示业务已经拍板，也不表示页面已经验收。"
         )
-    if needs_call:
-        lines.append("")
-        lines.append("还需要你拍板：")
-        for w in needs_call:
-            lines.append(f"- {humanize_finding(w)}")
     lines.append("")
     return "\n".join(lines)
 
@@ -219,6 +345,15 @@ def build_report(spec_path: Path) -> tuple[str, dict]:
     result = validate(
         data, project, spec_path=spec_path, human_path=human, manifest_path=manifest
     )
+    if data.get("status") != "ready":
+        result["ready_gap"] = ready_gap(
+            data,
+            project,
+            spec_path=spec_path,
+            human_path=human,
+            manifest_path=manifest,
+        )
+    result["review_state"] = "blocked" if result["fail"] else data.get("status")
     md = render_report(data, result, spec_path, human, manifest)
     return md, result
 
@@ -246,6 +381,15 @@ def main(argv: list[str] | None = None) -> int:
     print(f"wrote: {out}")
     print(f"FAIL_COUNT: {len(result['fail'])}")
     print(f"WARN_COUNT: {len(result['warn'])}")
+    if result["fail"]:
+        final = "FAIL"
+    elif result.get("review_state") == "draft":
+        final = "DRAFT"
+    elif result.get("review_state") == "deprecated":
+        final = "DEPRECATED"
+    else:
+        final = "PASS"
+    print(f"RESULT: {final}")
     return 1 if result["fail"] else 0
 
 

@@ -78,9 +78,6 @@ _KIND_ZH = {
     "controls": "页面控件",
 }
 
-_CLIP = 36
-
-
 def _text(node, lang: str = "zh") -> str:
     if isinstance(node, dict):
         if lang in node and node[lang]:
@@ -95,11 +92,9 @@ def _text(node, lang: str = "zh") -> str:
     return str(node).strip()
 
 
-def _clip(text: str, n: int = _CLIP) -> str:
-    text = " ".join((text or "").split())
-    if len(text) <= n:
-        return text
-    return text[: n - 1] + "…"
+def _inline(text: str) -> str:
+    """Keep the complete wording while making it safe for one Markdown row."""
+    return " ".join((text or "").split())
 
 
 def _drop_ascii_paren(text: str) -> str:
@@ -166,7 +161,7 @@ def format_spec_ref(data: dict, ref: str, lang: str = "zh") -> str:
         if isinstance(a, dict) and str(a.get("id") or "") == token:
             body = _text(a, lang) or _text(a.get("text"), lang)
             if body:
-                return f"验收句「{_clip(body)}」（`{token}`）"
+                return f"验收句「{_inline(body)}」（`{token}`）"
             return f"验收句（`{token}`）"
 
     ui = data.get("ui") if isinstance(data.get("ui"), dict) else {}
@@ -181,14 +176,14 @@ def format_spec_ref(data: dict, ref: str, lang: str = "zh") -> str:
         if isinstance(d, dict) and str(d.get("id") or "") == token:
             q = _text(d.get("question"), lang)
             if q:
-                return f"已拍板事项「{_clip(q)}」（`{token}`）"
+                return f"已拍板事项「{_inline(q)}」（`{token}`）"
             return f"已拍板事项（`{token}`）"
 
     for p in data.get("pending") or []:
         if isinstance(p, dict) and str(p.get("id") or "") == token:
             q = _text(p.get("question"), lang) or _text(p.get("missing"), lang)
             if q:
-                return f"未决事项「{_clip(q)}」（`{token}`）"
+                return f"未决事项「{_inline(q)}」（`{token}`）"
             return f"未决事项（`{token}`）"
 
     return f"`{token}`"

@@ -145,6 +145,102 @@ overview:
   design_principles:
     - zh: 匹配模式与分页参数全部落 defaults，不留口头约定
     - zh: 空态文案原文入库，界面逐字使用
+architecture:
+  note:
+    zh: 商品列表页由搜索条件、结果列表、商品行和空态组成；本图只描述产品页面与信息对象，不表示技术调用关系。
+  mermaid: |-
+    flowchart LR
+      User["商家运营 / 平台管理员"] --> Search["搜索条件区"]
+      Search --> Result["商品结果列表"]
+      Result --> Row["商品行"]
+      Result --> Empty["无匹配空态"]
+responsibilities:
+  - role: search_area
+    zh: 搜索条件区
+    owns:
+      - zh: 接收标题片段或完整商品 ID
+      - zh: 展示输入长度限制与搜索中状态
+    not_owns:
+      - zh: 语义检索、同义词扩展
+  - role: result_area
+    zh: 商品结果区
+    owns:
+      - zh: 展示匹配商品、排序与分页结果
+      - zh: 展示无匹配和搜索失败文案
+    not_owns:
+      - zh: 商品编辑与批量操作
+data_contracts:
+  - id: SearchCondition
+    zh: 商品搜索条件
+    fields:
+      - name: keyword
+        zh: 搜索关键词
+        type: string
+        desc:
+          zh: 标题片段或完整商品 ID，最长 64 字
+      - name: match_mode
+        zh: 匹配方式
+        type: enum
+        desc:
+          zh: 完整商品 ID 精确匹配，否则按标题模糊匹配
+      - name: page_size
+        zh: 每页条数
+        type: number
+        desc:
+          zh: 默认 20
+    rules:
+      - zh: 搜索进行中不可重复提交
+  - id: SearchResult
+    zh: 商品搜索结果
+    fields:
+      - name: items
+        zh: 商品行集合
+        type: array
+        desc:
+          zh: 按更新时间倒序展示
+      - name: total
+        zh: 匹配总数
+        type: number
+        desc:
+          zh: 无匹配时为 0
+      - name: empty_message
+        zh: 空态文案
+        type: string
+        desc:
+          zh: total=0 时展示 no_match 原文
+error_codes:
+  - code: KEYWORD_TOO_LONG
+    zh: 关键词超过长度上限
+    trigger:
+      zh: 输入超过 64 字后提交
+    retryable: true
+    user_copy:
+      zh: 关键词最长 64 字
+  - code: SEARCH_FAILED
+    zh: 商品搜索失败
+    trigger:
+      zh: 搜索请求未得到可展示结果
+    retryable: true
+    user_copy:
+      zh: 搜索失败，请稍后重试
+decisions:
+  - id: D-PROTOTYPE
+    question:
+      zh: 本次需求评审是否需要可交互原型？如需要，采用什么载体？
+    options:
+      - id: no_prototype
+        zh: 不需要原型，仅评审标准文档
+      - id: static_html
+        zh: 静态 HTML，可直接打开
+      - id: local_service
+        zh: 本地服务，可运行交互流程
+      - id: other
+        zh: 其他载体
+    chosen: no_prototype
+    status: decided
+    date: "2026-08-24"
+    note:
+      zh: 列表搜索规则可通过线框、状态表和控件表完成评审，本样例不制作交互原型。
 sources:
   - id: SRC-LS-001
     kind: ops_note

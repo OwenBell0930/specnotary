@@ -5,12 +5,12 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "specnotary"
 version = "0.3.0"
-description = "Forge dev-ready specs on a hard gate: machine-first specs, human construction views, and review-readiness evidence (FAIL/WARN/Pending)."
+description = "Turn raw requirements into review-ready product specs with a machine source, a readable review pack, and deterministic evidence checks."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
 authors = [{ name = "OwenBell" }]
-keywords = ["specification", "requirements", "spec-driven-development", "gate", "prd"]
+keywords = ["specification", "requirements", "product-management", "requirements-review", "prd"]
 classifiers = [
   "Development Status :: 4 - Beta",
   "Environment :: Console",
@@ -18,7 +18,6 @@ classifiers = [
   "License :: OSI Approved :: MIT License",
   "Programming Language :: Python :: 3",
   "Topic :: Software Development :: Documentation",
-  "Topic :: Software Development :: Quality Assurance",
 ]
 dependencies = ["pyyaml>=6.0", "jsonschema>=4.0"]
 
@@ -29,4 +28,4 @@ specnotary = "specnotary.cli:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-specnotary = ["schemas/*.json"]
+specnotary = ["schemas/*.json", "templates/*.yaml"]

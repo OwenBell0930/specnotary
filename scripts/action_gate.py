@@ -22,8 +22,10 @@ def main() -> int:
         print(f"::notice::SpecNotary: no spec files matched {pattern!r}")
         return 0
     worst = 0
+    states: list[str] = []
     for raw in files:
         verdict = gate(Path(raw), explain=explain)
+        states.append(str(verdict["result"]))
         fails, warns = verdict["fail"], verdict["warn"]
         layers = verdict.get("fail_by_layer") or {}
         summary = " ".join(f"{k}={len(v)}" for k, v in layers.items()) or "clean"
@@ -45,7 +47,8 @@ def main() -> int:
             print(f"::notice file={raw},line=1::READY-GAP: {g}")
         print("::endgroup::")
         worst = max(worst, 1 if fails else 0)
-    print(f"SpecNotary gated {len(files)} spec(s); result: {'FAIL' if worst else 'PASS'}")
+    overall = "FAIL" if worst else ("PASS" if all(s == "PASS" for s in states) else "DRAFT")
+    print(f"SpecNotary gated {len(files)} spec(s); result: {overall}")
     return worst
 
 

@@ -5,6 +5,7 @@ from __future__ import annotations
 import re
 import shutil
 import sys
+from importlib.resources import files as resource_files
 from pathlib import Path
 
 from .libspec import dump_spec, file_sha256, load_spec
@@ -31,7 +32,11 @@ def _find_repo_with_templates() -> Path | None:
     return None
 
 
-def _templates() -> Path:
+def _templates():
+    """Return the bundled template, with a source-tree fallback for contributors."""
+    packaged = resource_files("specnotary").joinpath("templates/spec.template.yaml")
+    if packaged.is_file():
+        return packaged
     root = _find_repo_with_templates()
     if root is None:
         return Path("templates/machine/spec.template.yaml")
@@ -123,16 +128,11 @@ def new_main(argv: list[str] | None = None) -> int:
     (case / "reports").mkdir(parents=True, exist_ok=True)
     spec_path = case / "machine" / "spec.yaml"
     spec_path.write_text(text, encoding="utf-8")
-    html = (
-        "<!DOCTYPE html>\n<html lang=\"zh-CN\"><head><meta charset=\"utf-8\"/>"
-        f"<title>{spec_id}</title></head>\n<body>\n"
-        "<p>静态原型占位。Agent 起草时按机读控件补 data-spec-id。</p>\n"
-        "</body></html>\n"
-    )
-    (case / "prototype" / "main.html").write_text(html, encoding="utf-8")
     print(f"wrote: {spec_path}")
     print(f"source: {copied} (sha256:{digest[:12]}… kind={kind})")
-    print("NEXT: Agent/Skill 按 skills/specnotary/SKILL.md 起草机读、人读与原型；用户只确认结果并拿报告去评审。")
+    print("FIRST DECISION: 请先确认是否需要可交互原型；如需要，选择静态 HTML、本地服务或其他载体。")
+    print("  no_prototype | static_html | local_service | other")
+    print("NEXT: Agent/Skill 记录 D-PROTOTYPE 后，按 skills/specnotary/SKILL.md 起草标准评审文档。")
     print(f"  specnotary check {spec_path} --explain")
     return 0
 

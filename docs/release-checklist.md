@@ -9,8 +9,8 @@
 |---|----|-----------------|------|
 | 1 | 全量回归绿 | `python3 tests/test_cli.py`（**数量以命令输出为准，不在文档手抄**） | ✅ 2026-08-19 |
 | 2 | 样例门禁 PASS | `./cli/run-check.sh examples/case-order-cancel-raw/machine/spec.yaml` | ✅ |
-| 3 | 模板首触 PASS | `./cli/run-check.sh templates/machine/spec.template.yaml` | ✅ draft |
-| 4 | pip 安装可用 | `pip install . && specnotary check …` | ✅ 已在 venv 实测 |
+| 3 | 模板首触 DRAFT | `./cli/run-check.sh templates/machine/spec.template.yaml` | ✅ 结构通过但不冒充终稿 |
+| 4 | pip 安装可独立建案 | 在干净 venv 中 `pip install .`，离开源码目录后执行 `specnotary new … --from …` | ✅ 有自动化资源校验；发布前实测 |
 | 5 | CI 工作流就位 | `.github/workflows/ci.yml`（推送后自动生效） | ✅ |
 | 6 | LICENSE / CHANGELOG / CONTRIBUTING / SECURITY | 根目录 | ✅ |
 | 7 | 无本机绝对路径入库 | `git grep "/Users/" -- ':!*.svg' ':!docs/release-checklist.md'` | ✅ 2026-08-19 复查 |

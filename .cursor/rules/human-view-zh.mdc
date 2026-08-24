@@ -5,7 +5,7 @@ alwaysApply: true
 
 # 人读视图：中文正文，机读 ID 只对账
 
-人读说明书给产品/测试看（练习规格用沙箱绝对路径，样例用 `examples/<case>/human/spec.md`，禁止只写 `human/spec.md`）。机读 YAML 里的键名、枚举值、动作 ID 是给开发和门禁对账的，**不能冒充界面文案或状态名**。
+人读说明书给产品经理和评审参会者看（练习规格用沙箱绝对路径，样例用 `examples/<case>/human/spec.md`，禁止只写 `human/spec.md`）。机读 YAML 里的键名、枚举值、动作 ID 是给助手和门禁对账的，**不能冒充界面文案或状态名**。
 
 ## 错（已反复发生）
 

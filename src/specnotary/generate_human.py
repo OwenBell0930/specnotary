@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate the human construction-grade view from the machine source."""
+"""Generate the human review view from the machine source."""
 from __future__ import annotations
 
 import sys

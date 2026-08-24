@@ -111,15 +111,28 @@ def gate(
         }
         if project.get("object_ai_weight"):
             verdict["object_ai_weight"] = project.get("object_ai_weight")
-        if explain and data.get("status") != "ready":
-            verdict["ready_gap"] = ready_gap(
+        if data.get("status") != "ready":
+            gap = ready_gap(
                 data,
                 project,
                 spec_path=path,
                 human_path=resolved_human,
                 manifest_path=resolved_manifest,
             )
-    verdict["result"] = "FAIL" if result["fail"] else "PASS"
+            verdict["ready_gap_count"] = len(gap)
+            if explain:
+                verdict["ready_gap"] = gap
+    status = data.get("status") if isinstance(data, dict) else None
+    verdict["structural_result"] = "FAIL" if result["fail"] else "PASS"
+    verdict["review_state"] = "blocked" if result["fail"] else status
+    if result["fail"]:
+        verdict["result"] = "FAIL"
+    elif status == "draft":
+        verdict["result"] = "DRAFT"
+    elif status == "deprecated":
+        verdict["result"] = "DEPRECATED"
+    else:
+        verdict["result"] = "PASS"
     verdict["exit_code"] = 1 if result["fail"] else 0
     return verdict
 
@@ -167,6 +180,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"object_ai_weight: {verdict['object_ai_weight']}")
     print(f"FAIL_COUNT: {len(verdict['fail'])}")
     print(f"WARN_COUNT: {len(verdict['warn'])}")
+    print(f"STRUCTURE_GATE: {verdict.get('structural_result', 'ERROR')}")
     by_layer = verdict.get("fail_by_layer") or {}
     if len(by_layer) > 1:
         print("FAIL_LAYERS: " + " ".join(f"{k}={len(v)}" for k, v in by_layer.items()))
@@ -174,18 +188,25 @@ def main(argv: list[str] | None = None) -> int:
         print(f"FAIL: {e}")
     for w in verdict["warn"]:
         print(f"WARN: {w}")
+    if "ready_gap_count" in verdict:
+        print(f"READY_GAP_COUNT: {verdict['ready_gap_count']}")
     if "ready_gap" in verdict:
         gap = verdict["ready_gap"]
-        print(f"READY_GAP_COUNT: {len(gap)}")
         for g in gap:
             print(f"READY-GAP: {g}")
         if not gap and not verdict["fail"]:
             print("NOTE: no gap — this draft would pass as ready right now")
+    elif verdict.get("ready_gap_count"):
+        print("NOTE: this is not a final review pack; rerun with --explain to see every READY-GAP")
     if verdict["result"] == "FAIL":
         print("RESULT: FAIL")
         return 1
-    print("RESULT: PASS")
-    if verdict["warn"]:
+    print(f"RESULT: {verdict['result']}")
+    if verdict["result"] == "DRAFT":
+        print("NOTE: DRAFT means the current structure can be reviewed, but open items still prevent a final pack")
+    elif verdict["result"] == "DEPRECATED":
+        print("NOTE: DEPRECATED specs are retained for history and are not active review packs")
+    elif verdict["warn"]:
         ids = " ".join(verdict.get("warn_ids") or [])
         print(
             "NOTE: PASS with WARN — accept with "

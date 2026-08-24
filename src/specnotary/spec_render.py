@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Human construction-grade view — derived from the machine spec, never authored here.
+"""Human review view — derived from the machine spec, never authored here.
 
 Rule pipeline stays in libspec.py; disk I/O stays in spec_io.py. This module
 only lays out fields the machine source already holds.
@@ -11,7 +11,7 @@ import re
 from .pm_view import disposition_label, format_landing, status_label
 from .spec_io import human_body_hash, spec_hash, split_human_markdown
 
-RENDERER_VERSION = "11"
+RENDERER_VERSION = "13"
 
 
 def _rules():
@@ -37,7 +37,7 @@ _EN = {
     "目录": "Table of Contents",
     "概览": "Overview",
     "范围": "Scope",
-    "架构总览": "Architecture",
+    "产品与信息架构": "Product & Information Architecture",
     "功能说明": "Features",
     "职责边界": "Responsibilities",
     "数据契约": "Data Contracts",
@@ -52,16 +52,16 @@ _EN = {
     "决策记录": "Decision Log",
     "对象 AI": "Object AI",
     "原料落在规格里的情况": "Where source items landed",
-    "> **文档类型**：可开发的需求规格说明书（人读视图）  ": "> **Document type**: dev-ready specification (human view)  ",
+    "> **文档类型**：评审就绪的标准需求规格说明书（人读评审稿）<br>": "> **Document type**: review-ready requirements specification (human review view)<br>",
     "> **规格编号**：`{sid}` · **进度**：{status} · **版本**：`{ver}`  ": "> **Spec id**: `{sid}` · **Progress**: {status} · **Version**: `{ver}`  ",
-    "> **机读哈希**：`{digest}…`  ": "> **Machine hash**: `{digest}…`  ",
-    "> **怎么读：** 先看「功能说明」知道本期做哪些事；「主路径」是同一批功能的验收句子（Given/When/Then）；「状态与允许动作」决定按钮何时可点；「页面与交互」是按钮文案和失败提示。": "> **How to read:** Features = what to build; Main Path = the same features as Given/When/Then for tests; States = when a control is enabled; Pages = button copy.",
+    "> **机读哈希**：`{digest}…`<br>": "> **Machine hash**: `{digest}…`<br>",
+    "> **怎么读：** 先看「功能说明」判断本期方案；「主路径」用 Given/When/Then 逐条核对结果；「状态与允许动作」说明按钮何时可点；「页面与交互」说明按钮文案和失败提示。": "> **How to read:** Features frame the proposal; Main Path reviews observable outcomes in Given/When/Then form; States explain when controls are available; Pages define labels and failure copy.",
     "**设计原则：**": "**Design principles:**",
     "**环境与约束：**": "**Environment & constraints:**",
     "**本期做：**": "**In scope:**",
     "**本期不做（白名单外，不展开）：**": "**Out of scope (whitelist only, not elaborated):**",
     "**对照基线：** {baseline}": "**Baseline:** {baseline}",
-    "本章按模块划分交付边界。每个模块先写中文名称；括号里的机读 ID 给开发和门禁对账，不是菜单原文。「负责」是该模块要做的界面或能力，「不负责」是明确不做的事。": "This chapter splits delivery by module. Chinese name first; the ID in parentheses is for developers and the gate, not a menu label. Owns = what the module must ship; does not own = explicitly out of that module.",
+    "本章按模块划分方案边界。每个模块先写中文名称；括号里的机读 ID 给助手和检查工具对账，不是菜单原文。「负责」是该模块包含的界面或能力，「不负责」是明确不做的事。": "This chapter splits the proposal by module. The machine ID is for the assistant and deterministic checks, not a menu label. Owns = what the module includes; does not own = explicitly excluded.",
     "这是**{kind}**（机读 ID：`{role}`）。": "This is a **{kind}** (machine ID: `{role}`).",
     "页面": "page",
     "后台引擎": "backend engine",
@@ -72,7 +72,7 @@ _EN = {
     "**对应：** 步骤 {step} · `{bid}`": "**Maps to:** step {step} · `{bid}`",
     "本章回答两件事：①现在处于哪个状态（哪个页面/哪条任务）；②该状态下哪些动作允许、哪些禁止。下图按对象分组，方框之间没有箭头——允许的转移只看下面的表，不从图上猜。": "This chapter answers two questions: (1) which state the page or task is in; (2) which actions are allowed in that state. Boxes are grouped by subject and are not connected — do not infer flow from the diagram; the table is the source of truth.",
     "| 负责 | 不负责 |": "| Owns | Does not own |",
-    "共 {n} 个数据实体。每个对象一张字段表：字段名给接口和库表对齐，中文是给产品/测试看的含义。": "{n} data entities. One field table per object: field names align API and storage; the Chinese column is the meaning for product and test.",
+    "共 {n} 个数据实体。每个对象一张字段表，用于评审时对齐业务含义、输入输出和关键规则；不在这里规定开发语言或测试方案。": "{n} data entities. Each table aligns business meaning, inputs, outputs, and key rules during review; it does not prescribe implementation language or a test plan.",
     "| 字段 | 中文 | 类型 | 说明 |": "| Field | Label | Type | Notes |",
     "**规则：**": "**Rules:**",
     "下面是**登录身份**（谁在操作系统），不是页面名称。可执行动作是业务动作（和下一章「动作」列对应），不是接口路径，也不是数据库字段。": "These are **login identities** (who operates the system), not page names. Allowed actions are business actions (same column as the next chapter), not API paths or database fields.",
@@ -82,15 +82,15 @@ _EN = {
     "**按对象列出的状态（编号只为对照，不是流转顺序）：**": "**States by subject (numbers are for reference, not a flow order):**",
     "### {subject}": "### {subject}",
     "| 状态 | 动作 | 是否允许 | 说明 |": "| State | Action | Allowed | Notes |",
-    "共 {n} 步。这是「功能说明」的验收写法，给测试当用例；编号不是用户操作顺序。": "{n} steps. This is the acceptance form of the Features chapter for tests; numbers are not a user sequence.",
+    "共 {n} 步。这是「功能说明」的可观察结果写法，供评审逐条核对；编号不是用户操作顺序。": "{n} steps. These observable outcomes let reviewers inspect each feature; numbers are not a user sequence.",
     "| （机读未提供 action_matrix） | — | — | — |": "| (machine source has no action_matrix) | — | — | — |",
     "**入口：** {entry}": "**Entry:** {entry}",
     "### 线框": "### Wireframe",
     "### 控件规格": "### Control Spec",
     "共 {n} 个控件，其中 {f} 个定义了失败反馈文案。": "{n} controls, {f} of them with explicit failure-feedback copy.",
     "| 按钮文案 | 机读 ID | 显示条件 | 交互 | 失败反馈 |": "| Label | Machine ID | Visible when | Interaction | Failure feedback |",
-    "本章是页面上用户能点到的按钮和输入框。按钮文案是界面上的字；机读 ID 给开发和原型对账。": "This chapter is the on-screen buttons and fields. The label is what the user sees; the machine ID is for developers and the prototype.",
-    "共 {n} 步；每步的 Given/When/Then 同时是测试的验收输入。步骤为编号清单，非执行顺序。": "{n} steps; every Given/When/Then doubles as test acceptance input. Steps are a numbered list, not an execution sequence.",
+    "本章是页面上用户能点到的按钮和输入框。按钮文案是界面上的字；机读 ID 给规格与原型对账。": "This chapter lists on-screen buttons and fields. Labels are user-visible copy; machine IDs reconcile the spec and prototype.",
+    "共 {n} 步；每步用 Given/When/Then 说明前提、动作和可见结果，供需求评审逐条判断。步骤为编号清单，非执行顺序。": "{n} steps; each Given/When/Then states the precondition, action, and visible outcome for requirements review. Steps are numbered, not sequential.",
     "### 步骤 {step} · {name}": "### Step {step} · {name}",
     "- **Given：** {v}": "- **Given:** {v}",
     "- **When：** {v}": "- **When:** {v}",
@@ -101,7 +101,7 @@ _EN = {
     "（无）": "(none)",
     "### 空态 / 拦截文案（须与界面一致）": "### Empty-state / Blocking Copy (must match UI verbatim)",
     "| 场景 | 文案 |": "| Scenario | Copy |",
-    "开发按码实现分支，测试按码构造用例，客服按文案答复——一张表三方共用。": "Developers branch on the code, testers derive cases from it, support answers with the copy — one table, three consumers.",
+    "评审时用一张表统一错误含义、触发条件、是否可重试和用户看到的文案。": "Use one review table to align error meaning, trigger, retry policy, and user-visible copy.",
     "| 错误码 | 含义 | 触发场景 | 可重试 | 用户文案 |": "| Code | Meaning | Trigger | Retryable | User copy |",
     "是": "yes",
     "否": "no",
@@ -115,7 +115,7 @@ _EN = {
     "- 失败兜底: {v}": "- Failure fallback: {v}",
     "- 工具边界:": "- Tool boundary:",
     "- 人工接管:": "- Human takeover:",
-    "下面逐条对照原始需求说明。处理结果用中文；括号里的编号给开发和检查对账。已写入规格 {c} 条 · 原文没写、规格补了猜测 {a} 条 · 本期不做 {o} 条 · 其他 {r} 条。完整性需要开会时抽查。": "Each row is a source item. Handling is in plain language; ids in parentheses are for developers. Written into the spec: {c}. Guess filled in: {a}. Out of this slice: {o}. Other: {r}. Spot-check completeness in review.",
+    "下面逐条对照原始需求说明。处理结果用中文；括号里的编号给助手和检查工具对账。已写入规格 {c} 条 · 原文没写、规格补了猜测 {a} 条 · 本期不做 {o} 条 · 其他 {r} 条。完整性需要开会时抽查。": "Each row is a source item. Handling is in plain language; ids are for the assistant and deterministic checks. Written into the spec: {c}. Guess filled in: {a}. Out of this slice: {o}. Other: {r}. Spot-check completeness in review.",
     "| 原料条目编号 | 处理结果 | 这条在说什么 | 落到说明书的哪一段 |": "| Source item id | Handling | What this says | Where it landed |",
     "**EN title:** {t}": "**Title (zh):** {t}",
     "<!-- 以机读 YAML 为唯一准据；禁止长期只改本文件 -->": "<!-- Machine YAML is the single source of truth; do not hand-edit this file long-term -->",
@@ -341,7 +341,7 @@ def mermaid_lifecycle(states: dict) -> str | None:
 
 
 def render_human(data: dict, source: str, gate_mode: str = "hard", lang: str = "zh") -> str:
-    """Render 可开发的需求规格说明书 (human view) from machine source.
+    """Render the review-ready requirements specification from machine source.
 
     Reading arc (v10): orient first — overview, scope, features,
     architecture, responsibilities, data contracts — then zoom into rules,
@@ -416,7 +416,7 @@ def render_human(data: dict, source: str, gate_mode: str = "hard", lang: str = "
             sec.append("")
         sections.append(("功能说明", sec))
 
-    # ---- 架构总览（机读持有 mermaid 源码） ----
+    # ---- 产品与信息架构（机读持有 mermaid 源码） ----
     arch = data.get("architecture") or {}
     if arch.get("mermaid"):
         sec = []
@@ -424,12 +424,12 @@ def render_human(data: dict, source: str, gate_mode: str = "hard", lang: str = "
         if note:
             sec += [note, ""]
         sec += ["```mermaid", str(arch["mermaid"]).rstrip(), "```", ""]
-        sections.append(("架构总览", sec))
+        sections.append(("产品与信息架构", sec))
 
     # ---- 职责边界 ----
     resp = [r for r in (data.get("responsibilities") or []) if isinstance(r, dict)]
     if resp:
-        sec = [t("本章按模块划分交付边界。每个模块先写中文名称；括号里的机读 ID 给开发和门禁对账，不是菜单原文。「负责」是该模块要做的界面或能力，「不负责」是明确不做的事。"), ""]
+        sec = [t("本章按模块划分方案边界。每个模块先写中文名称；括号里的机读 ID 给助手和检查工具对账，不是菜单原文。「负责」是该模块包含的界面或能力，「不负责」是明确不做的事。"), ""]
         for r in resp:
             zh = _lang(r, lang)
             role = str(r.get("role") or "")
@@ -453,7 +453,7 @@ def render_human(data: dict, source: str, gate_mode: str = "hard", lang: str = "
     # ---- 数据契约 ----
     contracts = [c for c in (data.get("data_contracts") or []) if isinstance(c, dict)]
     if contracts:
-        sec = [t("共 {n} 个数据实体。每个对象一张字段表：字段名给接口和库表对齐，中文是给产品/测试看的含义。").format(n=len(contracts)), ""]
+        sec = [t("共 {n} 个数据实体。每个对象一张字段表，用于评审时对齐业务含义、输入输出和关键规则；不在这里规定开发语言或测试方案。").format(n=len(contracts)), ""]
         for dc in contracts:
             zh = _lang(dc, lang)
             sec.append(f"### {dc.get('id')}" + (f" · {zh}" if zh else ""))
@@ -551,7 +551,7 @@ def render_human(data: dict, source: str, gate_mode: str = "hard", lang: str = "
     sections.append(("状态与允许动作", sec))
 
     # ---- 页面与交互 ----
-    sec = [t("本章是页面上用户能点到的按钮和输入框。按钮文案是界面上的字；机读 ID 给开发和原型对账。"), ""]
+    sec = [t("本章是页面上用户能点到的按钮和输入框。按钮文案是界面上的字；机读 ID 给规格与原型对账。"), ""]
     if ui.get("entry"):
         sec += [t("**入口：** {entry}").format(entry=prose(ui.get("entry"))), ""]
     if ui.get("wireframe"):
@@ -583,7 +583,7 @@ def render_human(data: dict, source: str, gate_mode: str = "hard", lang: str = "
     sections.append(("页面与交互", sec))
 
     # ---- 主路径（编号） ----
-    sec = [t("共 {n} 步。这是「功能说明」的验收写法，给测试当用例；编号不是用户操作顺序。").format(n=len(behaviors)), ""]
+    sec = [t("共 {n} 步。这是「功能说明」的可观察结果写法，供评审逐条核对；编号不是用户操作顺序。").format(n=len(behaviors)), ""]
     for b in behaviors:
         step = b.get("step_id") or b.get("id")
         sec += [
@@ -624,7 +624,7 @@ def render_human(data: dict, source: str, gate_mode: str = "hard", lang: str = "
     error_codes = [e for e in (data.get("error_codes") or []) if isinstance(e, dict)]
     if error_codes:
         sec = [
-            t("开发按码实现分支，测试按码构造用例，客服按文案答复——一张表三方共用。"),
+            t("评审时用一张表统一错误含义、触发条件、是否可重试和用户看到的文案。"),
             "",
             t("| 错误码 | 含义 | 触发场景 | 可重试 | 用户文案 |"),
             "|--------|------|----------|--------|----------|",
@@ -680,6 +680,19 @@ def render_human(data: dict, source: str, gate_mode: str = "hard", lang: str = "
         ]
         for d in decisions:
             chosen = d.get("chosen") or t("**待定**")
+            if d.get("chosen"):
+                selected = next(
+                    (
+                        option
+                        for option in (d.get("options") or [])
+                        if isinstance(option, dict)
+                        and str(option.get("id") or "") == str(d.get("chosen"))
+                    ),
+                    None,
+                )
+                selected_label = prose(selected) if selected else ""
+                if selected_label:
+                    chosen = f"{selected_label} (`{d.get('chosen')}`)"
             sec.append(
                 f"| {d.get('id')} | {prose(d.get('question'))} | {chosen} | {d.get('date') or '—'} | {prose(d.get('note')) or '—'} |"
             )
@@ -705,7 +718,7 @@ def render_human(data: dict, source: str, gate_mode: str = "hard", lang: str = "
     if claims:
         buckets = claim_summary(data)
         sec = [
-            t("下面逐条对照原始需求说明。处理结果用中文；括号里的编号给开发和检查对账。已写入规格 {c} 条 · 原文没写、规格补了猜测 {a} 条 · 本期不做 {o} 条 · 其他 {r} 条。完整性需要开会时抽查。").format(
+            t("下面逐条对照原始需求说明。处理结果用中文；括号里的编号给助手和检查工具对账。已写入规格 {c} 条 · 原文没写、规格补了猜测 {a} 条 · 本期不做 {o} 条 · 其他 {r} 条。完整性需要开会时抽查。").format(
                 c=len(buckets.get("covered") or []),
                 a=len(buckets.get("assumption") or []),
                 o=len(buckets.get("out_of_scope") or []),
@@ -734,14 +747,14 @@ def render_human(data: dict, source: str, gate_mode: str = "hard", lang: str = "
     lines: list[str] = [
         f"# {title_main}",
         "",
-        t("> **文档类型**：可开发的需求规格说明书（人读视图）  "),
+        t("> **文档类型**：评审就绪的标准需求规格说明书（人读评审稿）<br>"),
         t("> **规格编号**：`{sid}` · **进度**：{status} · **版本**：`{ver}`  ").format(
             sid=data.get("id"),
             status=status_label(str(data.get("status") or ""), lang),
             ver=data.get("spec_version"),
         ),
-        t("> **机读哈希**：`{digest}…`  ").format(digest=digest[:16]),
-        t("> **怎么读：** 先看「功能说明」知道本期做哪些事；「主路径」是同一批功能的验收句子（Given/When/Then）；「状态与允许动作」决定按钮何时可点；「页面与交互」是按钮文案和失败提示。"),
+        t("> **机读哈希**：`{digest}…`<br>").format(digest=digest[:16]),
+        t("> **怎么读：** 先看「功能说明」判断本期方案；「主路径」用 Given/When/Then 逐条核对结果；「状态与允许动作」说明按钮何时可点；「页面与交互」说明按钮文案和失败提示。"),
         "",
     ]
     if title_alt and title_alt != title_main:
@@ -777,4 +790,3 @@ def render_human(data: dict, source: str, gate_mode: str = "hard", lang: str = "
 
     draft = _assemble("0" * 64)
     return _assemble(human_body_hash(split_human_markdown(draft)[1]))
-

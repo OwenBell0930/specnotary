@@ -346,6 +346,38 @@ def test_front_door_states_audience_and_tools():
     assert not missing, "; ".join(missing)
 
 
+def test_public_positioning_stays_review_ready():
+    """Public surfaces must not drift back into implementation/test hand-off claims."""
+    paths = (
+        ROOT / "README.md",
+        ROOT / "README.en.md",
+        ROOT / "docs/assets/hero-banner.svg",
+        ROOT / "docs/assets/ipo-flow.svg",
+    )
+    forbidden = (
+        "Dev-ready specs",
+        "Construction-grade human",
+        "Construction view",
+        "build from this table",
+        "按这张表开发",
+    )
+    stale = []
+    for path in paths:
+        text = path.read_text(encoding="utf-8")
+        for phrase in forbidden:
+            if phrase in text:
+                stale.append(f"{path.name}: {phrase}")
+    assert not stale, "public positioning crossed the PM review boundary: " + "; ".join(stale)
+
+
+def test_playground_does_not_mislabel_draft_as_pass():
+    """The zero-install demo must preserve the CLI's FAIL/DRAFT/PASS semantics."""
+    text = (ROOT / "playground/index.html").read_text(encoding="utf-8")
+    assert '"result": verdict' in text
+    assert 'v.result === "DRAFT"' in text
+    assert "RESULT: DRAFT" in text
+
+
 def test_english_readme_has_front_door_sections():
     """The English front door must keep the same section anchors as the Chinese one."""
     zh = (ROOT / "README.md").read_text(encoding="utf-8")

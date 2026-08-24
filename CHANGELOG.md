@@ -2,6 +2,24 @@
 
 SpecNotary 遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)；版本号遵循语义化版本。
 
+## [Unreleased]
+
+### Changed
+
+- 产品边界收敛为「产品经理接收需求原料 → 形成标准需求规格与可选原型 → 需求评审」，不生成实现任务、技术栈、测试计划或覆盖证据。
+- `draft` 即使结构合法也输出 `RESULT: DRAFT`；另给 `STRUCTURE_GATE: PASS` 与 `READY_GAP_COUNT`，只有已收口的 `ready` 才能输出 `RESULT: PASS`。
+- 输出自检报告新增评审待拍板事项与终稿差距，展示可定位的完整路径和不截断的验收原文。
+- 产品/信息架构、产品模块边界、业务数据契约和产品错误定义恢复为 `ready` 标准必填，不得降级为技术实现内容或按需省略。
+- 建案后首轮必须拍板 `D-PROTOTYPE`（不制作 / 静态 HTML / 本地服务 / 其他）；选择制作才要求 manifest，明确不制作不再产生缺失告警。
+- 人读评审稿调整为产品经理语言并展示原型载体选项中文，渲染器升级到 v13。
+
+### Fixed
+
+- 安装包内置 `specnotary new` 所需模板，源码目录外安装后也能直接建案。
+- Schema 对 `permissions[].actor` 与 `responsibilities[].role` 给出可纠正的字段提示。
+- Playground 与 CLI 使用同一结论语义，合法草稿显示 `DRAFT` 而不是冒充 `PASS`。
+- `specnotary new` 在产品经理确认 `D-PROTOTYPE` 前不再预生成静态 HTML 占位稿。
+
 ## [0.3.0] - 2026-08-13
 
 ### Added
