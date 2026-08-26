@@ -2,13 +2,29 @@
 
 > 一个门禁工具最不能输的仗，是对「自己能证明什么」绝对诚实。此表是 SpecNotary 对外承诺的唯一口径；任何宣传语与此表冲突时，以此表为准。
 
+## 三层结论（不得合并）
+
+SpecNotary 对外必须分开展示，禁止收成一句「全部通过」：
+
+| 层 | 结论 | 证明什么 |
+|----|------|----------|
+| Draft | 候选稿是否已生成（`DRAFT_STATUS`） | 仅表示起草产出存在；**Draft 不得自评质量通过** |
+| Product Review | `PRODUCT_REVIEW: REVISE \| DECISION_NEEDED \| REVIEWABLE`（**禁止 PASS**）；报告绑定 `subject.content_hash`，改稿后须 `stale` 并复审 | 按 [`product-quality-model.md`](product-quality-model.md) 做的语义审查；见 [`product-review-contract.md`](product-review-contract.md) |
+| Structure Gate | `RESULT: FAIL \| DRAFT \| PASS`（及 `STRUCTURE_GATE`） | 下文「PASS 的准确含义」——确定性结构与证据链 |
+
+**Structure Gate 通过 ≠ 产品方案合理。** Gate PASS **不能**覆盖 stale 或 `REVISE` 的 Product Review。结构合法的坏方案见 [`product-review-corpus.md`](product-review-corpus.md)：Review 必须指出，Gate 仍可能结构通过。
+
+### 「独立审查」的诚实边界
+
+三项能力与三层结论可**单独调用、单独展示**。默认 `/write-spec` 由同一助手顺序编排，**不等于**组织上或模型上下文上的独立审查者。需要真正审查者独立时：在新上下文单独调用 `/review-spec`，或人工复核。不强制多 Agent。
+
 ## PASS 的准确含义
 
 `RESULT: PASS` 表示：**规格已标为 `ready`，且在已声明的范围与确定性规则内结构自洽、引用闭合、派生物与准据同源、原料登记基于未变化的内容快照。**
 
 `RESULT: DRAFT` 表示：当前结构没有 FAIL，可以带着显式问题进入需求评审，但仍是草稿；`READY_GAP_COUNT` 说明若现在改成 `ready` 还会新增多少条必须修正。它不能冒充终稿 PASS。
 
-`RESULT: PASS` **不**表示：需求在业务上完整、真实、正确，或原型行为已被验证。
+`RESULT: PASS` **不**表示：需求在业务上完整、真实、正确，产品方案合理，或原型行为已被验证。
 
 关于「原料登记基于未变化的快照」这一句：它是 `status: ready` 的硬条件——ready 规格的**每个** `sources[]` 都必须有真实存在的 `path` 且带匹配的 `content_hash`，否则 FAIL。**删除 path 不能比提交了错误哈希更容易通过。** draft 上未钉死只给 WARN（起草期允许原料还在变）。**一句写进 PASS 定义的话，必须有一条 FAIL 规则兜着**，否则定义就是营销。
 
@@ -19,7 +35,7 @@
 | 机读通过硬门禁 | Schema 合法；ID 唯一（含跨类型不撞车）、引用闭合、不自相矛盾（scope / 矩阵 / 职责）；ready 完备性（无空话词典命中、无占位、无未决） | 业务语义正确、方案合理；一般性的「可观察性」判定（当前是已知空话／占位词表，不是语义公证）。「本模块治理到位」这类漏网词表拦不住 | 助手按 Skill 用语义拦住漏网假详细，标假设或未决，问产品经理；人的评审 |
 | 人读没漂 | 人读正文与当前机读、当前渲染器逐字同源（spec_hash + body_hash + renderer_version）；头部 `body_hash` / `gate_mode` 不得与正文或生成方式矛盾；来源声明 `generated_from` 确指被检查的机读文件 | 机读本身正确 | 上一行 |
 | 原料没漏 | 每个 ready source 指向真实文件；原料文件内容快照（content_hash）未变；`evidence` 引文与 `source_ref` 指向的文件名一致（换文件即暴露）；已登记 claims 处置合法、引用真实；每个必选实体被 claim 引用 | 原料的每一句话都被登记（账本由起草方自报） | 原料一变即全体 claims stale；评审报告逐条列账供人抽查 |
-| 方案没编 | conflict / pending / 未拍板 decision（含 `status: decided` 却无 chosen）在 ready 上被硬拦；assumption 在 ready 上 **WARN**（显式猜测，不挡 PASS）；对得上的 `accepted_warnings`（谁/何时/为何）不再刷屏，缺字段或过期 id 在 ready 上 FAIL | 起草方没有把猜测直接写成 covered 事实 | 起草与审查分离（双 Agent / 人审）；SourceClaim 需带证据位置；旗舰样例示范把源外推断标成 assumption；用户 `specnotary confirm` 入账 |
+| 方案没编 | conflict / pending / 未拍板 decision（含 `status: decided` 却无 chosen）在 ready 上被硬拦；assumption 在 ready 上 **WARN**（显式猜测，不挡 PASS）；对得上的 `accepted_warnings`（谁/何时/为何）不再刷屏，缺字段或过期 id 在 ready 上 FAIL | 起草方没有把猜测直接写成 covered 事实；商业边界/架构/流程/UX 是否合理 | Draft 与 Product Review 分离（`/draft-spec` vs `/review-spec`）；SourceClaim 需带证据位置；旗舰样例示范把源外推断标成 assumption；用户 `specnotary confirm` 入账 |
 | 原型没跑偏 | `D-PROTOTYPE` 已明确是否制作及载体；若选择制作，manifest 与机读同源（hash）、必选实体映射齐全、映射落在真实文件属性位 `data-spec-id`、交互链路 ID 闭合；若选择不制作，不要求 manifest | 文案、视觉、交互行为、业务结果与规格一致 | `semantic_warnings`（WARN 层）；人工走查；选择制作后的背书须显式（`sync --attest-prototype`），不把自报当成证明 |
 | PASS 即评审材料已收口 | `status: ready` 且结构与证据链已闭合；若 WARN 已入账，报告列出谁/何时/为何 | 事实为真、利益相关方已确认业务内容正确；更不表示研发或测试工作已完成 | 评审会本身；`specnotary confirm` 只证明有人接受了质量债，不证明债已消失 |
 
@@ -38,4 +54,4 @@
 
 ## 自报闭环的结构性上限
 
-同一个 Agent 可以完成「读原料 → 写机读 → 写 claims → 造原型 → 写 manifest → 跑门禁」。确定性门禁能验证这份账本的格式、引用与快照一致性，**不能仅凭账本本身证明账本没有隐瞒**。降低此风险的手段是流程性的：起草者与审查者分离、原料哈希钉死快照、假设必须显式、评审报告把账本摊开供人抽查。这是工具必须长期尊重的能力上限，也是我们不把「原料没漏」写成绝对承诺的原因。
+同一个 Agent 可以完成「读原料 → 写机读 → 写 claims → 造原型 → 写 manifest → 跑门禁」。确定性门禁能验证这份账本的格式、引用与快照一致性，**不能仅凭账本本身证明账本没有隐瞒**，也**不能**证明产品方案合理。降低此风险的手段是流程性的：Draft 与 Product Review 职责分离（默认可由全流程编排依次调用，但审查结论独立）、原料哈希钉死快照、假设必须显式、产品审查报告与结构自检报告分开、账本摊开供人抽查。这是工具必须长期尊重的能力上限，也是我们不把「原料没漏」或「方案合理」写成 Structure Gate 承诺的原因。

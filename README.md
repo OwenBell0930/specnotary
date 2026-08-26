@@ -5,9 +5,16 @@
 <h1 align="center">SpecNotary</h1>
 
 <p align="center">
-  <strong>把需求原料变成评审就绪的标准文档——写作 + 质检全套。</strong><br/>
-  <strong>面向产品经理。</strong>你只做三步：<strong>交出原料、确认结果、拿材料去评审</strong>。<br/>
-  <strong>推荐 Cursor 或 Codex</strong>（能改文件、能跑命令）。把 <a href="https://github.com/OwenBell0930/specnotary">GitHub 网址</a>发给助手，请它安装并按 [`skills/specnotary/SKILL.md`](skills/specnotary/SKILL.md) 工作。你正在用的文件夹即可，不必把 SpecNotary 设成当前工作区。
+  <strong>把零散需求，变成经得起评审的产品方案。</strong><br/>
+  <strong>专为产品经理与产品管理团队设计。</strong>高质量起草、产品质量审查、确定性结构门禁，一套工作流完成。<br/>
+  让评审聚焦于<strong>目标、边界、产品与信息架构、业务流程和 UX</strong>，而不是现场补口径。<br/>
+  <strong>Agent-first：</strong>在 Cursor 或 Codex 中发送 <a href="https://github.com/OwenBell0930/specnotary">github.com/OwenBell0930/specnotary</a>，直接在当前工作区使用。
+</p>
+
+<p align="center">
+  <a href="#quick-start"><strong>立即开始</strong></a> ·
+  <a href="https://owenbell0930.github.io/specnotary/playground/">在线体验</a> ·
+  <a href="examples/product-review-fixture/reports/product-review.md">查看产品审查样例</a>
 </p>
 
 <p align="center">
@@ -26,66 +33,71 @@
 </p>
 
 <p align="center">
-  <img alt="try" src="https://img.shields.io/badge/try-browser%20playground-0B6BCB"/>
-  <img alt="gate" src="https://img.shields.io/badge/result-FAIL%20%7C%20DRAFT%20%7C%20PASS-DC2626"/>
-  <img alt="runtime" src="https://img.shields.io/badge/hard%20gate-Python-159947"/>
+  <img alt="audience" src="https://img.shields.io/badge/for-Product%20Managers-7C3AED"/>
+  <img alt="workflow" src="https://img.shields.io/badge/workflow-Draft%20%7C%20Review%20%7C%20Gate-0B6BCB"/>
+  <img alt="agents" src="https://img.shields.io/badge/agents-Cursor%20%7C%20Codex-159947"/>
+  <img alt="traceable" src="https://img.shields.io/badge/output-review--ready-0F766E"/>
   <img alt="license" src="https://img.shields.io/badge/license-MIT-0B6BCB"/>
-  <img alt="node" src="https://img.shields.io/badge/Node-Deferred-94A3B8"/>
   <img alt="author" src="https://img.shields.io/badge/by-OwenBell-0F172A"/>
 </p>
-
-> 与工作流类 SDD 工具的关系见 [`docs/positioning.md`](docs/positioning.md)。与 CNCF Notary Project（OCI 制品签名）无关。
 
 ---
 
 <a id="value"></a>
 
-## Value · 解决什么问题
+## Value · 一眼看懂
 
-**唯一产品目标：评审就绪。** 帮产品经理把 PRD / 工单 / FAQ 等需求原料，整理成可直接用于需求评审的标准规格与自检报告；产品/信息架构、数据契约、错误定义是标准内容，原料快照、覆盖关系、假设、冲突、未决和已拍板载体的可选原型都能对账。
+**目标用户：** 需要把模糊业务诉求转成清晰产品方案的产品经理，以及负责统一需求质量的产品管理团队。
 
-**一句话：** 从接到需求原料，到拿出标准文档去评审；口号式「假详细」会被确定性门禁拦下。
+**核心场景：** 从接到 PRD、工单、会议纪要、FAQ 等需求原料，到需求评审开始之前。
 
-> 门禁能证明什么、不能证明什么，唯一口径见 [`docs/proof-boundary.md`](docs/proof-boundary.md)——PASS ≠ 业务正确，PASS = 结构与证据链闭合。
+**核心价值：** 帮你把“材料写完了”升级为“方案可以被有效评审”——目标与边界有依据，产品与信息架构清楚，流程和 UX 能讨论，假设、冲突与未决项能追溯。
 
-| 痛点 | SpecNotary 怎么处理 |
-|------|-------------------|
-| 需求写了很长，评审时仍说不清显隐、文案、默认值 | 人读评审稿展开线框 · 控件表 · 状态/动作矩阵 · 编号主路径 |
-| 「智能 / 尽快 / 体验好」冒充完整方案 | 硬门禁 `FAIL`：空话 given/when/then、已知空话／占位词 AC、占位 ui/defaults 直接否决 |
-| 人读与机读各改各的，越改越漂 | **以机读 YAML 为唯一准据**（single source of truth）；人读只由生成器产出，改正文即 FAIL |
-| 评审时说不清原料哪句落到了哪条规格 | SourceClaim 账本：**已登记**的每条原料有处置、每个必选实体有出处，原料内容被哈希钉死（账本完整性由人抽查，见[证明边界](docs/proof-boundary.md)） |
-| 原型与规格各自演化 | PrototypeManifest + HTML `data-spec-id` 落点核对 |
-| 原型到底做不做、用什么打开没人确认 | 建案后的首轮 `D-PROTOTYPE` 拍板：不制作 / 静态 HTML / 本地服务 / 其他 |
-| 未决事项假装已就绪 | `Pending` 须齐五字段；挂在 `ready` 上 → `FAIL` |
-| 没装 Python 就没法跑硬门禁 | 可用 Skill 降级检查，必须标 `gate_mode: degraded`；Node CLI = Deferred |
+| 能力 | 帮你完成什么 | 可独立调用 |
+|------|--------------|------------|
+| **Draft · 高质量起草** | 把零散原料组织为包含目标、范围、角色、架构、流程、交互、异常与决策的候选产品规格 | `/draft-spec` |
+| **Review · 产品质量审查** | 按统一质量模型审查核心准确性、边界合理性、架构扩展性、流程逻辑与 UX，并给出有依据的审查结论 | `/review-spec` |
+| **Gate · 确定性结构门禁** | 检查规格结构、原料追溯、人读/机读一致性及可选原型映射，输出可复核结果 | `/gate-spec` |
+
+默认使用 `/write-spec` 跑完整流程；已有方案的团队可以只调用 Review + Gate。三项能力共用同一套[产品质量模型](docs/product-quality-model.md)，但各自结论保持独立。
+
+### 你最终拿到什么
+
+- **标准产品规格**：适合人阅读、讨论和评审
+- **机读需求准据**：供 Cursor、Codex 等 Agent 继续引用
+- **产品质量审查报告**：明确优势、风险、证据与待拍板事项
+- **结构门禁结果**：对结构、追溯和文档漂移给出确定性结论
+- **可选原型追溯**：需要原型时，让页面与规格条目保持映射
+
+| 使用前 | 使用 SpecNotary 后 |
+|--------|-------------------|
+| 原料散落在文档、工单和口头信息里 | 汇总为一份有来源、有决策记录的评审材料 |
+| 评审会上才发现目标、边界或流程没讲清 | 在会前通过 Draft 与 Review 提前暴露关键缺口 |
+| 文档看起来完整，却无法判断产品方案是否合理 | 把产品质量与结构完整性分开审查，结论更清楚 |
+| 人读文档、机读规格和原型各自演化 | 用准据、哈希与映射关系保持可追溯 |
 
 <p align="center">
   <img src="docs/assets/ipo-flow.svg" alt="输入 → 处理 → 输出 / Input → Process → Output" width="100%"/>
 </p>
 
-### 谁用 · 什么时候用
+### 三步完成一次需求评审准备
 
 **用户只做三步：**
 
-1. **交出原料** — 把原始需求说明发给 AI 助手
-2. **确认结果** — 看说明书和页面稿对不对；原料没写清的假设需要你点头
-3. **拿去评审** — 带上助手给出的输出自检报告去开会
+1. **交出原料** — 把需求说明、工单、会议纪要或已有方案交给 AI 助手
+2. **确认关键决策** — 核对目标、边界、架构、流程和助手显式列出的假设
+3. **拿材料去评审** — 携带标准规格、产品审查报告和门禁结果进入会议
 
-先打开 [`playground/index.html`](playground/index.html) 点按钮看样例。自己的需求：把 [GitHub 网址](https://github.com/OwenBell0930/specnotary) 发给 Cursor 或 Codex，请它安装并按 [`skills/specnotary/SKILL.md`](skills/specnotary/SKILL.md) 工作。规格写在你正在用的文件夹里即可，不必把 SpecNotary 设成当前工作区。产品经理不必操作内部工具。
+最快的使用方式：把 [GitHub 网址](https://github.com/OwenBell0930/specnotary) 发给 Cursor 或 Codex，请它安装并按 [`skills/specnotary/SKILL.md`](skills/specnotary/SKILL.md) 工作。规格直接写在你的业务文件夹中，产品经理无需操作 CLI。
 
-| 场景 | 做什么 |
-|------|--------|
-| 收一笔需求 | 交出原始说明，确认说明书和页面稿，带材料上会 |
-| 需求评审前 | 看覆盖说明、已确认的假设、假详细有没有被拦住 |
-| 方案评审 | 对照范围、状态、交互、默认值、异常和可观察结果逐项讨论 |
-| 原型评审（如有） | 看规格条目和可点页面是否一一对应 |
-| 复盘假详细稿 | 对照 `case-order-cancel-bad`：看哪些写法会被拦住 |
+**个人产品经理**可以使用完整流程提高单份方案质量；**产品管理部门**可以只调用 Review + Gate，对已有文档做统一审查与门禁。
 
-**不是什么：** 不是又一份口号式需求模板，也不是项目管理、多人在线改稿、研发实施或测试管理工具。上游需求文档仍是**原料**；正式产出是**评审就绪的标准需求规格说明书**。开发语言、实现任务、测试策略和覆盖证据不属于产品边界。对方工具里的文档可以当原料进来，不会被自动改成我们的内部格式。
+**产品边界：** 专注产品经理“接到需求原料 → 输出标准方案去评审”的阶段；研发实施与测试交付继续使用团队既有体系。
 
-### 能力状态（诚实分层）
+<details>
+<summary><strong>维护者能力矩阵（点击展开）</strong></summary>
 
-> 产品经理看上面三步即可。下表给 AI 助手和维护者对照，不是给你操作的清单。
+> 下表给 AI 助手和维护者核对实现状态；产品经理按上面的三步使用即可。
 
 | 能力 | 状态 | 说明 |
 |------|------|------|
@@ -97,7 +109,8 @@
 | 一键同步派生物 | **Available** | `specnotary sync`：重生成人读 + 复跑门禁；原型背书须显式 `--attest-prototype` |
 | FAIL / DRAFT / PASS 与问题分层 | **Available** | 见 `docs/gate-modes.md`；草稿结构通过也不会冒充终稿 PASS |
 | 通用 `action_matrix`（非订单域样例） | **Available** | 见 `examples/case-list-search/` |
-| Skill 起草 / 降级检查 | **Available** | 降级须标 `degraded` |
+| Skill 起草 / 独立审查 / 降级检查 | **Available** | `/write-spec` 全流程；`/draft-spec` `/review-spec` `/gate-spec` 可拆；降级须标 `degraded` |
+| 产品质量模型（Draft/Review 共用） | **Available** | [`docs/product-quality-model.md`](docs/product-quality-model.md)；审查契约与反例语料；**不**进 Python hard gate |
 | 原料覆盖（SourceClaim） | **Available** | ready 上每个 source 必须有真实 path + content_hash；删除 path 不能绕过；必选实体必须被引用；`specnotary report` 写出输出自检报告 |
 | 全局视角人读（目录/概览/功能说明/产品与信息架构/职责/数据契约/错误码/决策记录） | **Available** | 渲染器 v13；机读 ID 展开为中文；mermaid 图确定性生成，人读防漂 |
 | 决策记录门禁 | **Available** | `decisions` 未拍板在 `ready` 上 FAIL |
@@ -118,6 +131,8 @@
 | Node 等价硬门禁 | **Deferred** | stub 直接拒绝，绝不冒充 hard PASS |
 | Web 服务端 | **Deferred** | — |
 
+</details>
+
 ---
 
 <a id="overview"></a>
@@ -126,13 +141,13 @@
 
 产品经理不必读这一节。下面写的是助手实际用到的内部结构。
 
-**载体：**
+**载体（产品经理主入口是 Agent）：**
 
 | 层 | 是什么 | 职责 |
 |----|--------|------|
-| **CLI**（主 · Python） | `specnotary new / ingest / check / human / report / confirm / sync`（或 `cli/run-*.sh` 免安装） | 建案钉原料；硬门禁；机读 → 人读；覆盖报告；WARN 账本；哈希链同步 |
-| **Scaffold**（主） | `templates/` · `examples/` | 字段体例与评审规格级样例 |
-| **Skill**（辅） | `skills/` | 起草机读；无运行时的降级检查 |
+| **Agent Skills / Commands** | `/write-spec` `/draft-spec` `/review-spec` `/gate-spec` + `skills/` | **面向产品经理的主入口**：全流程编排或单能力调用 |
+| **CLI**（Python） | `specnotary check / human / report / sync / …` | **Structure Gate 确定性执行引擎**（及建案/同步）；不是产品经理日常交互 |
+| **Scaffold / Schema / Docs** | `templates/` · `examples/` · `docs/` | 支撑资产：字段体例、样例、质量模型与证明边界 |
 
 <p align="center">
   <img src="docs/assets/flow.svg" alt="SpecNotary 主流程" width="100%"/>
@@ -142,9 +157,10 @@
 
 | Capability | 白话 |
 |------------|------|
+| Agent entry | Cursor/Codex 按 Skill/Command 工作；产品经理只交原料、确认、拿材料 |
 | Machine-first | 改 YAML/JSON；人读由 CLI 生成；有 FAIL 时默认不生成 |
-| Review-ready human | 产品/信息架构 · 线框 · 控件表 · 状态/动作矩阵 · 编号主路径 · AC · Pending |
-| Hard CLI gate | Python：`FAIL_COUNT` 必须为 0；Schema + ID/引用校验 |
+| Product Review | 语义审查绑定 `content_hash`；改后复审；与 Gate 结论分开 |
+| Hard CLI gate | Python Structure Gate：`FAIL_COUNT` 必须为 0；Schema + ID/引用校验 |
 | Degraded Skill | 无 Python 时可用，结果必须标 `degraded` |
 
 ---
@@ -157,7 +173,7 @@
   <img src="docs/assets/before-after.svg" alt="假详细 vs 评审规格密度" width="100%"/>
 </p>
 
-打开「电商未发货取消」人读视图的一截——有线框、控件显隐、失败文案原文。  
+打开「电商未发货取消」人读视图的一截——有线框、控件显隐、失败文案原文。
 评审不靠空口号，靠**每条方案能否在这张表上被逐项判断**。
 
 ### 摘录 · 控件规格
@@ -190,8 +206,16 @@
 **产品经理**
 
 1. 打开 [`playground/index.html`](playground/index.html)，点两个样例按钮（一份会被拦住，一份可以通过）。不用输入任何命令。
-2. 感兴趣后，把 [GitHub 网址](https://github.com/OwenBell0930/specnotary) 发给 Cursor、Codex 或其他能改文件、能跑命令的 AI 助手，请它安装并按 [`skills/specnotary/SKILL.md`](skills/specnotary/SKILL.md) 工作。规格写在你正在用的文件夹里即可，不必把 SpecNotary 设成当前工作区。你和开发同事不需要在 GitHub 上一起改同一份规格。
-3. 把你的需求草稿发给它。你只需补全缺的说明、确认写得对不对，然后拿评审材料去开会。
+2. 感兴趣后，把 [GitHub 网址](https://github.com/OwenBell0930/specnotary) 发给 Cursor、Codex 或其他能改文件、能跑命令的 AI 助手，请它安装并按 Skill/Command 工作。规格写在你正在用的文件夹里即可，不必把 SpecNotary 设成当前工作区。
+3. 按场景选用入口（由助手执行；你不必操作 CLI）：
+
+| 场景 | 入口 | 说明 |
+|------|------|------|
+| 原料 → 完整评审包 | `/write-spec` | Draft → Review（改后复审）→ Gate；结论分开 |
+| 只要候选稿 | `/draft-spec` | 只起草，不自动 Review/Gate |
+| 已有文档只要产品质量审查 | `/review-spec` | 默认不改原文；绑定 `content_hash` |
+| 已有文档：Review + Gate | `/review-spec` 再 `/gate-spec` | 可跳过 Draft；**普通 Markdown 不能直接 hard PASS**，须先合法 machine spec（或只提取的 normalize/projection 后再 Gate，且须复审） |
+| 只要结构门禁 | `/gate-spec` | 仅合法 machine spec；Gate PASS ≠ 方案合理 |
 
 可以复制下面这段给助手（你自己不用执行）：
 
@@ -213,12 +237,12 @@ python3 tests/test_cli.py
 
 > [!NOTE]
 > **量级预期**：把含糊原料整理成评审规格是有成本的——样例里 12 行运营说明会展开成很长的说明书。适合多状态、多异常的复杂需求；极小改动不必用它。
-> 助手若环境里没有 Python，只能做降级检查，必须写明 `gate_mode: degraded`。  
+> 助手若环境里没有 Python，只能做降级检查，必须写明 `gate_mode: degraded`。
 > Node 运行时 = **Deferred**，不能冒充正式判定。
 
 ### Cursor Customize
 
-Cursor 侧栏 **Customize** 上的官方目录是 [Marketplace](https://cursor.com/marketplace)。SpecNotary 已带 `.cursor-plugin/plugin.json`（Skill + `/write-spec` 命令，不含 MCP）。上架须把公开 Git 地址提交到 [cursor.com/marketplace/publish](https://cursor.com/marketplace/publish)，由 Cursor 人工审核，通过后才会出现在 Customize 里。未上架前：把 GitHub 网址发给助手即可。
+Cursor 侧栏 **Customize** 上的官方目录是 [Marketplace](https://cursor.com/marketplace)。SpecNotary 已带 `.cursor-plugin/plugin.json`（Skill + `/write-spec` `/draft-spec` `/review-spec` `/gate-spec`，不含 MCP）。上架须把公开 Git 地址提交到 [cursor.com/marketplace/publish](https://cursor.com/marketplace/publish)，由 Cursor 人工审核，通过后才会出现在 Customize 里。未上架前：把 GitHub 网址发给助手即可。
 
 ---
 
@@ -266,16 +290,16 @@ Cursor 侧栏 **Customize** 上的官方目录是 [Marketplace](https://cursor.c
 ## Structure
 
 <p align="center">
-  <img src="docs/assets/architecture.svg" alt="CLI / Scaffold / Skill 构成" width="100%"/>
+  <img src="docs/assets/architecture.svg" alt="Agent 入口 / CLI Gate 引擎 / 支撑资产" width="100%"/>
 </p>
 
 | 路径 | 作用 |
 |------|------|
-| [`src/specnotary/`](src/specnotary/) | Python 包：门禁规则、渲染器、Schema（pip 安装的主体） |
+| [`src/specnotary/`](src/specnotary/) | Python 包：Structure Gate、渲染器、Schema |
 | [`cli/`](cli/) | 免安装包装：`run-check.sh` · `run-generate-human.sh` · `run-report.sh` · `run-sync.sh` |
 | [`templates/`](templates/) | 机读 / 人读 / 原型 manifest 体例（模板本身过门禁） |
 | [`examples/`](examples/) | 评审规格级样例（含对齐与漂移双原型） |
-| [`skills/`](skills/) | 辅：起草与降级 |
+| [`skills/`](skills/) · [`commands/`](commands/) | **用户入口**：全流程 + Draft / Review / Gate |
 | [`docs/what-is-dev-ready.md`](docs/what-is-dev-ready.md) | 「评审就绪」定义（保留旧文件名以兼容链接） |
 | [`docs/human-view.md`](docs/human-view.md) | 人读正文用中文；机读 ID 只对账 |
 
@@ -298,14 +322,18 @@ Cursor 侧栏 **Customize** 上的官方目录是 [Marketplace](https://cursor.c
 | Doc | 内容 |
 |-----|------|
 | [`docs/what-is-dev-ready.md`](docs/what-is-dev-ready.md) | 什么叫「评审就绪」 |
+| [`docs/product-quality-model.md`](docs/product-quality-model.md) | Draft/Review 唯一公共产品质量模型 |
+| [`docs/product-review-contract.md`](docs/product-review-contract.md) | 产品审查报告字段与结论 |
+| [`docs/product-review-corpus.md`](docs/product-review-corpus.md) | 结构合法但方案不合理的反例语料 |
 | [`docs/gate-modes.md`](docs/gate-modes.md) | hard / degraded；原料覆盖与 stale |
+| [`docs/proof-boundary.md`](docs/proof-boundary.md) | 门禁能证明 / 不能证明 |
 | [`docs/positioning.md`](docs/positioning.md) | 与 GitHub spec-kit / OpenSpec 的关系（对方文档可 ingest，无一键转 YAML） |
 | [`docs/empty-talk-corpus.md`](docs/empty-talk-corpus.md) | 空话好坏句子校准集（已知词表，不是一般 NLP） |
-| [`docs/skill-boundary.md`](docs/skill-boundary.md) | CLI 与 Skill 边界 |
+| [`docs/skill-boundary.md`](docs/skill-boundary.md) | CLI 与 Draft/Review/Gate Skill 边界 |
 | [`docs/release-checklist.md`](docs/release-checklist.md) | 公开前技术就绪清单 |
 | [`CHANGELOG.md`](CHANGELOG.md) · [`CONTRIBUTING.md`](CONTRIBUTING.md) · [`SECURITY.md`](SECURITY.md) | 版本 · 贡献 · 安全 |
 | [`examples/README.md`](examples/README.md) | 案例索引 |
-| [`skills/specnotary/SKILL.md`](skills/specnotary/SKILL.md) | Skill 规则 |
+| [`skills/specnotary/SKILL.md`](skills/specnotary/SKILL.md) | 默认全流程编排 |
 
 ---
 

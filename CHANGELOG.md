@@ -4,6 +4,12 @@ SpecNotary 遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)；
 
 ## [Unreleased]
 
+### Added
+
+- **Draft / Review / Gate 可拆入口**：`/draft-spec` `/review-spec` `/gate-spec` 与对应 Skill；`/write-spec` 仍为默认全流程编排并向后兼容。
+- **公共产品质量模型**：[`docs/product-quality-model.md`](docs/product-quality-model.md)（Draft/Review 唯一标准）；审查契约、反例语料、`product-review.schema.json` 与形状样例。Product Review 结论为 `REVISE|DECISION_NEEDED|REVIEWABLE`（禁止 PASS）。Gate 仍只做确定性结构检查。
+- **Review 绑定 subject `content_hash`**：改稿 / normalize / 拍板后旧报告 `stale`，须重新 Review；`source_materials` 记录本次对照快照；Gate PASS 不能覆盖 stale/`REVISE`。
+
 ### Changed
 
 - 产品边界收敛为「产品经理接收需求原料 → 形成标准需求规格与可选原型 → 需求评审」，不生成实现任务、技术栈、测试计划或覆盖证据。
@@ -12,6 +18,8 @@ SpecNotary 遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)；
 - 产品/信息架构、产品模块边界、业务数据契约和产品错误定义恢复为 `ready` 标准必填，不得降级为技术实现内容或按需省略。
 - 建案后首轮必须拍板 `D-PROTOTYPE`（不制作 / 静态 HTML / 本地服务 / 其他）；选择制作才要求 manifest，明确不制作不再产生缺失告警。
 - 人读评审稿调整为产品经理语言并展示原型载体选项中文，渲染器升级到 v13。
+- 证明边界与 Skill 边界写明三层结论不得合并；Structure Gate 通过不等于产品方案合理；「独立审查」不等于默认多 Agent。
+- README 与流程图改为 Agent 入口 + CLI Gate 引擎；假详细口径拆成 Gate（结构/词表）与 Product Review（语义）。
 
 ### Fixed
 

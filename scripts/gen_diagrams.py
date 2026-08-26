@@ -66,35 +66,46 @@ def line(x1, y1, x2, y2, marker="arrow", color=BLUE):
 
 
 def flow():
-    svg = header(1280, 560)
-    svg += label(640, 42, "SpecNotary Flow / 规格工程主流程", 26)
-    svg += label(640, 72, "Machine-first · Generate human view · Hard gate (CLI) or degraded Skill", 14, bold=False, color=TEXT_MUTED)
+    svg = header(1280, 580)
+    svg += label(640, 36, "SpecNotary Flow / 主流程", 26)
+    svg += label(
+        640,
+        64,
+        "Draft 可跳过 · Product Review（改后复审）· Structure Gate · 结论分开展示",
+        14,
+        bold=False,
+        color=TEXT_MUTED,
+    )
 
-    y = 130
+    y = 120
     items = [
-        (40, "1. Inputs", "原料 / 坏稿 / 反推"),
-        (300, "2. Machine YAML", "机读唯一准据 · SSOT"),
-        (560, "3. Human MD", "人读评审稿 · Generated"),
-        (820, "4. CLI Gate", "hard PASS/FAIL"),
-        (1040, "5. Ready", "评审就绪 · Review-ready"),
+        (24, "1. Inputs", "原料 / 已有文档"),
+        (248, "2. Draft", "可跳过 · 候选稿"),
+        (472, "3. Review", "绑定 hash · 可复审"),
+        (696, "4. Gate", "CLI 结构门禁"),
+        (920, "5. Pack", "评审材料 · 结论分开"),
     ]
     for x, t, s in items:
-        w = 200 if x < 1000 else 200
-        fill = BLUE_LIGHT if "Machine" in t else WHITE
-        stroke = BLUE_DARK if "Machine" in t else BLUE
-        svg += box(x, y, w, 100, t, s, fill=fill, stroke=stroke, title_size=15)
+        fill = BLUE_LIGHT if "Review" in t else WHITE
+        stroke = BLUE_DARK if "Review" in t else BLUE
+        if "Gate" in t:
+            fill = "#ECFDF5"
+            stroke = GREEN
+        svg += box(x, y, 200, 100, t, s, fill=fill, stroke=stroke, title_size=15)
 
     for i in range(4):
-        x1 = 40 + i * 260 + 200
-        svg += line(x1, y + 50, x1 + 60, y + 50)
+        x1 = 24 + i * 224 + 200
+        svg += line(x1, y + 50, x1 + 24, y + 50)
 
-    # secondary row
-    svg += box(300, 320, 280, 90, "Skill (optional)", "起草机读 / 无运行时降级检查", fill="#FFF7ED", stroke=ORANGE)
-    svg += box(700, 320, 280, 90, "Runtime", "python3 唯一硬门禁 · Node Deferred", fill=WHITE, stroke=GRAY)
-    svg += line(440, 230, 440, 320, marker="arrow", color=ORANGE)
-    svg += line(840, 230, 840, 320, marker="arrow", color=GRAY)
+    # revise → re-review loop
+    svg += f'<path d="M572 220 C572 280, 572 280, 520 280 L420 280 C368 280, 368 280, 368 230" fill="none" stroke="{ORANGE}" stroke-width="2.5" marker-end="url(#arrow)"/>'
+    svg += label(470, 308, "修订 / 拍板 → 旧报告 stale → 重新 Review", 13, bold=False, color=ORANGE)
 
-    svg += label(640, 470, "核心：自动化以机读为准；人读由机读生成，禁止长期只改人读", 15, bold=False, color=TEXT_MUTED)
+    svg += box(80, 360, 320, 80, "Agent Skills / Commands", "全流程 + Draft / Review / Gate 独立入口", fill="#FFF7ED", stroke=ORANGE)
+    svg += box(480, 360, 320, 80, "CLI = Gate engine", "check · sync · report · confirm", fill=WHITE, stroke=GRAY)
+    svg += box(880, 360, 320, 80, "支撑资产", "Schema · templates · examples", fill=WHITE, stroke=GRAY)
+
+    svg += label(640, 480, "PRODUCT_REVIEW 与 RESULT 分开展示 · Gate PASS 不能覆盖 stale/REVISE", 14, bold=False, color=TEXT_MUTED)
     svg += footer()
     path = os.path.join(OUT, "flow.svg")
     with open(path, "w", encoding="utf-8") as f:
@@ -104,10 +115,9 @@ def flow():
 
 def before_after():
     svg = header(1280, 640)
-    svg += label(640, 36, "Case demo: Fake-detailed PRD → Review-ready machine spec", 24)
-    svg += label(640, 64, "案例：假详细需求 → 评审就绪机读规格（节选对照）", 14, bold=False, color=TEXT_MUTED)
+    svg += label(640, 36, "Case demo: Fake-detailed PRD → Review-ready pack", 24)
+    svg += label(640, 64, "案例：假详细需求 → 评审就绪材料（结构 + 产品审查，结论分开）", 14, bold=False, color=TEXT_MUTED)
 
-    # left bad
     svg += f'<rect x="40" y="100" width="560" height="480" rx="16" fill="#FEF2F2" stroke="{RED}" stroke-width="2"/>'
     svg += label(320, 130, "BEFORE / 改造前", 20, color=RED)
     bad_lines = [
@@ -116,24 +126,22 @@ def before_after():
         "「权限按角色区分」——未列角色",
         "「异常要有提示」——未写文案/码",
         "无默认值 · 无空结果 · 无验收",
-        "→ 评审现场只能猜，Agent 会瞎补",
+        "→ 评审现场只能猜，助手会瞎补",
     ]
     yy = 175
     for line_t in bad_lines:
         svg += label(70, yy, "• " + line_t, 16, bold=False, anchor="start", color=TEXT)
         yy += 42
 
-    # right good
     svg += f'<rect x="680" y="100" width="560" height="480" rx="16" fill="#ECFDF5" stroke="{GREEN}" stroke-width="2"/>'
-    svg += label(960, 130, "AFTER / 改造后（机读字段）", 20, color=GREEN)
+    svg += label(960, 130, "AFTER / 改造后", 20, color=GREEN)
     good_lines = [
-        "search.fields: [title, id]",
-        "search.match: fuzzy",
-        "actors: [admin, member]",
-        "empty_state: 「无匹配结果」",
-        "defaults.page_size: 20",
-        "acceptance: Given/When/Then × N",
-        "→ CLI hard gate: PASS",
+        "search.fields / match / actors 写清",
+        "empty_state · defaults · AC 可观察",
+        "Product Review：语义错配单独指出",
+        "Structure Gate：结构 / 词表硬检查",
+        "PRODUCT_REVIEW 与 RESULT 分开展示",
+        "→ Gate PASS ≠ 产品方案已合理",
     ]
     yy = 175
     for line_t in good_lines:
@@ -152,18 +160,18 @@ def architecture():
     svg = header(1280, 620)
     svg += label(640, 40, "What's in the box / 套件里有什么", 26)
 
-    svg += box(60, 100, 360, 140, "Scaffold 脚手架", "templates · examples · docs", fill=BLUE_LIGHT)
-    svg += box(460, 100, 360, 140, "CLI 硬门禁", "check · human · report · sync", fill=WHITE)
-    svg += box(860, 100, 360, 140, "Skill 辅", "起草 / 降级检查", fill="#FFF7ED", stroke=ORANGE)
+    svg += box(60, 100, 520, 140, "Agent Skills / Commands", "用户入口 · /write-spec · /draft-spec · /review-spec · /gate-spec", fill="#FFF7ED", stroke=ORANGE)
+    svg += box(700, 100, 520, 140, "CLI Structure Gate engine", "check · human · report · sync · confirm", fill="#ECFDF5", stroke=GREEN)
 
-    svg += box(60, 300, 560, 160, "Machine source (YAML/JSON)", "唯一准据 · object_ai 权重可声明", fill=WHITE, stroke=BLUE_DARK)
-    svg += box(660, 300, 560, 160, "Human view (Markdown)", "由机读生成 · 中英可工作", fill=WHITE)
+    svg += box(60, 300, 360, 140, "Scaffold", "templates · examples", fill=BLUE_LIGHT)
+    svg += box(460, 300, 360, 140, "Schema / Docs", "机读契约 · 质量模型 · 证明边界", fill=WHITE)
+    svg += box(860, 300, 360, 140, "Machine + Human", "YAML 准据 · 生成人读 · 审查报告", fill=WHITE, stroke=BLUE_DARK)
 
-    svg += line(240, 240, 240, 300)
-    svg += line(640, 240, 640, 300)
-    svg += line(1040, 240, 940, 300, color=ORANGE)
+    svg += line(320, 240, 240, 300, color=ORANGE)
+    svg += line(960, 240, 1040, 300, color=GREEN)
+    svg += line(640, 240, 640, 300, color=GRAY)
 
-    svg += label(640, 530, "Python 硬门禁 · Node Deferred · 优先 YAML", 15, bold=False, color=TEXT_MUTED)
+    svg += label(640, 510, "产品经理主入口是 Agent；CLI 是确定性 Structure Gate 引擎；Scaffold/Docs 是支撑资产", 14, bold=False, color=TEXT_MUTED)
     svg += footer()
     path = os.path.join(OUT, "architecture.svg")
     with open(path, "w", encoding="utf-8") as f:

@@ -2,7 +2,7 @@
   "name": "specnotary",
   "displayName": "SpecNotary",
   "version": "0.3.0",
-  "description": "Writing plus a deterministic hard gate for specs. For product managers using Cursor: install the CLI from GitHub, draft from raw material, confirm, take the review pack to the meeting. SpecNotary does not need to be the current workspace.",
+  "description": "Turn raw requirements into review-ready product specs for product managers. Draft, Product Review, and deterministic Structure Gate work as one flow or as separate capabilities. Use /write-spec for the full workflow, or /draft-spec, /review-spec, and /gate-spec independently.",
   "author": {
     "name": "OwenBell"
   },

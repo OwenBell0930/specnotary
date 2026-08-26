@@ -1,11 +1,16 @@
 ---
 name: specnotary
 description: >
-  Turns raw PRDs, tickets, or FAQs into a review-ready product-manager pack. Installs
-  the specnotary CLI from GitHub when needed, talks to the product manager only
-  about missing material, confirmation, and the review pack, and never asks
-  them to run internal tools. Use from requirement intake through product review;
-  do not extend into implementation or test delivery planning.
+  SpecNotary plugin entry pointer. Full-flow orchestrator lives in
+  skills/specnotary/SKILL.md; Draft/Review/Gate are separate skills.
 ---
 
-完整写作执行器在 [`skills/specnotary/SKILL.md`](specnotary/SKILL.md)（Cursor 插件发现的也是那一份）。
+完整写作与默认全流程编排在 [`skills/specnotary/SKILL.md`](specnotary/SKILL.md)。
+
+单能力：
+
+- Draft → [`skills/specnotary-draft/SKILL.md`](specnotary-draft/SKILL.md)（`/draft-spec`）
+- Review → [`skills/specnotary-review/SKILL.md`](specnotary-review/SKILL.md)（`/review-spec`）
+- Gate → [`skills/specnotary-gate/SKILL.md`](specnotary-gate/SKILL.md)（`/gate-spec`）
+
+公共质量模型（唯一）：[`docs/product-quality-model.md`](../docs/product-quality-model.md)。

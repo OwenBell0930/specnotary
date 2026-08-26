@@ -5,9 +5,16 @@
 <h1 align="center">SpecNotary</h1>
 
 <p align="center">
-  <strong>Turn raw requirements into a review-ready product pack — writing + a hard gate in one suite.</strong><br/>
-  <strong>For product managers.</strong> You do three things: <strong>hand over raw material, confirm the result, take the pack to review.</strong><br/>
-  <strong>Recommended: Cursor or Codex</strong> (can edit files and run commands). Send the assistant the <a href="https://github.com/OwenBell0930/specnotary">GitHub URL</a> and ask it to install and follow [`skills/specnotary/SKILL.md`](skills/specnotary/SKILL.md). Use whatever folder you already have open — SpecNotary does not need to be the current workspace.
+  <strong>Turn scattered requirements into a product proposal ready for serious review.</strong><br/>
+  <strong>Built for product managers and product operations teams.</strong> High-quality Draft, Product Review, and deterministic Structure Gate in one workflow.<br/>
+  Keep reviews focused on <strong>goals, boundaries, product and information architecture, business flows, and UX</strong>.<br/>
+  <strong>Agent-first:</strong> send <a href="https://github.com/OwenBell0930/specnotary">github.com/OwenBell0930/specnotary</a> to Cursor or Codex and use it directly in your current workspace.
+</p>
+
+<p align="center">
+  <a href="#quick-start"><strong>Get started</strong></a> ·
+  <a href="https://owenbell0930.github.io/specnotary/playground/">Live playground</a> ·
+  <a href="examples/product-review-fixture/reports/product-review.md">Product review sample</a>
 </p>
 
 <p align="center">
@@ -26,67 +33,71 @@
 </p>
 
 <p align="center">
-  <img alt="try" src="https://img.shields.io/badge/try-browser%20playground-0B6BCB"/>
-  <img alt="gate" src="https://img.shields.io/badge/result-FAIL%20%7C%20DRAFT%20%7C%20PASS-DC2626"/>
-  <img alt="runtime" src="https://img.shields.io/badge/hard%20gate-Python-159947"/>
-  <img alt="llm" src="https://img.shields.io/badge/LLM%20in%20gate-zero-0B6BCB"/>
+  <img alt="audience" src="https://img.shields.io/badge/for-Product%20Managers-7C3AED"/>
+  <img alt="workflow" src="https://img.shields.io/badge/workflow-Draft%20%7C%20Review%20%7C%20Gate-0B6BCB"/>
+  <img alt="agents" src="https://img.shields.io/badge/agents-Cursor%20%7C%20Codex-159947"/>
+  <img alt="traceable" src="https://img.shields.io/badge/output-review--ready-0F766E"/>
   <img alt="license" src="https://img.shields.io/badge/license-MIT-0B6BCB"/>
-  <img alt="node" src="https://img.shields.io/badge/Node-Deferred-94A3B8"/>
   <img alt="author" src="https://img.shields.io/badge/by-OwenBell-0F172A"/>
 </p>
-
-> How this relates to workflow-style SDD tools: [`docs/positioning.md`](docs/positioning.md). Not affiliated with the CNCF Notary Project (OCI artifact signing).
 
 ---
 
 <a id="value"></a>
 
-## Value · the problem
+## Value · at a glance
 
-**One product goal: review-ready requirements.** Help a product manager turn PRDs, tickets, FAQs, and rough notes into a standard requirements spec and self-check report for review. Product/information architecture, business data contracts, and product error definitions are standard content; sources, assumptions, conflicts, open questions, and any explicitly selected prototype carrier stay traceable.
+**Who it is for:** product managers turning ambiguous business needs into clear product proposals, and product operations teams standardizing requirement quality.
 
-**One line:** from incoming requirement material to a standard pack for requirements review; slogan-grade “fake detail” fails a deterministic gate.
+**Where it fits:** from incoming PRDs, tickets, meeting notes, FAQs, or rough ideas to the moment a requirements review begins.
 
-> What PASS does and does not prove: [`docs/proof-boundary.md`](docs/proof-boundary.md) — PASS ≠ the business is right; PASS = structure and evidence chain are closed.
+**Core value:** move from “the document is written” to “the proposal can be reviewed effectively” — grounded goals and boundaries, clear product and information architecture, discussable flows and UX, and traceable assumptions, conflicts, and open decisions.
 
-| Pain | What SpecNotary does |
-|------|---------------------|
-| A long write-up still leaves visibility, copy, and defaults unclear in review | The review view expands wireframes · control tables · state/action matrices · numbered main paths |
-| “smart / ASAP / great UX” presented as a complete proposal | Hard `FAIL`: vague given/when/then, known empty-talk / placeholder AC phrasing, placeholder ui/defaults |
-| Human doc and machine truth drift apart | Machine YAML is the **single source of truth**; the human view is generated; hand-editing it fails the gate |
-| Review cannot show which source sentence became which spec line | SourceClaim ledger: every **registered** source item has a disposition, every required entity has a claim, source bytes are hash-pinned (ledger completeness is sampled by humans — see [proof boundary](docs/proof-boundary.md)) |
-| Prototype and spec evolve separately | PrototypeManifest + HTML `data-spec-id` marker check |
-| Nobody confirms whether a prototype is needed or how reviewers will open it | First-round `D-PROTOTYPE` decision: none / static HTML / local service / other |
-| Open questions pretending to be ready | `Pending` needs five fields; still open on `ready` → `FAIL` |
-| No Python, so no hard gate | Skill can run a degraded check, which must be labelled `gate_mode: degraded`; Node CLI = Deferred |
+| Capability | What it helps you do | Standalone entry |
+|------------|----------------------|------------------|
+| **Draft · high-quality drafting** | Organize scattered inputs into a candidate product spec with goals, scope, roles, architecture, flows, interactions, exceptions, and decisions | `/draft-spec` |
+| **Review · product-quality review** | Assess core correctness, boundary quality, architectural extensibility, flow logic, and UX against one quality model, with evidence-backed findings | `/review-spec` |
+| **Gate · deterministic structure gate** | Check structure, source traceability, machine/human consistency, and optional prototype mapping with reproducible results | `/gate-spec` |
+
+Use `/write-spec` for the full workflow. Teams with an existing proposal can run Review + Gate only. All three share one [product quality model](docs/product-quality-model.md), while keeping their verdicts separate.
+
+### What you get
+
+- **Standard product spec** for reading, discussion, and review
+- **Machine-readable requirement source** for Cursor, Codex, and other agents
+- **Product-quality review report** with strengths, risks, evidence, and decisions needed
+- **Structure-gate result** covering structure, traceability, and document drift
+- **Optional prototype traceability** mapping screens back to spec items when a prototype is selected
+
+| Before | With SpecNotary |
+|--------|-----------------|
+| Inputs are scattered across documents, tickets, and conversations | One review pack with source links and decision records |
+| Goals, boundaries, or flow gaps surface during the meeting | Draft and Review help expose the critical gaps before review |
+| A document looks complete but product quality remains unclear | Product quality and structural completeness receive separate verdicts |
+| Human docs, machine specs, and prototypes evolve independently | A source of truth, hashes, and mappings keep them traceable |
 
 <p align="center">
   <img src="docs/assets/ipo-flow.svg" alt="Input → Process → Output" width="100%"/>
 </p>
 
-### Who uses it · when
+### Three steps to prepare for review
 
 **You do three things:**
 
-1. **Hand over raw material** — send the original write-up to an AI assistant
-2. **Confirm the result** — check the spec and the page draft; assumptions that were not in the source need your yes
-3. **Take it to review** — bring the assistant's self-check report to the meeting
+1. **Hand over the inputs** — give the assistant requirement notes, tickets, meeting notes, or an existing proposal
+2. **Confirm key decisions** — verify goals, boundaries, architecture, flows, and explicitly listed assumptions
+3. **Take the pack to review** — enter the meeting with the standard spec, product review report, and gate result
 
-Start with [`playground/index.html`](playground/index.html) and click the sample buttons. For your own work: send Cursor or Codex the [GitHub URL](https://github.com/OwenBell0930/specnotary) and ask it to install and follow [`skills/specnotary/SKILL.md`](skills/specnotary/SKILL.md). Specs live in whatever folder you already use; SpecNotary does not need to be the current workspace. Product managers do not operate internal tools.
+The fastest path: send Cursor or Codex the [GitHub URL](https://github.com/OwenBell0930/specnotary) and ask it to install and follow [`skills/specnotary/SKILL.md`](skills/specnotary/SKILL.md). Specs stay in your business workspace; product managers do not need to operate the CLI.
 
-| Situation | What you do |
-|-----------|-------------|
-| A new request lands | Hand over the original notes, confirm the spec and page draft, take the pack to the meeting |
-| Before a requirements review | Check coverage notes, confirmed assumptions, and whether fake detail was blocked |
-| Proposal review | Discuss scope, states, interactions, defaults, exceptions, and observable outcomes |
-| Prototype review (if needed) | Check that spec items and clickable screens map to one another |
-| Post-mortem on a fake-detail draft | Compare `case-order-cancel-bad`: which phrasings the gate rejects |
+**Individual PMs** can run the complete flow to improve a proposal. **Product operations teams** can invoke Review + Gate only to standardize existing documents.
 
-**Not this:** not another slogan template, project management, multiplayer editing, implementation planning, or QA management. Upstream docs stay **raw material**; the formal output is a **review-ready requirements specification**. Languages, implementation tasks, test strategy, and coverage evidence are outside the product boundary. Documents from other tools can be registered as sources; they are not auto-converted into SpecNotary's machine format.
+**Product boundary:** focused on the PM journey from incoming requirement material to a standard proposal for requirements review; engineering implementation and QA delivery continue in the team's existing systems.
 
-### Capability status (honest tiers)
+<details>
+<summary><strong>Maintainer capability matrix (click to expand)</strong></summary>
 
-> Product managers only need the three steps above. This table is for assistants and maintainers, not a checklist for you to run.
+> This table lets assistants and maintainers verify implementation status. Product managers can stay with the three steps above.
 
 | Capability | Status | Notes |
 |------------|--------|-------|
@@ -98,7 +109,8 @@ Start with [`playground/index.html`](playground/index.html) and click the sample
 | One-command derivative sync | **Available** | `specnotary sync`: regenerate human view + re-run the gate; prototype attestation needs explicit `--attest-prototype` |
 | FAIL / DRAFT / PASS and finding layers | **Available** | See `docs/gate-modes.md`; a structurally valid draft never impersonates a final PASS |
 | Generic `action_matrix` (non-order example) | **Available** | See `examples/case-list-search/` |
-| Skill drafting / degraded check | **Available** | Degraded must be labelled `degraded` |
+| Skill drafting / independent review / degraded check | **Available** | `/write-spec` full flow; `/draft-spec` `/review-spec` `/gate-spec` separable; degraded must be labelled `degraded` |
+| Product quality model (shared by Draft/Review) | **Available** | [`docs/product-quality-model.md`](docs/product-quality-model.md); review contract + anti-corpus; **not** in the Python hard gate |
 | Source coverage (SourceClaim) | **Available** | On ready every source needs a real path + content_hash; deleting path cannot bypass; required entities must be cited; `specnotary report` writes the PM self-check report |
 | Global human view (TOC / overview / features / product & information architecture / duties / data contracts / error codes / decisions) | **Available** | renderer v13; machine IDs expanded to Chinese; mermaid diagrams generated deterministically |
 | Decision-log gate | **Available** | Undecided `decisions` FAIL on `ready` |
@@ -119,6 +131,8 @@ Start with [`playground/index.html`](playground/index.html) and click the sample
 | Node-equivalent hard gate | **Deferred** | stubs refuse; they never fake a hard PASS |
 | Hosted web service | **Deferred** | — |
 
+</details>
+
 ---
 
 <a id="overview"></a>
@@ -127,13 +141,13 @@ Start with [`playground/index.html`](playground/index.html) and click the sample
 
 Product managers can skip this section. It describes the internals the assistant actually uses.
 
-**Carriers:**
+**Carriers (Agent is the PM-facing front door):**
 
 | Layer | What it is | Duty |
 |-------|------------|------|
-| **CLI** (primary · Python) | `specnotary new / ingest / check / human / report / confirm / sync` (or `cli/run-*.sh` without install) | Pin sources; hard gate; machine → human; coverage report; WARN ledger; hash-chain sync |
-| **Scaffold** (primary) | `templates/` · `examples/` | Field conventions and review-grade samples |
-| **Skill** (auxiliary) | `skills/` | Draft the machine source; degraded check when no runtime |
+| **Agent Skills / Commands** | `/write-spec` `/draft-spec` `/review-spec` `/gate-spec` + `skills/` | **PM-facing entry**: full flow or single capability |
+| **CLI** (Python) | `specnotary check / human / report / sync / …` | **Structure Gate engine** (plus case setup/sync); not the PM's daily UI |
+| **Scaffold / Schema / Docs** | `templates/` · `examples/` · `docs/` | Supporting assets: templates, samples, quality model, proof boundary |
 
 <p align="center">
   <img src="docs/assets/flow.svg" alt="SpecNotary main flow" width="100%"/>
@@ -143,9 +157,10 @@ Product managers can skip this section. It describes the internals the assistant
 
 | Capability | In plain words |
 |------------|----------------|
+| Agent entry | Cursor/Codex follows Skills/Commands; PM only supplies material, confirms, takes the pack |
 | Machine-first | Edit YAML/JSON; human view is generated by the CLI; default is no generate on FAIL |
-| Review-ready human | Product/information architecture · wireframe · control table · state/action matrix · numbered main path · AC · Pending |
-| Hard CLI gate | Python: `FAIL_COUNT` must be 0; schema + ID/ref checks |
+| Product Review | Semantic review bound to `content_hash`; re-review after edits; separate from Gate |
+| Hard CLI gate | Python Structure Gate: `FAIL_COUNT` must be 0; schema + ID/ref checks |
 | Degraded Skill | Usable without Python; the result must be labelled `degraded` |
 
 ---
@@ -158,7 +173,7 @@ Product managers can skip this section. It describes the internals the assistant
   <img src="docs/assets/before-after.svg" alt="Fake detail vs review-spec density" width="100%"/>
 </p>
 
-A slice of the “unshipped order cancel” human view — wireframe, control visibility, failure copy as written.  
+A slice of the “unshipped order cancel” human view — wireframe, control visibility, failure copy as written.
 A review succeeds when **each proposal can be judged from this table**, not because of slogans.
 
 ### Excerpt · controls
@@ -191,8 +206,16 @@ Full sample:
 **Product manager**
 
 1. Open [`playground/index.html`](playground/index.html) and click the two sample buttons (one is rejected, one passes). No commands.
-2. If it looks useful, send Cursor, Codex, or another assistant that can edit files and run commands the [GitHub URL](https://github.com/OwenBell0930/specnotary). Ask it to install and follow [`skills/specnotary/SKILL.md`](skills/specnotary/SKILL.md). Specs live in whatever folder you already use; SpecNotary does not need to be the current workspace. You and engineering do not need to co-edit the spec on GitHub.
-3. Send it your draft. You fill in what's missing, confirm the write-up, and take the review pack to the meeting.
+2. If it looks useful, send Cursor, Codex, or another assistant that can edit files and run commands the [GitHub URL](https://github.com/OwenBell0930/specnotary). Ask it to install and follow Skills/Commands. Specs live in whatever folder you already use; SpecNotary does not need to be the current workspace.
+3. Pick the entry for your situation (the assistant runs it; you do not operate the CLI):
+
+| Situation | Entry | Notes |
+|-----------|-------|-------|
+| Raw material → full review pack | `/write-spec` | Draft → Review (re-review after edits) → Gate; verdicts separate |
+| Candidate draft only | `/draft-spec` | Draft only; no automatic Review/Gate |
+| Existing doc: product-quality review only | `/review-spec` | Default: do not edit the subject; bind `content_hash` |
+| Existing doc: Review + Gate | `/review-spec` then `/gate-spec` | Skip Draft; **plain Markdown cannot hard-PASS** — need a legal machine spec (or extract-only normalize/projection, then re-review, then Gate) |
+| Structure gate only | `/gate-spec` | Legal machine spec only; Gate PASS ≠ sound product design |
 
 Paste this to the assistant (you do not run it):
 
@@ -214,12 +237,12 @@ python3 tests/test_cli.py
 
 > [!NOTE]
 > **Scale:** turning vague notes into a review pack takes work — a 12-line ops note becomes a long spec. Use it for multi-state, multi-exception work; skip it for tiny tweaks.
-> If the assistant has no Python, it can only run a degraded check and must write `gate_mode: degraded`.  
+> If the assistant has no Python, it can only run a degraded check and must write `gate_mode: degraded`.
 > Node runtime = **Deferred**; it must not fake a formal verdict.
 
 ### Cursor Customize
 
-The official catalog in Cursor's **Customize** sidebar is the [Marketplace](https://cursor.com/marketplace). SpecNotary already ships `.cursor-plugin/plugin.json` (skill + `/write-spec`; no MCP). Listing requires submitting the public Git URL at [cursor.com/marketplace/publish](https://cursor.com/marketplace/publish). Cursor reviews every plugin by hand; it appears in Customize only after that. Until then, send the GitHub URL to the assistant.
+The official catalog in Cursor's **Customize** sidebar is the [Marketplace](https://cursor.com/marketplace). SpecNotary already ships `.cursor-plugin/plugin.json` (skills + `/write-spec` `/draft-spec` `/review-spec` `/gate-spec`; no MCP). Listing requires submitting the public Git URL at [cursor.com/marketplace/publish](https://cursor.com/marketplace/publish). Cursor reviews every plugin by hand; it appears in Customize only after that. Until then, send the GitHub URL to the assistant.
 
 ---
 
@@ -267,16 +290,16 @@ More: [`examples/README.md`](examples/README.md)
 ## Structure
 
 <p align="center">
-  <img src="docs/assets/architecture.svg" alt="CLI / Scaffold / Skill layout" width="100%"/>
+  <img src="docs/assets/architecture.svg" alt="Agent entry / CLI Gate engine / supporting assets" width="100%"/>
 </p>
 
 | Path | Role |
 |------|------|
-| [`src/specnotary/`](src/specnotary/) | Python package: gate rules, renderer, schemas (what `pip install` ships) |
+| [`src/specnotary/`](src/specnotary/) | Python package: Structure Gate, renderer, schemas |
 | [`cli/`](cli/) | No-install wrappers: `run-check.sh` · `run-generate-human.sh` · `run-report.sh` · `run-sync.sh` |
 | [`templates/`](templates/) | Machine / human / prototype-manifest conventions (the template itself passes the gate) |
 | [`examples/`](examples/) | Review-grade samples (aligned + deliberately drifted prototypes) |
-| [`skills/`](skills/) | Auxiliary: drafting and degraded checks |
+| [`skills/`](skills/) · [`commands/`](commands/) | **User entry**: full-flow + Draft / Review / Gate |
 | [`docs/what-is-dev-ready.md`](docs/what-is-dev-ready.md) | What “review-ready” means (legacy filename retained) |
 | [`docs/human-view.md`](docs/human-view.md) | Human prose in Chinese; machine IDs only for reconciliation |
 
@@ -299,14 +322,18 @@ More: [`examples/README.md`](examples/README.md)
 | Doc | Contents |
 |-----|----------|
 | [`docs/what-is-dev-ready.md`](docs/what-is-dev-ready.md) | What “review-ready” means |
+| [`docs/product-quality-model.md`](docs/product-quality-model.md) | Shared Draft/Review product quality model |
+| [`docs/product-review-contract.md`](docs/product-review-contract.md) | Product-review report fields and verdicts |
+| [`docs/product-review-corpus.md`](docs/product-review-corpus.md) | Structurally valid but product-bad anti-examples |
 | [`docs/gate-modes.md`](docs/gate-modes.md) | hard / degraded; source coverage and stale |
+| [`docs/proof-boundary.md`](docs/proof-boundary.md) | What the gate can and cannot prove |
 | [`docs/positioning.md`](docs/positioning.md) | Relation to GitHub spec-kit / OpenSpec (their docs can be ingested; no one-click Markdown-to-YAML) |
 | [`docs/empty-talk-corpus.md`](docs/empty-talk-corpus.md) | Empty-talk good/bad sentence set (known list, not general NLP) |
-| [`docs/skill-boundary.md`](docs/skill-boundary.md) | CLI vs Skill boundary |
+| [`docs/skill-boundary.md`](docs/skill-boundary.md) | CLI vs Draft/Review/Gate Skill boundary |
 | [`docs/release-checklist.md`](docs/release-checklist.md) | Public-release technical checklist |
 | [`CHANGELOG.md`](CHANGELOG.md) · [`CONTRIBUTING.md`](CONTRIBUTING.md) · [`SECURITY.md`](SECURITY.md) | Versions · contributing · security |
 | [`examples/README.md`](examples/README.md) | Case index |
-| [`skills/specnotary/SKILL.md`](skills/specnotary/SKILL.md) | Skill rules |
+| [`skills/specnotary/SKILL.md`](skills/specnotary/SKILL.md) | Default full-flow orchestrator |
 
 ---
 

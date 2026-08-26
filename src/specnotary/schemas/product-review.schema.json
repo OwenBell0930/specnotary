@@ -1,0 +1,309 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/OwenBell0930/specnotary/schemas/product-review.schema.json",
+  "title": "SpecNotary Product Review Report",
+  "description": "Shape and internal consistency for reports/product-review.yaml. Passing this schema does not prove the semantic review was correct.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "review_version",
+    "subject",
+    "source_fidelity",
+    "source_materials",
+    "model_ref",
+    "validity",
+    "verdict",
+    "summary",
+    "findings",
+    "decisions_needed",
+    "gate_note"
+  ],
+  "properties": {
+    "review_version": {
+      "type": "string",
+      "const": "1"
+    },
+    "subject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "kind", "content_hash"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "kind": {
+          "type": "string",
+          "enum": ["machine_spec", "markdown_prd", "other"]
+        },
+        "content_hash": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$",
+          "description": "sha256 of the reviewed subject file bytes (lowercase hex)"
+        }
+      }
+    },
+    "source_fidelity": {
+      "type": "string",
+      "enum": ["aligned", "partial", "unavailable"]
+    },
+    "source_materials": {
+      "type": "array",
+      "description": "Snapshots actually consulted for this review. Does not prove the raw material ledger is complete.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "content_hash"],
+        "properties": {
+          "path": { "type": "string", "minLength": 1 },
+          "content_hash": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          }
+        }
+      }
+    },
+    "model_ref": {
+      "type": "string",
+      "const": "docs/product-quality-model.md"
+    },
+    "validity": {
+      "type": "string",
+      "enum": ["current", "stale"],
+      "description": "current only when subject.content_hash still matches the file on disk; any subject change forces stale then a fresh review"
+    },
+    "verdict": {
+      "type": "string",
+      "enum": ["REVISE", "DECISION_NEEDED", "REVIEWABLE"]
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["zh"],
+      "properties": {
+        "zh": { "type": "string", "minLength": 1 },
+        "en": { "type": "string", "minLength": 1 }
+      }
+    },
+    "findings": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/finding" }
+    },
+    "decisions_needed": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "id": { "type": "string" },
+          "zh": { "type": "string" },
+          "finding_id": { "type": "string" }
+        }
+      }
+    },
+    "gate_note": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["zh"],
+      "properties": {
+        "zh": {
+          "type": "string",
+          "const": "Structure Gate 通过不等于产品方案合理。"
+        },
+        "en": { "type": "string", "minLength": 1 }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "source_fidelity": { "enum": ["aligned", "partial"] }
+        },
+        "required": ["source_fidelity"]
+      },
+      "then": {
+        "properties": {
+          "source_materials": { "type": "array", "minItems": 1 }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "source_fidelity": { "const": "unavailable" } },
+        "required": ["source_fidelity"]
+      },
+      "then": {
+        "properties": {
+          "source_materials": { "type": "array", "maxItems": 0 }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "findings": {
+            "contains": {
+              "type": "object",
+              "properties": {
+                "severity": { "enum": ["blocker", "major"] }
+              },
+              "required": ["severity"]
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": { "verdict": { "const": "REVISE" } }
+      }
+    },
+    {
+      "if": {
+        "properties": { "verdict": { "const": "REVISE" } },
+        "required": ["verdict"]
+      },
+      "then": {
+        "properties": {
+          "findings": {
+            "type": "array",
+            "contains": {
+              "type": "object",
+              "properties": {
+                "severity": { "enum": ["blocker", "major"] }
+              },
+              "required": ["severity"]
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "verdict": { "const": "DECISION_NEEDED" } },
+        "required": ["verdict"]
+      },
+      "then": {
+        "allOf": [
+          {
+            "not": {
+              "properties": {
+                "findings": {
+                  "contains": {
+                    "type": "object",
+                    "properties": {
+                      "severity": { "enum": ["blocker", "major"] }
+                    },
+                    "required": ["severity"]
+                  }
+                }
+              }
+            }
+          },
+          {
+            "properties": {
+              "findings": {
+                "type": "array",
+                "contains": {
+                  "type": "object",
+                  "properties": {
+                    "requires_decision": { "const": true }
+                  },
+                  "required": ["requires_decision"]
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": { "verdict": { "const": "REVIEWABLE" } },
+        "required": ["verdict"]
+      },
+      "then": {
+        "allOf": [
+          {
+            "not": {
+              "properties": {
+                "findings": {
+                  "contains": {
+                    "type": "object",
+                    "properties": {
+                      "severity": { "enum": ["blocker", "major"] }
+                    },
+                    "required": ["severity"]
+                  }
+                }
+              }
+            }
+          },
+          {
+            "not": {
+              "properties": {
+                "findings": {
+                  "contains": {
+                    "type": "object",
+                    "properties": {
+                      "requires_decision": { "const": true }
+                    },
+                    "required": ["requires_decision"]
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "$defs": {
+    "finding": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "id",
+        "dimension",
+        "severity",
+        "observation",
+        "impact",
+        "direction",
+        "confidence",
+        "requires_decision"
+      ],
+      "anyOf": [
+        { "required": ["evidence"] },
+        { "required": ["spec_refs"] }
+      ],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "dimension": {
+          "type": "string",
+          "enum": [
+            "goals_and_core",
+            "boundary",
+            "architecture",
+            "flow",
+            "ux"
+          ]
+        },
+        "severity": {
+          "type": "string",
+          "enum": ["blocker", "major", "minor", "question"]
+        },
+        "observation": { "type": "string", "minLength": 1 },
+        "evidence": { "type": "string", "minLength": 1 },
+        "spec_refs": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 1
+        },
+        "impact": { "type": "string", "minLength": 1 },
+        "direction": { "type": "string", "minLength": 1 },
+        "confidence": {
+          "type": "string",
+          "enum": ["high", "medium", "low"]
+        },
+        "requires_decision": { "type": "boolean" },
+        "owner": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

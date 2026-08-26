@@ -29,12 +29,23 @@ DOCS = [
     ROOT / "docs/proof-boundary.md",
     ROOT / "docs/positioning.md",
     ROOT / "docs/empty-talk-corpus.md",
+    ROOT / "docs/product-quality-model.md",
+    ROOT / "docs/product-review-contract.md",
+    ROOT / "docs/product-review-corpus.md",
+    ROOT / "docs/skill-boundary.md",
     ROOT / "docs/release-checklist.md",
     ROOT / "docs/human-view.md",
     ROOT / "CONTRIBUTING.md",
     ROOT / "CHANGELOG.md",
     ROOT / "SECURITY.md",
     ROOT / "skills/specnotary/SKILL.md",
+    ROOT / "skills/specnotary-draft/SKILL.md",
+    ROOT / "skills/specnotary-review/SKILL.md",
+    ROOT / "skills/specnotary-gate/SKILL.md",
+    ROOT / "commands/write-spec.md",
+    ROOT / "commands/draft-spec.md",
+    ROOT / "commands/review-spec.md",
+    ROOT / "commands/gate-spec.md",
     ROOT / "src/specnotary/cli.py",
     ROOT / "src/specnotary/sync.py",
     ROOT / "action.yml",
@@ -450,18 +461,268 @@ def test_shape_sanitizer_matches_schema_containers():
 
 
 def test_cursor_plugin_manifest_is_valid():
-    """Marketplace listing needs a Cursor plugin manifest at the documented path."""
+    """Plugin manifest paths exist and Skill/Command frontmatter names match directories.
+
+    This proves packaging layout and discoverable filenames for Cursor's
+    skills/commands directories — not that Marketplace hosting or runtime
+    injection already works for every Cursor build.
+    """
     import json
+    import re as _re
 
     manifest_path = ROOT / ".cursor-plugin" / "plugin.json"
     assert manifest_path.is_file(), "missing .cursor-plugin/plugin.json"
     data = json.loads(manifest_path.read_text(encoding="utf-8"))
     assert data.get("name") == "specnotary"
+    skills_dir = ROOT / data.get("skills", "skills")
+    commands_dir = ROOT / data.get("commands", "commands")
+    assert skills_dir.is_dir(), f"manifest skills path missing: {skills_dir}"
+    assert commands_dir.is_dir(), f"manifest commands path missing: {commands_dir}"
     logo = ROOT / data["logo"]
     assert logo.is_file(), f"plugin logo missing: {data['logo']}"
-    assert (ROOT / "skills" / "specnotary" / "SKILL.md").is_file()
-    assert (ROOT / "commands" / "write-spec.md").is_file()
     assert not (ROOT / "mcp.json").is_file(), "MCP is not the product path; do not ship mcp.json in the plugin"
+
+    def frontmatter(path: Path) -> dict[str, str]:
+        text = path.read_text(encoding="utf-8")
+        m = _re.match(r"^---\n(.*?)\n---\n", text, _re.DOTALL)
+        assert m, f"missing YAML frontmatter: {path}"
+        block = m.group(1)
+        name_m = _re.search(r"^name:\s*(\S+)", block, _re.M)
+        desc_m = _re.search(r"^description:\s*>?\s*(.*)", block, _re.M)
+        assert name_m and desc_m, f"frontmatter needs name+description: {path}"
+        desc = desc_m.group(1).strip()
+        if desc_m.group(0).rstrip().endswith(">"):
+            # folded block: take following indented lines until blank/non-indented
+            lines = []
+            after = block.split("description:", 1)[1]
+            for line in after.splitlines()[1:]:
+                if line.startswith("  ") or line.startswith("\t"):
+                    lines.append(line.strip())
+                elif line.strip() == "":
+                    if lines:
+                        break
+                else:
+                    break
+            desc = " ".join(lines) if lines else desc
+        assert desc, f"empty description: {path}"
+        return {"name": name_m.group(1).strip(), "description": desc}
+
+    for skill in (
+        "specnotary",
+        "specnotary-draft",
+        "specnotary-review",
+        "specnotary-gate",
+    ):
+        path = skills_dir / skill / "SKILL.md"
+        assert path.is_file(), f"missing skill: {skill}"
+        meta = frontmatter(path)
+        assert meta["name"] == skill, f"skill name {meta['name']!r} != dir {skill!r}"
+
+    for cmd in ("write-spec", "draft-spec", "review-spec", "gate-spec"):
+        path = commands_dir / f"{cmd}.md"
+        assert path.is_file(), f"missing command: {cmd}"
+        meta = frontmatter(path)
+        assert meta["name"] == cmd, f"command name {meta['name']!r} != file {cmd!r}"
+
+
+def test_product_quality_model_is_single_sourced():
+    """Draft/Review must point at one model doc; skills must not embed a second full copy."""
+    model = ROOT / "docs/product-quality-model.md"
+    assert model.is_file()
+    body = model.read_text(encoding="utf-8")
+    for needle in (
+        "goals_and_core",
+        "boundary",
+        "architecture",
+        "flow",
+        "ux",
+        "PRODUCT_REVIEW: REVISE",
+        "REVIEWABLE",
+        "产品方案合理",
+    ):
+        assert needle in body, f"quality model missing {needle}"
+    assert "Structure Gate 通过" in body and "产品方案合理" in body
+    for skill in (
+        ROOT / "skills/specnotary-draft/SKILL.md",
+        ROOT / "skills/specnotary-review/SKILL.md",
+        ROOT / "skills/specnotary/SKILL.md",
+    ):
+        text = skill.read_text(encoding="utf-8")
+        assert "product-quality-model.md" in text, f"{skill.name} must cite the shared model"
+        assert text.count("goals_and_core") <= 2, f"{skill.name} looks like a duplicated model"
+
+
+def test_product_review_contract_and_corpus():
+    """Review contract + anti-corpus exist for Agent/human eval; not a fake LLM unit proof."""
+    contract = (ROOT / "docs/product-review-contract.md").read_text(encoding="utf-8")
+    corpus = (ROOT / "docs/product-review-corpus.md").read_text(encoding="utf-8")
+    for field in (
+        "id",
+        "dimension",
+        "severity",
+        "observation",
+        "impact",
+        "direction",
+        "confidence",
+        "requires_decision",
+        "source_fidelity",
+        "unavailable",
+        "content_hash",
+        "source_materials",
+        "validity",
+        "stale",
+    ):
+        assert field in contract, f"contract missing {field}"
+    assert "禁止" in contract and "PASS" in contract
+    for anti in ("ANTI-01", "ANTI-02", "ANTI-03", "ANTI-04", "ANTI-05"):
+        assert anti in corpus, f"corpus missing {anti}"
+    assert "Structure Gate 通过不等于产品方案合理" in corpus
+
+
+def _load_product_review_schema():
+    import json
+
+    try:
+        import jsonschema
+    except ImportError as exc:  # pragma: no cover
+        raise AssertionError("jsonschema required") from exc
+    schema = json.loads(
+        (ROOT / "src/specnotary/schemas/product-review.schema.json").read_text(encoding="utf-8")
+    )
+    return jsonschema, schema
+
+
+def _fixture_review():
+    import copy
+
+    import yaml
+
+    raw = yaml.safe_load(
+        (ROOT / "examples/product-review-fixture/reports/product-review.yaml").read_text(
+            encoding="utf-8"
+        )
+    )
+    return copy.deepcopy(raw)
+
+
+def test_product_review_schema_accepts_fixture():
+    """Fixture validates; negative shapes fail; MD projection matches YAML minimally."""
+    import hashlib
+
+    jsonschema, schema = _load_product_review_schema()
+    fixture = _fixture_review()
+    jsonschema.validate(instance=fixture, schema=schema)
+
+    subject = ROOT / fixture["subject"]["path"]
+    digest = hashlib.sha256(subject.read_bytes()).hexdigest()
+    assert fixture["subject"]["content_hash"] == digest, "fixture hash must match subject file"
+
+    md = (ROOT / "examples/product-review-fixture/reports/product-review.md").read_text(
+        encoding="utf-8"
+    )
+    assert f"PRODUCT_REVIEW: {fixture['verdict']}" in md
+    assert fixture["subject"]["content_hash"] in md
+    assert fixture["gate_note"]["zh"] in md
+    for finding in fixture["findings"]:
+        assert finding["id"] in md, f"MD missing finding id {finding['id']}"
+
+    def must_fail(mutator, label: str):
+        bad = _fixture_review()
+        mutator(bad)
+        try:
+            jsonschema.validate(instance=bad, schema=schema)
+        except jsonschema.ValidationError:
+            return
+        raise AssertionError(f"schema must reject {label}")
+
+    must_fail(lambda d: d.__setitem__("verdict", "PASS"), "verdict PASS")
+
+    def empty_evidence(d):
+        f = dict(d["findings"][0])
+        f["evidence"] = ""
+        f.pop("spec_refs", None)
+        d["findings"] = [f]
+
+    must_fail(empty_evidence, "empty evidence string")
+
+    def drop_summary_zh(d):
+        d["summary"] = {"en": "only english"}
+
+    must_fail(drop_summary_zh, "missing summary.zh")
+
+    def aligned_without_materials(d):
+        d["source_fidelity"] = "aligned"
+        d["source_materials"] = []
+
+    must_fail(aligned_without_materials, "aligned without source_materials")
+
+    def contradictory_reviewable(d):
+        d["verdict"] = "REVIEWABLE"
+        d["findings"] = [
+            {
+                **d["findings"][0],
+                "severity": "blocker",
+                "requires_decision": False,
+            }
+        ]
+
+    must_fail(contradictory_reviewable, "REVIEWABLE with blocker")
+
+    def revise_without_major(d):
+        d["verdict"] = "REVISE"
+        # keep only minor
+        d["findings"] = [{**d["findings"][0], "severity": "minor", "requires_decision": False}]
+
+    must_fail(revise_without_major, "REVISE without blocker/major")
+
+
+def test_orchestrator_separates_three_verdicts():
+    """Default full flow must require separate Draft / Product Review / Structure Gate status."""
+    text = (ROOT / "skills/specnotary/SKILL.md").read_text(encoding="utf-8")
+    for needle in (
+        "DRAFT_STATUS",
+        "PRODUCT_REVIEW",
+        "STRUCTURE_GATE",
+        "specnotary-draft",
+        "specnotary-review",
+        "specnotary-gate",
+        "跳过 Draft",
+        "重新 Review",
+        "content_hash",
+        "stale",
+    ):
+        assert needle in text, f"orchestrator missing {needle}"
+    gate = (ROOT / "skills/specnotary-gate/SKILL.md").read_text(encoding="utf-8")
+    assert "伪造" in gate and "Markdown" in gate, "gate skill must refuse hard PASS on plain Markdown"
+    assert "不能覆盖" in gate or "不能**覆盖" in gate or "不能覆盖" in gate.replace("*", "")
+    draft = (ROOT / "skills/specnotary-draft/SKILL.md").read_text(encoding="utf-8")
+    assert "不跑 Product Review" in draft
+
+
+def test_product_review_requires_re_review_after_change():
+    """Docs/skills must bind Product Review to subject hash and require re-review after edits."""
+    paths = (
+        ROOT / "docs/product-review-contract.md",
+        ROOT / "skills/specnotary/SKILL.md",
+        ROOT / "skills/specnotary-review/SKILL.md",
+        ROOT / "commands/write-spec.md",
+        ROOT / "commands/review-spec.md",
+    )
+    required = (
+        "content_hash",
+        "stale",
+        "重新 Review",
+    )
+    for path in paths:
+        text = path.read_text(encoding="utf-8")
+        for needle in required:
+            assert needle in text, f"{path.name} missing {needle}"
+    contract = (ROOT / "docs/product-review-contract.md").read_text(encoding="utf-8")
+    assert "source_materials" in contract
+    assert "不能覆盖" in contract or "不能**覆盖" in contract
+    proof = (ROOT / "docs/proof-boundary.md").read_text(encoding="utf-8")
+    assert "独立审查" in proof
+    assert "新上下文" in proof or "人工复核" in proof
 
 
 def test_security_support_matches_package_minor():
@@ -487,11 +748,18 @@ TESTS = [
     test_capability_table_commands_runnable,
     test_brand_is_consistent,
     test_front_door_states_audience_and_tools,
+    test_public_positioning_stays_review_ready,
+    test_playground_does_not_mislabel_draft_as_pass,
     test_english_readme_has_front_door_sections,
     test_no_process_theater,
     test_schema_and_known_top_level_agree,
     test_shape_sanitizer_matches_schema_containers,
     test_cursor_plugin_manifest_is_valid,
+    test_product_quality_model_is_single_sourced,
+    test_product_review_contract_and_corpus,
+    test_product_review_schema_accepts_fixture,
+    test_orchestrator_separates_three_verdicts,
+    test_product_review_requires_re_review_after_change,
     test_security_support_matches_package_minor,
 ]
 

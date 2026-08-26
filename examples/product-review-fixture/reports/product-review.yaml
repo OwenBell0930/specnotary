@@ -1,0 +1,28 @@
+# Shape fixture for product-review.schema.json only.
+# Not a real review of case-list-search. Passing schema != semantic correctness.
+review_version: "1"
+subject:
+  path: examples/case-list-search/machine/spec.yaml
+  kind: machine_spec
+  content_hash: cc6515de7b1eab4abfdab899e9959462b5cbc78b1ff2315e3342db5b2dcd705d
+source_fidelity: unavailable
+source_materials: []
+model_ref: docs/product-quality-model.md
+validity: current
+verdict: REVIEWABLE
+summary:
+  zh: 形状样例：无原料时只能评内部一致性；本文件不是对列表搜索样例的真实审查结论。
+findings:
+  - id: F-DEMO-01
+    dimension: ux
+    severity: minor
+    observation: 形状演示用 finding；真实审查须对照产品质量模型与反例语料。
+    evidence: fixture only
+    impact: 无；仅供 Schema / 契约测试。
+    direction: 真实审查时删除本条，改为有证据的 finding。
+    confidence: low
+    requires_decision: false
+    owner: reviewer
+decisions_needed: []
+gate_note:
+  zh: Structure Gate 通过不等于产品方案合理。
