@@ -126,7 +126,7 @@ The fastest path: send Cursor or Codex the [GitHub URL](https://github.com/OwenB
 | pre-commit hook | **Maintainer optional** | The assistant can run the CLI locally. Not the product-manager path, and not team online collaboration |
 | GitHub Action | **Not the product path** | Code exists. Current use: send the URL to an assistant that runs the check locally |
 | MCP server | **Not the product path** | Code exists. The assistant follows the Skill and runs commands; no extra protocol required |
-| Try it in the browser | **Available** | [`playground/`](playground/index.html): zero install; click to see a bad spec get rejected |
+| Try it in the browser | **Available** | [Live Playground](https://owenbell0930.github.io/specnotary/playground/): zero install; click to see a bad spec get rejected |
 | Hand to an agent to write your own spec | **Available** | PM supplies raw material and confirms; the agent drafts and gates per the Skill |
 | Node-equivalent hard gate | **Deferred** | stubs refuse; they never fake a hard PASS |
 | Hosted web service | **Deferred** | — |
@@ -205,7 +205,7 @@ Full sample:
 
 **Product manager**
 
-1. Open [`playground/index.html`](playground/index.html) and click the two sample buttons (one is rejected, one passes). No commands.
+1. Open the [Live Playground](https://owenbell0930.github.io/specnotary/playground/) and click the two sample buttons (one is rejected, one passes). No commands.
 2. If it looks useful, send Cursor, Codex, or another assistant that can edit files and run commands the [GitHub URL](https://github.com/OwenBell0930/specnotary). Ask it to install and follow Skills/Commands. Specs live in whatever folder you already use; SpecNotary does not need to be the current workspace.
 3. Pick the entry for your situation (the assistant runs it; you do not operate the CLI):
 

@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
+<link rel="icon" href="data:,"/>
 <title>SpecNotary 试用 — 点按钮看不合格需求怎么被拦住</title>
 <style>
   :root{--bg:#0b1220;--panel:#0f172a;--line:#1e293b;--text:#e2e8f0;--muted:#94a3b8;
@@ -38,7 +39,7 @@
 <header>
   <h1>SpecNotary 试用</h1>
   <span class="tag">给产品经理 · 推荐 Cursor / Codex · 浏览器点按钮即可 · 不用安装 · 内容不上传</span>
-  <a href="../README.md">← 回说明</a>
+  <a href="https://github.com/OwenBell0930/specnotary">← 回 GitHub 说明</a>
 </header>
 <div class="bar">
   <button id="btn-bad" class="secondary" disabled>试一份不合格的需求</button>
@@ -62,7 +63,7 @@ const out = $("out");
 const show = (html) => { out.innerHTML = html; };
 const esc = (s) => s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 
-const SOURCES = ["__init__.py","spec_io.py","spec_render.py","pm_view.py","libspec.py","libproto.py","check.py","generate_human.py","report.py","sync.py","markers.py","mcp.py","cli.py"];
+const SOURCES = ["spec_io.py","spec_render.py","pm_view.py","libspec.py","libproto.py","check.py","generate_human.py","report.py","sync.py","markers.py","mcp.py","cli.py"];
 const SCHEMAS = ["machine-spec.schema.json","prototype-manifest.schema.json"];
 const EXAMPLES = {
   bad:  "../examples/case-order-cancel-bad/machine/spec.yaml",
@@ -84,6 +85,10 @@ async function boot(){
     await pyodide.loadPackage(["pyyaml","jsonschema"]);
     show('<span class="mut">正在加载样例检查器…</span>');
     pyodide.FS.mkdirTree("/lib/specnotary/schemas");
+    // GitHub Pages uses Jekyll and does not publish source files beginning with
+    // an underscore. The playground does not need package metadata, so create
+    // an empty package initializer locally instead of fetching __init__.py.
+    pyodide.FS.writeFile("/lib/specnotary/__init__.py", "");
     for(const f of SOURCES){
       pyodide.FS.writeFile(`/lib/specnotary/${f}`, await fetchText(`../src/specnotary/${f}`));
     }

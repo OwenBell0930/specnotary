@@ -49,7 +49,7 @@
 - **GitHub Action**（根目录 `action.yml`）：**非产品路径**。以后若有人把规格放进 GitHub 才用。
 - **`specnotary mcp`**：**非产品路径**。助手按 Skill 跑命令即可。
 - **`specnotary human --lang en`**：英文人读视图；语言记录在头部，防漂校验按记录语言重渲染。
-- **Playground**（`playground/index.html`）：浏览器里点按钮试用，零安装零上传；属降级环境，完整判定仍以助手跑的检查为准。
+- **[Playground](https://owenbell0930.github.io/specnotary/playground/)**（源码：`playground/index.html`）：浏览器里点按钮试用，零安装零上传；属降级环境，完整判定仍以助手跑的检查为准。
 
 ## draft 差距报告
 

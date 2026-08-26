@@ -126,7 +126,7 @@
 | pre-commit 钩子 | **维护者可选** | 助手本机检查即可。不是产品经理路径，也不做团队线上协同 |
 | GitHub Action | **非产品路径** | 代码里有。当前用法是把网址发给助手在本机检查，不走 GitHub 协同 |
 | MCP server | **非产品路径** | 代码里有。助手按 Skill 跑命令即可，不必再开一条协议 |
-| 浏览器里点着试 | **Available** | [`playground/`](playground/index.html)：零安装，点按钮看不合格需求怎么被拦住 |
+| 浏览器里点着试 | **Available** | [在线 Playground](https://owenbell0930.github.io/specnotary/playground/)：零安装，点按钮看不合格需求怎么被拦住 |
 | 交给 Agent 安装后写自己的需求 | **Available** | 产品经理只提供原料并确认；Agent 按 Skill 起草并验收 |
 | Node 等价硬门禁 | **Deferred** | stub 直接拒绝，绝不冒充 hard PASS |
 | Web 服务端 | **Deferred** | — |
@@ -205,7 +205,7 @@
 
 **产品经理**
 
-1. 打开 [`playground/index.html`](playground/index.html)，点两个样例按钮（一份会被拦住，一份可以通过）。不用输入任何命令。
+1. 打开 [在线 Playground](https://owenbell0930.github.io/specnotary/playground/)，点两个样例按钮（一份会被拦住，一份可以通过）。不用输入任何命令。
 2. 感兴趣后，把 [GitHub 网址](https://github.com/OwenBell0930/specnotary) 发给 Cursor、Codex 或其他能改文件、能跑命令的 AI 助手，请它安装并按 Skill/Command 工作。规格写在你正在用的文件夹里即可，不必把 SpecNotary 设成当前工作区。
 3. 按场景选用入口（由助手执行；你不必操作 CLI）：
 

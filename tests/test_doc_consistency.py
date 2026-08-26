@@ -389,6 +389,21 @@ def test_playground_does_not_mislabel_draft_as_pass():
     assert "RESULT: DRAFT" in text
 
 
+def test_public_playground_entry_opens_the_rendered_app():
+    """Public links must open Pages, and Pages must not fetch Jekyll-excluded files."""
+    live = "https://owenbell0930.github.io/specnotary/playground/"
+    for name in ("README.md", "README.en.md"):
+        text = (ROOT / name).read_text(encoding="utf-8")
+        assert live in text, f"{name} must link to the rendered Playground"
+        assert "](playground/index.html)" not in text, f"{name} links to source instead of GUI"
+
+    page = (ROOT / "playground/index.html").read_text(encoding="utf-8")
+    sources = page.split("const SOURCES =", 1)[1].split("];", 1)[0]
+    assert '"__init__.py"' not in sources, "Jekyll excludes __init__.py from Pages"
+    assert 'FS.writeFile("/lib/specnotary/__init__.py", "")' in page
+    assert 'href="https://github.com/OwenBell0930/specnotary"' in page
+
+
 def test_english_readme_has_front_door_sections():
     """The English front door must keep the same section anchors as the Chinese one."""
     zh = (ROOT / "README.md").read_text(encoding="utf-8")
@@ -750,6 +765,7 @@ TESTS = [
     test_front_door_states_audience_and_tools,
     test_public_positioning_stays_review_ready,
     test_playground_does_not_mislabel_draft_as_pass,
+    test_public_playground_entry_opens_the_rendered_app,
     test_english_readme_has_front_door_sections,
     test_no_process_theater,
     test_schema_and_known_top_level_agree,

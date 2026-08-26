@@ -23,6 +23,7 @@ SpecNotary 遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)；
 
 ### Fixed
 
+- README 的浏览器试用入口改为已渲染的 GitHub Pages；Playground 不再请求会被 Jekyll 排除的 `__init__.py`，避免在线按钮永久停在加载状态。
 - 安装包内置 `specnotary new` 所需模板，源码目录外安装后也能直接建案。
 - Schema 对 `permissions[].actor` 与 `responsibilities[].role` 给出可纠正的字段提示。
 - Playground 与 CLI 使用同一结论语义，合法草稿显示 `DRAFT` 而不是冒充 `PASS`。
