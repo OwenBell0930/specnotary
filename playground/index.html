@@ -36,6 +36,16 @@
            padding:14px;font:12.5px/1.55 "SF Mono",Menlo,Consolas,monospace;resize:none;white-space:pre}
   #out{flex:1;overflow:auto;padding:14px;font:12.5px/1.6 "SF Mono",Menlo,Consolas,monospace;
        white-space:pre-wrap;word-break:break-word}
+  #out h1,#out h2,#out h3{scroll-margin-top:18px}
+  .loading-state{display:flex;flex-direction:column;gap:10px;padding:8px 4px;color:var(--muted);font:14px/1.5 -apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;white-space:normal}
+  .loading-row{display:flex;align-items:center;gap:9px;color:var(--text)}
+  .loading-spinner{width:15px;height:15px;border:2px solid #334155;border-top-color:var(--blue);border-radius:50%;animation:loading-spin .8s linear infinite;flex:none}
+  .loading-track{width:min(440px,100%);height:6px;border-radius:999px;background:#1e293b;overflow:hidden}
+  .loading-bar{width:35%;height:100%;border-radius:inherit;background:linear-gradient(90deg,#3b82f6,#60a5fa,#93c5fd);animation:loading-slide 1.1s ease-in-out infinite}
+  .loading-hint{font-size:12px;color:var(--muted)}
+  @keyframes loading-spin{to{transform:rotate(360deg)}}
+  @keyframes loading-slide{0%{transform:translateX(-120%)}50%{transform:translateX(160%)}100%{transform:translateX(300%)}}
+  @media (prefers-reduced-motion:reduce){.loading-spinner,.loading-bar{animation:none}}
   #human-editor{font:14px/1.65 "SF Mono",Menlo,Consolas,monospace;white-space:pre-wrap}
   #out.markdown-preview{padding:22px 26px;font:15px/1.75 -apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
                         white-space:normal;word-break:normal;background:#111c31}
@@ -84,7 +94,7 @@
         <button id="human-back" class="tool secondary" disabled>返回检查结果</button>
       </div>
     </div>
-    <div id="out"><span class="mut">正在准备试用环境（首次大约十几秒）…</span></div>
+    <div id="out" aria-live="polite"><span class="mut">正在准备试用环境（首次大约十几秒）…</span></div>
     <textarea id="human-editor" hidden spellcheck="false" aria-label="评审就绪的方案 Markdown 编辑器"></textarea>
   </div>
 </main>
@@ -215,6 +225,16 @@ function tableCells(line){
   return value.split("|").map((cell) => inlineMarkdown(cell.trim()));
 }
 
+function headingAnchor(text){
+  // Keep this in sync with spec_render._anchor so the generated TOC points at
+  // the same ids as the Markdown headings rendered in this browser preview.
+  return String(text || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}_\- ]/gu, "")
+    .replace(/ /g, "-");
+}
+
 function isTableSeparator(line){
   return /^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?\s*$/.test(line);
 }
@@ -264,7 +284,8 @@ function renderMarkdown(markdown){
     let match = line.match(/^\s*(#{1,3})\s+(.+)$/);
     if(match){
       flushParagraph(); closeList();
-      html.push(`<h${match[1].length}>${inlineMarkdown(match[2])}</h${match[1].length}>`);
+      const headingText = match[2].trim();
+      html.push(`<h${match[1].length} id="${esc(headingAnchor(headingText))}">${inlineMarkdown(headingText)}</h${match[1].length}>`);
       continue;
     }
     if(/^\s*---+\s*$/.test(line)){ flushParagraph(); closeList(); html.push("<hr>"); continue; }
@@ -339,7 +360,28 @@ function renderVerdict(raw){
 }
 
 function waitForPaint(){
-  return new Promise((resolve) => requestAnimationFrame(resolve));
+  // A single rAF callback can still be followed by the synchronous Pyodide
+  // call before the browser paints. Yield once more via a macrotask so the
+  // visible "正在检查…" state is actually shown to the user.
+  return new Promise((resolve) => requestAnimationFrame(() => setTimeout(resolve, 0)));
+}
+
+function setCheckBusy(busy){
+  const button = $("btn-check");
+  button.disabled = busy;
+  button.textContent = busy ? "检查中…" : "再检查一次";
+}
+
+function showCheckLoading(){
+  show('<div class="loading-state" role="status" aria-live="polite">'
+    + '<div class="loading-row"><span class="loading-spinner" aria-hidden="true"></span>'
+    + '<span>正在检查需求规格…</span></div>'
+    + '<div class="loading-track" aria-hidden="true"><div class="loading-bar"></div></div>'
+    + '<div class="loading-hint">正在读取规则、核对结构并整理结果</div></div>');
+}
+
+function sleep(ms){
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function showFailure(prefix, error){
@@ -350,22 +392,28 @@ function showFailure(prefix, error){
 async function checkCurrentSource(){
   if(checkBusy) return;
   checkBusy = true;
-  $("btn-check").disabled = true;
+  const startedAt = performance.now();
+  const minVisibleMs = 900;
+  setCheckBusy(true);
   setCheckView();
   try{
     if(!$("src").value.trim()){
       show('<span class="warn">还没有可检查的需求。请先点一个样例按钮，或在左侧粘贴需求规格。</span>');
       return;
     }
-    show('<span class="mut">正在检查需求规格…</span>');
+    showCheckLoading();
     await waitForPaint();
     const fn = pyodide.globals.get("pg_check");
-    try { show(renderVerdict(fn($("src").value))); } finally { fn.destroy(); }
+    let verdict;
+    try { verdict = renderVerdict(fn($("src").value)); } finally { fn.destroy(); }
+    const remainingMs = minVisibleMs - (performance.now() - startedAt);
+    if(remainingMs > 0) await sleep(remainingMs);
+    show(verdict);
   }catch(err){
     showFailure("检查失败：", err);
   }finally{
     checkBusy = false;
-    $("btn-check").disabled = false;
+    setCheckBusy(false);
   }
 }
 
