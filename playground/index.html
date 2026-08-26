@@ -16,6 +16,7 @@
   header .tag{color:var(--muted);font-size:13px}
   header a{color:var(--blue);text-decoration:none;font-size:13px}
   .bar{display:flex;flex-wrap:wrap;gap:8px;padding:10px 24px}
+  #btn-human{margin-left:auto}
   button{background:#1d4ed8;border:0;color:#fff;padding:8px 14px;border-radius:8px;
          font-size:13px;cursor:pointer}
   button.secondary{background:#334155}
@@ -103,6 +104,7 @@ const SCHEMAS = ["machine-spec.schema.json","prototype-manifest.schema.json"];
 const EXAMPLES = {
   bad:  "../examples/case-order-cancel-bad/machine/spec.yaml",
   good: "../examples/case-order-cancel-bad/machine/spec.fixed.yaml",
+  review: "../examples/case-order-cancel-ops-faq/machine/spec.yaml",
 };
 
 let pyodide = null;
@@ -181,6 +183,7 @@ def pg_human(text):
 }
 
 let humanMarkdown = "";
+let checkBusy = false;
 
 function setCheckView(){
   document.body.classList.remove("human-mode");
@@ -335,23 +338,78 @@ function renderVerdict(raw){
   return html;
 }
 
+function waitForPaint(){
+  return new Promise((resolve) => requestAnimationFrame(resolve));
+}
+
+function showFailure(prefix, error){
+  setCheckView();
+  show(`<span class="fail">${esc(prefix)}${esc(String(error))}</span>`);
+}
+
+async function checkCurrentSource(){
+  if(checkBusy) return;
+  checkBusy = true;
+  $("btn-check").disabled = true;
+  setCheckView();
+  try{
+    if(!$("src").value.trim()){
+      show('<span class="warn">还没有可检查的需求。请先点一个样例按钮，或在左侧粘贴需求规格。</span>');
+      return;
+    }
+    show('<span class="mut">正在检查需求规格…</span>');
+    await waitForPaint();
+    const fn = pyodide.globals.get("pg_check");
+    try { show(renderVerdict(fn($("src").value))); } finally { fn.destroy(); }
+  }catch(err){
+    showFailure("检查失败：", err);
+  }finally{
+    checkBusy = false;
+    $("btn-check").disabled = false;
+  }
+}
+
+async function loadExampleAndCheck(path){
+  try{
+    setCheckView();
+    show('<span class="mut">正在加载样例并检查…</span>');
+    $("src").value = await fetchText(path);
+    await checkCurrentSource();
+  }catch(err){
+    showFailure("样例加载失败：", err);
+  }
+}
+
 $("btn-bad").onclick = async () => {
-  $("src").value = await fetchText(EXAMPLES.bad);
-  $("btn-check").click();
+  await loadExampleAndCheck(EXAMPLES.bad);
 };
 $("btn-good").onclick = async () => {
-  $("src").value = await fetchText(EXAMPLES.good);
-  $("btn-check").click();
+  await loadExampleAndCheck(EXAMPLES.good);
 };
 $("btn-check").onclick = () => {
-  setCheckView();
-  const fn = pyodide.globals.get("pg_check");
-  try { show(renderVerdict(fn($("src").value))); } finally { fn.destroy(); }
+  checkCurrentSource();
 };
-$("btn-human").onclick = () => {
-  const fn = pyodide.globals.get("pg_human");
-  try { openHumanView(String(fn($("src").value))); }
-  finally { fn.destroy(); }
+$("btn-human").onclick = async () => {
+  try{
+    setCheckView();
+    if(!$("src").value.trim()){
+      show('<span class="mut">正在加载完整的评审方案示例…</span>');
+      $("src").value = await fetchText(EXAMPLES.review);
+    }else{
+      show('<span class="mut">正在生成评审方案示例…</span>');
+    }
+    await waitForPaint();
+    const fn = pyodide.globals.get("pg_human");
+    let markdown;
+    try { markdown = String(fn($("src").value)); } finally { fn.destroy(); }
+    if(!markdown.trim() || markdown === "根节点必须是对象" || markdown.startsWith("YAML 解析失败")){
+      showFailure("方案示例生成失败：", markdown || "没有生成内容");
+      return;
+    }
+    openHumanView(markdown);
+  }catch(err){
+    showFailure("方案示例加载失败：", err);
+  }
 };
 $("human-preview").onclick = () => setHumanSubmode("preview");
 $("human-edit").onclick = () => setHumanSubmode("edit");

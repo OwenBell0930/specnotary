@@ -389,6 +389,10 @@ def test_playground_does_not_mislabel_draft_as_pass():
     assert 'v.result === "DRAFT"' in text
     assert "RESULT: DRAFT" in text
     assert "评审就绪的方案示例" in text
+    assert 'review: "../examples/case-order-cancel-ops-faq/machine/spec.yaml"' in text
+    assert "#btn-human{margin-left:auto}" in text
+    assert "checkCurrentSource" in text
+    assert "还没有可检查的需求" in text
     assert 'id="human-preview"' in text
     assert 'id="human-edit"' in text
     assert "renderMarkdown" in text
