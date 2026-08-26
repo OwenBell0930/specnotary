@@ -18,6 +18,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 from specnotary.cli import COMMANDS  # noqa: E402
 from specnotary.libspec import RENDERER_VERSION  # noqa: E402
+from specnotary.pm_view import humanize_finding  # noqa: E402
 
 # User-facing prose. CLI help and the Action manifest count: an audit found the
 # stale `sync` promise living in `cli.py`'s help string, which users read more
@@ -387,6 +388,19 @@ def test_playground_does_not_mislabel_draft_as_pass():
     assert '"result": verdict' in text
     assert 'v.result === "DRAFT"' in text
     assert "RESULT: DRAFT" in text
+    assert "评审就绪的方案示例" in text
+    assert 'id="human-preview"' in text
+    assert 'id="human-edit"' in text
+    assert "renderMarkdown" in text
+    assert "body.human-mode #source-panel" in text
+    assert '"ready_gap": [humanize_finding(g) for g in gap]' in text
+    assert "终稿还缺少参与角色" in humanize_finding("status=ready requires actors")
+    assert "功能 B1 的预期结果太笼统" in humanize_finding(
+        "behavior B1: then-clause too vague for ready"
+    )
+    assert "原型决策" in humanize_finding(
+        "status=ready requires D-PROTOTYPE: decide whether an interactive prototype is needed and choose its carrier"
+    )
 
 
 def test_public_playground_entry_opens_the_rendered_app():

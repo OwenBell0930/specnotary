@@ -19,17 +19,40 @@
   button{background:#1d4ed8;border:0;color:#fff;padding:8px 14px;border-radius:8px;
          font-size:13px;cursor:pointer}
   button.secondary{background:#334155}
+  button.tool{padding:6px 10px;font-size:12px;background:#1e293b;color:var(--muted)}
+  button.tool.active{background:#1d4ed8;color:#fff}
   button:disabled{opacity:.45;cursor:wait}
   main{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:0 24px 24px;height:calc(100vh - 130px)}
   @media (max-width:900px){main{grid-template-columns:1fr;height:auto}}
   .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;
          display:flex;flex-direction:column;min-height:320px;overflow:hidden}
+  .panel-header{display:flex;align-items:center;justify-content:space-between;gap:12px;
+                border-bottom:1px solid var(--line)}
   .panel h2{margin:0;padding:10px 14px;font-size:12px;letter-spacing:.08em;
-            text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--line)}
+            text-transform:uppercase;color:var(--muted)}
+  #human-toolbar{display:flex;align-items:center;gap:6px;padding:4px 8px}
   textarea{flex:1;background:transparent;color:var(--text);border:0;outline:none;
            padding:14px;font:12.5px/1.55 "SF Mono",Menlo,Consolas,monospace;resize:none;white-space:pre}
   #out{flex:1;overflow:auto;padding:14px;font:12.5px/1.6 "SF Mono",Menlo,Consolas,monospace;
        white-space:pre-wrap;word-break:break-word}
+  #human-editor{font:14px/1.65 "SF Mono",Menlo,Consolas,monospace;white-space:pre-wrap}
+  #out.markdown-preview{padding:22px 26px;font:15px/1.75 -apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+                        white-space:normal;word-break:normal;background:#111c31}
+  .markdown-preview h1,.markdown-preview h2,.markdown-preview h3{color:#f8fafc;line-height:1.3;margin:0 0 12px}
+  .markdown-preview h1{font-size:25px}.markdown-preview h2{font-size:20px;margin-top:24px}.markdown-preview h3{font-size:17px;margin-top:18px}
+  .markdown-preview p{margin:8px 0;color:#dbeafe}.markdown-preview ul,.markdown-preview ol{margin:8px 0 12px;padding-left:24px}
+  .markdown-preview li{margin:4px 0}.markdown-preview blockquote{margin:12px 0;padding:8px 14px;border-left:3px solid var(--blue);color:#bfdbfe;background:#172641}
+  .markdown-preview code{padding:2px 5px;border-radius:4px;background:#1e293b;color:#bfdbfe;font:12px "SF Mono",Menlo,Consolas,monospace}
+  .markdown-preview pre{overflow:auto;padding:14px;border-radius:8px;background:#020617;color:#cbd5e1;font:12px/1.55 "SF Mono",Menlo,Consolas,monospace}
+  .markdown-preview pre code{padding:0;background:none;color:inherit}.markdown-preview a{color:#93c5fd}
+  .markdown-preview table{width:100%;border-collapse:collapse;margin:12px 0;font-size:13px}
+  .markdown-preview th,.markdown-preview td{border:1px solid #334155;padding:7px 9px;text-align:left;vertical-align:top}
+  .markdown-preview th{background:#1e293b;color:#f8fafc}.markdown-preview td{color:#dbeafe}
+  .markdown-preview hr{border:0;border-top:1px solid #334155;margin:20px 0}
+  body.human-mode main{grid-template-columns:1fr}
+  body.human-mode #source-panel{display:none}
+  body.human-mode #result-panel{min-height:calc(100vh - 130px)}
+  [hidden]{display:none!important}
   .fail{color:var(--red)} .warn{color:var(--amber)} .pass{color:var(--green)}
   .gap{color:var(--blue)} .mut{color:var(--muted)}
   footer{padding:0 24px 20px;color:var(--muted);font-size:12px}
@@ -45,14 +68,23 @@
   <button id="btn-bad" class="secondary" disabled>试一份不合格的需求</button>
   <button id="btn-good" class="secondary" disabled>试一份合格的需求</button>
   <button id="btn-check" disabled>再检查一次</button>
-  <button id="btn-human" class="secondary" disabled>看人能读的说明书</button>
+  <button id="btn-human" class="secondary" disabled>评审就绪的方案示例</button>
 </div>
 <main>
-  <div class="panel"><h2>需求规格（内部格式，试用时可忽略）</h2>
+  <div class="panel" id="source-panel"><div class="panel-header"><h2>需求规格（内部格式，试用时可忽略）</h2></div>
     <textarea id="src" spellcheck="false" placeholder="点上方按钮即可，这里会自动填入样例"></textarea>
   </div>
-  <div class="panel"><h2>检查结果</h2>
+  <div class="panel" id="result-panel">
+    <div class="panel-header">
+      <h2 id="result-title">检查结果</h2>
+      <div id="human-toolbar" hidden>
+        <button id="human-preview" class="tool active" disabled>阅读预览</button>
+        <button id="human-edit" class="tool" disabled>编辑模式</button>
+        <button id="human-back" class="tool secondary" disabled>返回检查结果</button>
+      </div>
+    </div>
     <div id="out"><span class="mut">正在准备试用环境（首次大约十几秒）…</span></div>
+    <textarea id="human-editor" hidden spellcheck="false" aria-label="评审就绪的方案 Markdown 编辑器"></textarea>
   </div>
 </main>
 <footer>试用只检查规格正文。要用在自己的需求上：把 https://github.com/OwenBell0930/specnotary 发给 Cursor 或 Codex，请它安装。不必把 SpecNotary 设成工作区。</footer>
@@ -60,8 +92,11 @@
 <script>
 const $ = (id) => document.getElementById(id);
 const out = $("out");
-const show = (html) => { out.innerHTML = html; };
-const esc = (s) => s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+const humanEditor = $("human-editor");
+const humanToolbar = $("human-toolbar");
+const resultTitle = $("result-title");
+const show = (html) => { out.hidden = false; out.classList.remove("markdown-preview"); out.innerHTML = html; };
+const esc = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 
 const SOURCES = ["spec_io.py","spec_render.py","pm_view.py","libspec.py","libproto.py","check.py","generate_human.py","report.py","sync.py","markers.py","mcp.py","cli.py"];
 const SCHEMAS = ["machine-spec.schema.json","prototype-manifest.schema.json"];
@@ -126,7 +161,7 @@ def pg_check(text):
         "result": verdict,
         "fail": [humanize_finding(e) for e in result["fail"]],
         "warn": [humanize_finding(w) for w in result["warn"]],
-        "ready_gap": gap,
+        "ready_gap": [humanize_finding(g) for g in gap],
     }, ensure_ascii=False)
 
 def pg_human(text):
@@ -138,33 +173,169 @@ def pg_human(text):
         return "根节点必须是对象"
     return render_human(data, source="playground", gate_mode="degraded")
 `);
-    for(const id of ["btn-bad","btn-good","btn-check","btn-human"]) $(id).disabled = false;
+    for(const id of ["btn-bad","btn-good","btn-check","btn-human","human-preview","human-edit","human-back"]) $(id).disabled = false;
     show('<span class="mut">就绪。点「试一份不合格的需求」或「试一份合格的需求」即可。\n\n要用在自己的需求上：把 https://github.com/OwenBell0930/specnotary 发给 Cursor 或 Codex，请它安装。不必把 SpecNotary 设成工作区。</span>');
   }catch(err){
     show(`<span class="fail">加载失败：${esc(String(err))}</span>\n<span class="mut">试用需要能上网。失败后刷新页面再试一次。</span>`);
   }
 }
 
+let humanMarkdown = "";
+
+function setCheckView(){
+  document.body.classList.remove("human-mode");
+  resultTitle.textContent = "检查结果";
+  humanToolbar.hidden = true;
+  humanEditor.hidden = true;
+  out.hidden = false;
+  out.classList.remove("markdown-preview");
+}
+
+function inlineMarkdown(text){
+  let value = esc(text);
+  value = value.replace(/&lt;br\s*\/?&gt;/gi, "<br>");
+  value = value.replace(/`([^`]+)`/g, "<code>$1</code>");
+  value = value.replace(/\[([^\]]+)\]\(((?:https?:\/\/|#)[^)\s]+)\)/g,
+    (_match, label, url) => url.startsWith("#")
+      ? `<a href="${url}">${label}</a>`
+      : `<a href="${url}" target="_blank" rel="noreferrer">${label}</a>`);
+  value = value.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+  value = value.replace(/__([^_]+)__/g, "<strong>$1</strong>");
+  value = value.replace(/\*([^*]+)\*/g, "<em>$1</em>");
+  return value;
+}
+
+function tableCells(line){
+  let value = line.trim();
+  if(value.startsWith("|")) value = value.slice(1);
+  if(value.endsWith("|")) value = value.slice(0, -1);
+  return value.split("|").map((cell) => inlineMarkdown(cell.trim()));
+}
+
+function isTableSeparator(line){
+  return /^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?\s*$/.test(line);
+}
+
+function renderMarkdown(markdown){
+  const lines = String(markdown || "").replace(/\r/g, "").split("\n");
+  const html = [];
+  let paragraph = [];
+  let listType = "";
+  let inCode = false;
+  let codeLines = [];
+  const flushParagraph = () => {
+    if(paragraph.length){
+      html.push(`<p>${paragraph.map(inlineMarkdown).join(" ")}</p>`);
+      paragraph = [];
+    }
+  };
+  const closeList = () => {
+    if(listType){ html.push(`</${listType}>`); listType = ""; }
+  };
+  for(let i = 0; i < lines.length; i++){
+    const line = lines[i];
+    if(inCode){
+      if(/^\s*```/.test(line)){
+        html.push(`<pre><code>${esc(codeLines.join("\n"))}</code></pre>`);
+        inCode = false;
+        codeLines = [];
+      }else codeLines.push(line);
+      continue;
+    }
+    if(/^\s*```/.test(line)){ flushParagraph(); closeList(); inCode = true; continue; }
+    if(!line.trim()){ flushParagraph(); closeList(); continue; }
+    if(line.includes("|") && i + 1 < lines.length && isTableSeparator(lines[i + 1])){
+      flushParagraph(); closeList();
+      const header = tableCells(line);
+      i += 2;
+      html.push(`<table><thead><tr>${header.map((cell) => `<th>${cell}</th>`).join("")}</tr></thead><tbody>`);
+      while(i < lines.length && lines[i].includes("|") && lines[i].trim()){
+        const row = tableCells(lines[i]);
+        html.push(`<tr>${row.map((cell) => `<td>${cell}</td>`).join("")}</tr>`);
+        i++;
+      }
+      html.push("</tbody></table>");
+      i--;
+      continue;
+    }
+    let match = line.match(/^\s*(#{1,3})\s+(.+)$/);
+    if(match){
+      flushParagraph(); closeList();
+      html.push(`<h${match[1].length}>${inlineMarkdown(match[2])}</h${match[1].length}>`);
+      continue;
+    }
+    if(/^\s*---+\s*$/.test(line)){ flushParagraph(); closeList(); html.push("<hr>"); continue; }
+    match = line.match(/^\s*>\s?(.*)$/);
+    if(match){ flushParagraph(); closeList(); html.push(`<blockquote>${inlineMarkdown(match[1])}</blockquote>`); continue; }
+    match = line.match(/^\s*[-*]\s+(.+)$/);
+    if(match){
+      flushParagraph();
+      if(listType !== "ul"){ closeList(); html.push("<ul>"); listType = "ul"; }
+      html.push(`<li>${inlineMarkdown(match[1])}</li>`);
+      continue;
+    }
+    match = line.match(/^\s*\d+[.)]\s+(.+)$/);
+    if(match){
+      flushParagraph();
+      if(listType !== "ol"){ closeList(); html.push("<ol>"); listType = "ol"; }
+      html.push(`<li>${inlineMarkdown(match[1])}</li>`);
+      continue;
+    }
+    closeList();
+    paragraph.push(line.trim());
+  }
+  if(inCode) html.push(`<pre><code>${esc(codeLines.join("\n"))}</code></pre>`);
+  flushParagraph();
+  closeList();
+  return html.join("\n");
+}
+
+function setHumanSubmode(mode){
+  const preview = mode === "preview";
+  $("human-preview").classList.toggle("active", preview);
+  $("human-edit").classList.toggle("active", !preview);
+  if(preview){
+    humanMarkdown = humanEditor.value;
+    out.innerHTML = renderMarkdown(humanMarkdown);
+    out.hidden = false;
+    out.classList.add("markdown-preview");
+    humanEditor.hidden = true;
+  }else{
+    out.hidden = true;
+    out.classList.remove("markdown-preview");
+    humanEditor.hidden = false;
+    humanEditor.focus();
+  }
+}
+
+function openHumanView(markdown){
+  document.body.classList.add("human-mode");
+  resultTitle.textContent = "评审就绪的方案示例";
+  humanToolbar.hidden = false;
+  humanEditor.value = markdown;
+  setHumanSubmode("preview");
+}
+
 function renderVerdict(raw){
   const v = JSON.parse(raw);
   if(v.error) return `<span class="fail">${esc(v.error)}</span>`;
-  let html = `<span class="mut">规格编号：${esc(String(v.id))} · 进度：${esc(String(v.status))}</span>\n`;
-  html += `必须改：${v.fail.length} 条\n需要你拍板：${v.warn.length} 条\n`;
-  for(const e of v.fail) html += `<span class="fail">必须改：${esc(e)}</span>\n`;
-  for(const w of v.warn) html += `<span class="warn">需要你拍板：${esc(w)}</span>\n`;
+  let html = `<div class="mut">规格编号：${esc(String(v.id))} · 进度：${esc(String(v.status))}</div>`;
+  html += `<div><strong>需要修订：</strong>${v.fail.length} 条　<strong>需要拍板：</strong>${v.warn.length} 条</div>`;
+  for(const e of v.fail) html += `<div class="fail">必须改：${esc(e)}</div>`;
+  for(const w of v.warn) html += `<div class="warn">需要你拍板：${esc(w)}</div>`;
   if(v.ready_gap && v.ready_gap.length){
-    html += `<span class="mut">翻成终稿前还差 ${v.ready_gap.length} 条</span>\n`;
-    for(const g of v.ready_gap) html += `<span class="gap">还差：${esc(g)}</span>\n`;
+    html += `<div class="mut">距离评审就绪还需要补齐 ${v.ready_gap.length} 项</div>`;
+    for(const g of v.ready_gap) html += `<div class="gap">还需要：${esc(g)}</div>`;
   }
-  if(v.result === "FAIL") html += `\n<span class="fail">结论：结构未通过。RESULT: FAIL</span>`;
-  else if(v.result === "DRAFT") html += `\n<span class="gap">结论：草稿结构可用，但不是终稿。RESULT: DRAFT</span>`;
-  else if(v.result === "DEPRECATED") html += `\n<span class="mut">结论：规格已停用。RESULT: DEPRECATED</span>`;
-  else html += `\n<span class="pass">结论：结构通过。RESULT: PASS</span>`;
-  if(!v.fail.length && v.warn.length) html += `\n<span class="mut">结构可以过关，但仍有需要你拍板的条目</span>`;
+  if(v.result === "FAIL") html += `<p class="fail"><strong>结论：结构未通过。</strong> RESULT: FAIL</p>`;
+  else if(v.result === "DRAFT") html += `<p class="gap"><strong>结论：草稿结构可用，但还不是终稿。</strong> RESULT: DRAFT</p>`;
+  else if(v.result === "DEPRECATED") html += `<p class="mut"><strong>结论：规格已停用。</strong> RESULT: DEPRECATED</p>`;
+  else html += `<p class="pass"><strong>结论：结构通过。</strong> RESULT: PASS</p>`;
+  if(!v.fail.length && v.warn.length) html += `<div class="mut">结构可以过关，但仍有需要你拍板的条目。</div>`;
   return html;
 }
 
-$("btn-bad").onclick  = async () => {
+$("btn-bad").onclick = async () => {
   $("src").value = await fetchText(EXAMPLES.bad);
   $("btn-check").click();
 };
@@ -173,14 +344,19 @@ $("btn-good").onclick = async () => {
   $("btn-check").click();
 };
 $("btn-check").onclick = () => {
+  setCheckView();
   const fn = pyodide.globals.get("pg_check");
   try { show(renderVerdict(fn($("src").value))); } finally { fn.destroy(); }
 };
 $("btn-human").onclick = () => {
   const fn = pyodide.globals.get("pg_human");
-  try { show(`<span class="mut">说明书原文如下（试用环境不钉内容指纹）</span>\n\n${esc(fn($("src").value))}`); }
+  try { openHumanView(String(fn($("src").value))); }
   finally { fn.destroy(); }
 };
+$("human-preview").onclick = () => setHumanSubmode("preview");
+$("human-edit").onclick = () => setHumanSubmode("edit");
+$("human-back").onclick = () => $("btn-check").click();
+humanEditor.addEventListener("input", () => { humanMarkdown = humanEditor.value; });
 
 boot();
 </script>

@@ -228,10 +228,130 @@ def humanize_warning_id(wid: str) -> str:
     return f"`{token}`" if token else "—"
 
 
+_READY_REQUIREMENTS_ZH = {
+    "actors": "参与角色（谁使用、谁负责、谁可以操作）",
+    "non-empty in_scope": "本期范围",
+    "a non-empty title": "需求标题",
+    "defaults with at least one real key": "真实默认值",
+    "ui (wireframe or non-empty controls)": "页面入口、控件或线框",
+    "ui.wireframe or non-empty ui.controls": "页面线框或控件清单",
+    "states (lifecycle / allowed actions)": "状态变化和允许动作",
+    "states.action_matrix (lifecycle alone is not enough)": "状态与动作对应关系",
+    "product/information architecture (architecture.mermaid)": "产品与信息架构",
+    "product module responsibilities": "产品模块职责边界",
+    "product data contracts": "业务数据契约",
+    "product error definitions": "用户可见的错误定义",
+}
+
+
+def _ready_requirement_zh(requirement: str) -> str:
+    raw = str(requirement or "").strip()
+    if raw.startswith("D-PROTOTYPE:"):
+        return "终稿还缺少原型决策：请说明是否需要可交互原型，以及原型放在哪里。"
+    if raw.startswith("regenerate human/prototype"):
+        return "状态切换后需要重新生成方案文档和原型，避免内容指纹失效。"
+    meaning = _READY_REQUIREMENTS_ZH.get(raw)
+    if meaning:
+        return f"终稿还缺少{meaning}。"
+    return f"终稿还缺少必填内容：{raw}。"
+
+
+def _behavior_field_zh(field: str) -> str:
+    return {
+        "given": "前置条件",
+        "when": "用户动作",
+        "then": "预期结果",
+    }.get(str(field or "").strip(), str(field or "步骤"))
+
+
 def humanize_finding(msg: str) -> str:
     """Translate a gate finding into a sentence a product manager can act on."""
     text = str(msg or "").strip()
     patterns: list[tuple[re.Pattern[str], object]] = [
+        (
+            re.compile(r"^status=ready but open_questions is not empty — move to pending with owner or resolve$"),
+            lambda _m: "终稿仍有未决事项：请补充负责人和处理状态，或先拍板解决。",
+        ),
+        (
+            re.compile(r"^status=ready requires (.+)$"),
+            lambda m: _ready_requirement_zh(m.group(1)),
+        ),
+        (
+            re.compile(r"^behavior (\S+): missing name — the human view would render an unnamed step$"),
+            lambda m: f"功能 {m.group(1)} 缺少名称，评审材料无法说明这一步要完成什么。",
+        ),
+        (
+            re.compile(r"^behavior (\S+): (given|when|then) is empty$"),
+            lambda m: f"功能 {m.group(1)} 缺少{_behavior_field_zh(m.group(2))}。",
+        ),
+        (
+            re.compile(r"^behavior (\S+): (given|when|then)-clause too vague for ready$"),
+            lambda m: f"功能 {m.group(1)} 的{_behavior_field_zh(m.group(2))}太笼统，无法据此评审或验收。",
+        ),
+        (
+            re.compile(r"^behavior (\S+): (given|when|then) is still placeholder text$"),
+            lambda m: f"功能 {m.group(1)} 的{_behavior_field_zh(m.group(2))}仍是占位内容，请补成具体说法。",
+        ),
+        (
+            re.compile(r"^acceptance (\S+): missing behavior link — every AC must verify a behavior$"),
+            lambda m: f"验收场景 {m.group(1)} 没有对应功能，无法判断它要验证哪条流程。",
+        ),
+        (
+            re.compile(r"^acceptance (\S+): missing observable zh/en text$"),
+            lambda m: f"验收场景 {m.group(1)} 缺少可观察的结果描述。",
+        ),
+        (
+            re.compile(r"^acceptance (\S+): not observable$"),
+            lambda m: f"验收场景 {m.group(1)} 仍不可观察，请写清状态、页面结果或用户能看到的反馈。",
+        ),
+        (
+            re.compile(r"^acceptance (\S+): is still placeholder text$"),
+            lambda m: f"验收场景 {m.group(1)} 仍是占位内容，请改成可以判断对错的具体结果。",
+        ),
+        (
+            re.compile(r"^permission (\S+): can=(\S+) is not an action in states\.action_matrix — confirm it is a capability label, not a state-machine action$"),
+            lambda m: f"角色「{m.group(1)}」的权限「{m.group(2)}」未出现在状态动作表中，请确认它是权限标签还是业务动作。",
+        ),
+        (
+            re.compile(r"^source (\S+): path not verified \(no spec file context\)$"),
+            lambda m: f"原料「{m.group(1)}」的文件路径尚未核实；当前试用环境没有对应原料文件可供对账。",
+        ),
+        (
+            re.compile(r"^source (\S+): missing path — ready requires every source to have a path$"),
+            lambda m: f"原料「{m.group(1)}」没有来源文件路径，无法追溯原始需求。",
+        ),
+        (
+            re.compile(r"^source_claims missing — ready requires coverage evidence$"),
+            lambda _m: "缺少原料对照记录，无法说明每条需求是如何进入方案的。",
+        ),
+        (
+            re.compile(r"^overview missing — readers get no orientation before detail sections$"),
+            lambda _m: "缺少方案概览，读者进入细节前不知道这份方案要解决什么。",
+        ),
+        (
+            re.compile(r"^ui block missing — human spec will lack wireframe/controls$"),
+            lambda _m: "缺少页面和控件说明，评审时无法讨论入口、操作和反馈。",
+        ),
+        (
+            re.compile(r"^states block missing — lifecycle/actions unclear$"),
+            lambda _m: "缺少状态和动作说明，主流程及不同状态下能否操作不清楚。",
+        ),
+        (
+            re.compile(r"^empty_states missing — empty/error copy may be invented downstream$"),
+            lambda _m: "缺少空状态和错误提示，后续容易由不同角色各自猜文案。",
+        ),
+        (
+            re.compile(r"^behavior (\S+): prefer step_id for numbered main path$"),
+            lambda m: f"功能 {m.group(1)} 建议补充主流程步骤编号，方便评审时按顺序讨论。",
+        ),
+        (
+            re.compile(r"^scope contradiction: (.+) is both in_scope and out_of_scope$"),
+            lambda m: f"范围冲突：{m.group(1)} 同时被列入本期范围和不做范围，请先统一口径。",
+        ),
+        (
+            re.compile(r"^decision (\S+): chosen recorded without options to choose from$"),
+            lambda m: f"决策「{m.group(1)}」已经写了选择结果，但没有列出可选方案，无法复核决策依据。",
+        ),
         (
             re.compile(r"^source_claim (\S+): assumption — confirm with product owner$"),
             lambda m: (
