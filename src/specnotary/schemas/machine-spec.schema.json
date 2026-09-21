@@ -41,7 +41,25 @@
         "required": ["actor"],
         "properties": {
           "actor": { "type": "string", "minLength": 1 },
-          "can": { "type": "array", "items": { "type": "string" } }
+          "can": { "type": "array", "items": { "type": "string" } },
+          "rules": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["id", "action", "object", "effect"],
+              "properties": {
+                "id": { "type": "string", "minLength": 1 },
+                "action": { "type": "string", "minLength": 1 },
+                "object": { "type": "string", "minLength": 1 },
+                "states": { "type": "array", "items": { "type": "string" } },
+                "effect": { "type": "string", "enum": ["allow", "deny"] },
+                "surfaces": { "type": "array", "items": { "type": "string" } },
+                "enforcement": { "type": "array", "items": { "type": "string" } },
+                "zh": { "type": "string" }
+              },
+              "additionalProperties": true
+            }
+          }
         },
         "additionalProperties": true
       }
@@ -125,7 +143,48 @@
           "given": { "type": ["object", "string"] },
           "when": { "type": ["object", "string"] },
           "then": { "type": ["object", "string"] },
-          "side_effects": { "type": "array" }
+          "side_effects": { "type": "array" },
+          "goal": { "type": ["object", "string"] },
+          "entry_ref": { "type": "string" },
+          "actor_refs": { "type": "array", "items": { "type": "string" } },
+          "preconditions": { "type": "array" },
+          "reads": { "type": "array", "items": { "type": "string" } },
+          "writes": { "type": "array", "items": { "type": "string" } },
+          "action_refs": { "type": "array", "items": { "type": "string" } },
+          "state_transitions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["object_ref", "from", "action", "to"],
+              "properties": {
+                "object_ref": { "type": "string" },
+                "from": { "type": "string" },
+                "action": { "type": "string" },
+                "to": { "type": "string" }
+              },
+              "additionalProperties": true
+            }
+          },
+          "exceptions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["id", "trigger", "visible_result", "preserved_facts", "retry"],
+              "properties": {
+                "id": { "type": "string", "minLength": 1 },
+                "trigger": { "type": ["object", "string"] },
+                "visible_result": { "type": ["object", "string"] },
+                "preserved_facts": { "type": "array" },
+                "retry": { "type": ["object", "string"] },
+                "recovery": { "type": ["object", "string"] }
+              },
+              "additionalProperties": true
+            }
+          },
+          "idempotency": { "type": ["object", "string"] },
+          "recovery": { "type": ["object", "string"] },
+          "permission_refs": { "type": "array", "items": { "type": "string" } },
+          "acceptance_refs": { "type": "array", "items": { "type": "string" } }
         },
         "additionalProperties": true
       }
@@ -140,7 +199,13 @@
           "id": { "type": "string", "minLength": 1 },
           "behavior": { "type": "string" },
           "zh": { "type": "string" },
-          "en": { "type": "string" }
+          "en": { "type": "string" },
+          "actor_refs": { "type": "array", "items": { "type": "string" } },
+          "object_refs": { "type": "array", "items": { "type": "string" } },
+          "state_refs": { "type": "array", "items": { "type": "string" } },
+          "permission_refs": { "type": "array", "items": { "type": "string" } },
+          "surface_refs": { "type": "array", "items": { "type": "string" } },
+          "path": { "type": ["object", "string"] }
         },
         "additionalProperties": true
       }
@@ -154,7 +219,11 @@
           "missing": { "type": "string" },
           "impact": { "type": "string" },
           "owner": { "type": "string" },
-          "status": { "type": "string" }
+          "status": { "type": "string" },
+          "kind": { "type": "string", "enum": ["fact", "decision"] },
+          "options": { "type": "array" },
+          "recommendation": { "type": ["object", "string"] },
+          "tradeoff": { "type": ["object", "string"] }
         },
         "additionalProperties": true
       }
@@ -214,7 +283,25 @@
       "description": "Product and information architecture for requirement review: product objects, pages/modules and information flow; not implementation architecture",
       "properties": {
         "mermaid": { "type": "string", "minLength": 1 },
-        "note": { "type": ["object", "string"] }
+        "note": { "type": ["object", "string"] },
+        "surfaces": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "kind", "question", "reads"],
+            "properties": {
+              "id": { "type": "string", "minLength": 1 },
+              "zh": { "type": "string" },
+              "kind": { "type": "string", "minLength": 1 },
+              "question": { "type": ["object", "string"] },
+              "reads": { "type": "array", "items": { "type": "string" } },
+              "writes": { "type": "array", "items": { "type": "string" } },
+              "links_to": { "type": "array", "items": { "type": "string" } },
+              "state_source": { "type": ["object", "string"] }
+            },
+            "additionalProperties": true
+          }
+        }
       },
       "additionalProperties": true
     },
@@ -242,6 +329,27 @@
         "properties": {
           "id": { "type": "string", "minLength": 1 },
           "zh": { "type": "string" },
+          "purpose": { "type": ["object", "string"] },
+          "ownership": { "type": ["object", "string"] },
+          "identity": { "type": ["object", "string"] },
+          "kind": { "type": "string", "enum": ["fact", "event", "aggregate", "view"] },
+          "relationships": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["target", "cardinality", "zh"],
+              "properties": {
+                "target": { "type": "string", "minLength": 1 },
+                "cardinality": { "type": "string", "minLength": 1 },
+                "zh": { "type": "string", "minLength": 1 }
+              },
+              "additionalProperties": true
+            }
+          },
+          "lifecycle_refs": { "type": "array", "items": { "type": "string" } },
+          "producer_refs": { "type": "array", "items": { "type": "string" } },
+          "consumer_refs": { "type": "array", "items": { "type": "string" } },
+          "history_current_boundary": { "type": ["object", "string"] },
           "fields": {
             "type": "array",
             "items": {
@@ -291,7 +399,9 @@
           "chosen": { "type": ["string", "null"] },
           "status": { "type": "string", "enum": ["decided", "pending"] },
           "date": { "type": "string" },
-          "note": { "type": ["object", "string"] }
+          "note": { "type": ["object", "string"] },
+          "owner": { "type": "string" },
+          "recommendation": { "type": "string" }
         },
         "additionalProperties": true
       }

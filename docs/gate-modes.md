@@ -104,7 +104,7 @@ specnotary confirm <machine.yaml> --by <name> --reason "<why>" --accept-all-warn
 
 `specnotary human`（或 `./cli/run-generate-human.sh`）在机读仍有 FAIL 时**拒绝写入**，除非传入 `--allow-invalid`。
 
-### 人读阅读动线（渲染器 v13）
+### 人读阅读动线（渲染器 v14）
 
 先全局后细节：目录、概览、范围、**功能说明**、产品与信息架构、职责边界、数据契约、角色权限、状态与允许动作、页面与交互、主路径（功能说明的验收写法）、默认值文案、错误码、AC、Pending、决策记录、对象 AI、原料落在规格里的情况（附录）。产品/信息架构、数据契约、错误定义属于标准评审内容，不得降级成技术实现章节或随意省略。章节按机读实际内容动态编号。门禁对账用的 HTML 注释放在文末，避免 Markdown 预览出现空白。人读把机读 ID **全部**展开为中文：提示文案键 → 「界面原文」；状态枚举 / lifecycle / 业务动作 / 角色 → 中文名（括号里保留机读 ID）。附录的处理结果也用中文（已写入规格，而不是 covered）。不要在说明书正文里留下 `file_too_large`、`terminated`、`create_import_task` 这种裸字段。口径见 [`human-view.md`](human-view.md)。
 

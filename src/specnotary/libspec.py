@@ -215,10 +215,18 @@ def claim_spec_ref_ids(data: dict) -> set[str]:
         (data.get("ui") or {}).get("controls") or [],
         data.get("data_contracts") or [],
         data.get("decisions") or [],
+        data.get("pending") or [],
+        (data.get("architecture") or {}).get("surfaces") or [],
     ):
         for item in items:
             if isinstance(item, dict) and item.get("id"):
                 ids.add(str(item.get("id")))
+    for permission in data.get("permissions") or []:
+        if not isinstance(permission, dict):
+            continue
+        for rule in permission.get("rules") or []:
+            if isinstance(rule, dict) and rule.get("id"):
+                ids.add(str(rule.get("id")))
     for key in data.get("defaults") or {}:
         ids.add(f"defaults.{key}")
     for key in data.get("empty_states") or {}:
@@ -238,11 +246,18 @@ def known_entity_ids(data: dict) -> set[str]:
         ("claim", data.get("source_claims") or []),
         ("data_contract", data.get("data_contracts") or []),
         ("decision", data.get("decisions") or []),
+        ("surface", (data.get("architecture") or {}).get("surfaces") or []),
     ):
         del kind
         for item in items:
             if isinstance(item, dict) and item.get("id"):
                 ids.add(str(item.get("id")))
+    for permission in data.get("permissions") or []:
+        if not isinstance(permission, dict):
+            continue
+        for rule in permission.get("rules") or []:
+            if isinstance(rule, dict) and rule.get("id"):
+                ids.add(str(rule.get("id")))
     states = data.get("states") or {}
     if isinstance(states, dict):
         for s in states.get("lifecycle") or []:
@@ -763,6 +778,17 @@ def _layer_structure(data: dict, fail: list[str], warn: list[str]) -> list[dict]
     _collect_ids(fail, data.get("pending") or [], "pending")
     contract_ids = _collect_ids(fail, data.get("data_contracts") or [], "data_contract")
     decision_ids = _collect_ids(fail, data.get("decisions") or [], "decision")
+    surface_ids = _collect_ids(
+        fail, (data.get("architecture") or {}).get("surfaces") or [], "surface"
+    )
+    permission_rules = [
+        rule
+        for permission in data.get("permissions") or []
+        if isinstance(permission, dict)
+        for rule in (permission.get("rules") or [])
+        if isinstance(rule, dict)
+    ]
+    permission_rule_ids = _collect_ids(fail, permission_rules, "permission_rule")
 
     # IDs are referenced by bare name across object kinds (spec_refs, prototype
     # markers, free text), so a name may only mean one thing spec-wide.
@@ -770,6 +796,7 @@ def _layer_structure(data: dict, fail: list[str], warn: list[str]) -> list[dict]
     for kind, ids in (
         ("behavior", behavior_ids), ("acceptance", ac_ids), ("control", control_ids),
         ("actor", actor_ids), ("data_contract", contract_ids), ("decision", decision_ids),
+        ("surface", surface_ids), ("permission_rule", permission_rule_ids),
     ):
         for i in ids:
             if i in named and named[i] != kind:
@@ -779,6 +806,15 @@ def _layer_structure(data: dict, fail: list[str], warn: list[str]) -> list[dict]
     matrix_actions = {
         str(r.get("action")) for r in action_matrix_rows(data.get("states") or {}) if r.get("action")
     }
+    lifecycle_ids = {
+        str(s) for s in ((data.get("states") or {}).get("lifecycle") or []) if s
+    }
+
+    def refs(owner: str, field: str, values, known: set[str], kind: str) -> None:
+        for value in values or []:
+            if str(value) not in known:
+                fail.append(f"{owner}: {field} references missing {kind}: {value}")
+
     for p in data.get("permissions") or []:
         if not isinstance(p, dict):
             fail.append(f"permission item must be an object, got {type(p).__name__}")
@@ -795,6 +831,68 @@ def _layer_structure(data: dict, fail: list[str], warn: list[str]) -> list[dict]
                     f"permission {actor}: can={act} is not an action in states.action_matrix "
                     "— confirm it is a capability label, not a state-machine action"
                 )
+        for rule in p.get("rules") or []:
+            if not isinstance(rule, dict):
+                continue
+            rid = str(rule.get("id") or "permission_rule")
+            obj = rule.get("object")
+            if obj and str(obj) not in contract_ids:
+                fail.append(f"permission_rule {rid}: object references missing data_contract: {obj}")
+            action = rule.get("action")
+            if matrix_actions and action and str(action) not in matrix_actions:
+                fail.append(f"permission_rule {rid}: action references missing action_matrix action: {action}")
+            refs(f"permission_rule {rid}", "states", rule.get("states"), lifecycle_ids, "state")
+            refs(f"permission_rule {rid}", "surfaces", rule.get("surfaces"), surface_ids, "surface")
+
+    for surface in (data.get("architecture") or {}).get("surfaces") or []:
+        if not isinstance(surface, dict):
+            continue
+        sid = str(surface.get("id") or "surface")
+        refs(f"surface {sid}", "reads", surface.get("reads"), contract_ids, "data_contract")
+        refs(f"surface {sid}", "writes", surface.get("writes"), contract_ids, "data_contract")
+        refs(f"surface {sid}", "links_to", surface.get("links_to"), surface_ids, "surface")
+
+    for contract in data.get("data_contracts") or []:
+        if not isinstance(contract, dict):
+            continue
+        cid = str(contract.get("id") or "data_contract")
+        for relation in contract.get("relationships") or []:
+            if not isinstance(relation, dict):
+                continue
+            target = relation.get("target")
+            if target and str(target) not in contract_ids:
+                fail.append(f"data_contract {cid}: relationship references missing data_contract: {target}")
+        refs(f"data_contract {cid}", "lifecycle_refs", contract.get("lifecycle_refs"), lifecycle_ids, "state")
+        refs(f"data_contract {cid}", "producer_refs", contract.get("producer_refs"), behavior_ids, "behavior")
+        refs(f"data_contract {cid}", "consumer_refs", contract.get("consumer_refs"), surface_ids, "surface")
+
+    for behavior in behaviors if isinstance(behaviors, list) else []:
+        if not isinstance(behavior, dict):
+            continue
+        bid = str(behavior.get("id") or "behavior")
+        entry = behavior.get("entry_ref")
+        if entry and str(entry) not in surface_ids:
+            fail.append(f"behavior {bid}: entry_ref references missing surface: {entry}")
+        refs(f"behavior {bid}", "actor_refs", behavior.get("actor_refs"), actor_ids, "actor")
+        refs(f"behavior {bid}", "reads", behavior.get("reads"), contract_ids, "data_contract")
+        refs(f"behavior {bid}", "writes", behavior.get("writes"), contract_ids, "data_contract")
+        refs(f"behavior {bid}", "action_refs", behavior.get("action_refs"), matrix_actions, "action")
+        refs(f"behavior {bid}", "permission_refs", behavior.get("permission_refs"), permission_rule_ids, "permission_rule")
+        refs(f"behavior {bid}", "acceptance_refs", behavior.get("acceptance_refs"), ac_ids, "acceptance")
+        _collect_ids(fail, behavior.get("exceptions") or [], f"behavior {bid} exception")
+        for transition in behavior.get("state_transitions") or []:
+            if not isinstance(transition, dict):
+                continue
+            obj = transition.get("object_ref")
+            if obj and str(obj) not in contract_ids:
+                fail.append(f"behavior {bid}: state transition references missing data_contract: {obj}")
+            for field in ("from", "to"):
+                state = transition.get(field)
+                if state and str(state) not in lifecycle_ids:
+                    fail.append(f"behavior {bid}: state transition {field} references missing state: {state}")
+            action = transition.get("action")
+            if action and str(action) not in matrix_actions:
+                fail.append(f"behavior {bid}: state transition action references missing action: {action}")
 
     _check_new_object_integrity(data, fail, warn)
     _warn_unknown_top_level(data, warn)
@@ -805,6 +903,12 @@ def _layer_structure(data: dict, fail: list[str], warn: list[str]) -> list[dict]
         bid = a.get("behavior")
         if bid and str(bid) not in behavior_ids:
             fail.append(f"acceptance {a.get('id')}: behavior ref missing: {bid}")
+        aid = str(a.get("id") or "acceptance")
+        refs(f"acceptance {aid}", "actor_refs", a.get("actor_refs"), actor_ids, "actor")
+        refs(f"acceptance {aid}", "object_refs", a.get("object_refs"), contract_ids, "data_contract")
+        refs(f"acceptance {aid}", "state_refs", a.get("state_refs"), lifecycle_ids, "state")
+        refs(f"acceptance {aid}", "permission_refs", a.get("permission_refs"), permission_rule_ids, "permission_rule")
+        refs(f"acceptance {aid}", "surface_refs", a.get("surface_refs"), surface_ids, "surface")
 
     states = data.get("states") or {}
     lifecycle = set(states.get("lifecycle") or []) if isinstance(states, dict) else set()

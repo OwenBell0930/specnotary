@@ -94,7 +94,7 @@ specnotary ingest <spec.md> --spec <machine.yaml> --kind speckit
 ## Rules
 
 1. **Machine source is authoritative.** Edit YAML first; generate the human 评审就绪标准需求规格说明书 from it.
-2. Prefer **YAML**. Ready review view must include product/information architecture, module boundaries, business data contracts and product error definitions, plus wireframe/controls/state-action/behaviors/AC/Pending as applicable. Never turn them into technical architecture, implementation tasks, or test plans.
+2. Prefer **YAML**. Ready review view must include product/information architecture, module boundaries, business data contracts and product error definitions, plus wireframe/controls/state-action/behaviors/AC/Pending as applicable. Draft 先定边界与对象，再定页面归属，最后以 `behaviors` 写功能契约；复杂写入按风险补对象读写、异常、幂等、恢复、权限和验收引用。Never turn them into technical architecture, implementation tasks, or test plans.
 3. Before claiming a final Structure Gate `PASS`: status must be `ready` and **FAIL must be 0**. `RESULT: DRAFT` 只表示可带问题评审，不是终稿。Remaining WARN: ask the product manager；then **you** run `specnotary confirm`. 对她不要只说 WARN / FAIL / PASS。
 4. Hard gate runtime is **Python only**. Node CLI is Deferred — exit 3; never `gate_mode: hard` / `RESULT: PASS`.
 5. If no Python: degraded Skill check with `gate_mode: degraded` only.
@@ -110,7 +110,7 @@ specnotary ingest <spec.md> --spec <machine.yaml> --kind speckit
 
 ## 写作主路径（Draft 段）
 
-`specnotary new` 只给脚手架和已钉哈希的原料。你补全原料账本与 `D-PROTOTYPE`、产品/信息架构、功能与交互、按需原型，然后交由 Review（含修订复审循环），再 Gate。不要在 Draft 段结束时宣称质量通过。
+`specnotary new` 只给脚手架和已钉哈希的原料。你补全原料账本与 `D-PROTOTYPE`，按「边界与复用基线 → 对象契约 → 页面/消费者视图 → 功能契约 → 异常恢复/权限/验收」组织单一机读规格、按需原型，然后交由 Review（含修订复审循环），再 Gate。不要在 Draft 段结束时宣称质量通过。
 
 ## 提取 SourceClaim
 

@@ -112,7 +112,7 @@
 | Skill 起草 / 独立审查 / 降级检查 | **Available** | `/write-spec` 全流程；`/draft-spec` `/review-spec` `/gate-spec` 可拆；降级须标 `degraded` |
 | 产品质量模型（Draft/Review 共用） | **Available** | [`docs/product-quality-model.md`](docs/product-quality-model.md)；审查契约与反例语料；**不**进 Python hard gate |
 | 原料覆盖（SourceClaim） | **Available** | ready 上每个 source 必须有真实 path + content_hash；删除 path 不能绕过；必选实体必须被引用；`specnotary report` 写出输出自检报告 |
-| 全局视角人读（目录/概览/功能说明/产品与信息架构/职责/数据契约/错误码/决策记录） | **Available** | 渲染器 v13；机读 ID 展开为中文；mermaid 图确定性生成，人读防漂 |
+| 全局视角人读（目录/概览/功能说明/产品与信息架构/职责/数据契约/错误码/决策记录） | **Available** | 渲染器 v14；机读 ID 展开为中文；mermaid 图确定性生成，人读防漂 |
 | 决策记录门禁 | **Available** | `decisions` 未拍板在 `ready` 上 FAIL |
 | 人读哈希 / stale 检测 | **Available** | `spec_hash` + 正文逐字对照 + `renderer_version`；只改正文也 FAIL |
 | 原型方案与 Manifest 一致性 | **Available** | `D-PROTOTYPE` 首轮必拍板；选择制作则 manifest 必须存在并核对哈希与真实 `data-spec-id`，选择不制作则不制造缺失告警 |

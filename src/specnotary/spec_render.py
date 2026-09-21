@@ -11,7 +11,7 @@ import re
 from .pm_view import disposition_label, format_landing, status_label
 from .spec_io import human_body_hash, spec_hash, split_human_markdown
 
-RENDERER_VERSION = "13"
+RENDERER_VERSION = "14"
 
 
 def _rules():
@@ -38,10 +38,13 @@ _EN = {
     "概览": "Overview",
     "范围": "Scope",
     "产品与信息架构": "Product & Information Architecture",
+    "页面与消费者视图": "Surfaces & Consumer Views",
     "功能说明": "Features",
     "职责边界": "Responsibilities",
     "数据契约": "Data Contracts",
+    "对象契约": "Object Contracts",
     "角色与权限": "Roles & Permissions",
+    "权限规则矩阵": "Permission Rule Matrix",
     "状态与允许动作": "States & Allowed Actions",
     "页面与交互": "Pages & Interactions",
     "主路径（编号）": "Main Path (numbered)",
@@ -109,8 +112,27 @@ _EN = {
     "- **{aid}**（行为 `{bid}`）：{text}": "- **{aid}** (behavior `{bid}`): {text}",
     "无。": "None.",
     "| ID | 缺失信息 | 影响范围 | 责任人 | 状态 |": "| ID | Missing | Impact | Owner | Status |",
+    "| ID | 类型 | 问题 / 缺失事实 | 影响范围 | 选项与建议 | 责任人 | 状态 |": "| ID | Type | Question / missing fact | Impact | Options & recommendation | Owner | Status |",
+    "事实缺口": "fact gap",
+    "产品取舍": "product decision",
     "共 {n} 项，已拍板 {d} 项，待定 {u} 项。「为什么是这样」的存档，新人不必考古聊天记录。": "{n} decisions — {d} settled, {u} open. The archive of why things are this way; no chat-log archaeology needed.",
     "| ID | 问题 | 选定 | 日期 | 备注 |": "| ID | Question | Chosen | Date | Note |",
+    "| 页面 / 入口 | 类型 | 回答的用户问题 | 读取 | 修改 | 跳转 | 权威状态来源 |": "| Surface / entry | Kind | User question | Reads | Writes | Links | Authoritative state source |",
+    "| 规则 | 角色 | 动作 | 对象 | 状态 | 结果 | 生效面 | 执行位置 |": "| Rule | Actor | Action | Object | States | Effect | Surfaces | Enforcement |",
+    "**目标：** {v}": "**Goal:** {v}",
+    "**入口：** `{v}`": "**Entry:** `{v}`",
+    "**参与角色：** {v}": "**Actors:** {v}",
+    "**读取 / 修改：** {reads} / {writes}": "**Reads / writes:** {reads} / {writes}",
+    "**权限规则：** {v}": "**Permission rules:** {v}",
+    "**幂等口径：** {v}": "**Idempotency:** {v}",
+    "**恢复方式：** {v}": "**Recovery:** {v}",
+    "**异常与恢复：**": "**Exceptions & recovery:**",
+    "| 异常 | 触发条件 | 用户看到 | 已保存事实 | 重试 / 恢复 |": "| Exception | Trigger | Visible result | Preserved facts | Retry / recovery |",
+    "**对象类型：** `{kind}`  ": "**Object kind:** `{kind}`  ",
+    "**职责与归属：** {purpose}；{ownership}  ": "**Purpose & ownership:** {purpose}; {ownership}  ",
+    "**唯一性：** {identity}  ": "**Identity:** {identity}  ",
+    "**历史与当前：** {boundary}": "**History vs current:** {boundary}",
+    "**关系：**": "**Relationships:**",
     "**待定**": "**undecided**",
     "- 失败兜底: {v}": "- Failure fallback: {v}",
     "- 工具边界:": "- Tool boundary:",
@@ -426,6 +448,31 @@ def render_human(data: dict, source: str, gate_mode: str = "hard", lang: str = "
         sec += ["```mermaid", str(arch["mermaid"]).rstrip(), "```", ""]
         sections.append(("产品与信息架构", sec))
 
+    surfaces = [s for s in (arch.get("surfaces") or []) if isinstance(s, dict)]
+    if surfaces:
+        sec = [
+            t("| 页面 / 入口 | 类型 | 回答的用户问题 | 读取 | 修改 | 跳转 | 权威状态来源 |"),
+            "|-------------|------|------------------|------|------|------|--------------|",
+        ]
+        for s in surfaces:
+            label = _lang(s, lang) or str(s.get("id") or "—")
+            sid = str(s.get("id") or "")
+            if sid:
+                label = f"{label} (`{sid}`)"
+            sec.append(
+                "| {label} | {kind} | {question} | {reads} | {writes} | {links} | {source} |".format(
+                    label=label,
+                    kind=s.get("kind") or "—",
+                    question=prose(s.get("question")) or "—",
+                    reads="、".join(f"`{v}`" for v in (s.get("reads") or [])) or "—",
+                    writes="、".join(f"`{v}`" for v in (s.get("writes") or [])) or "—",
+                    links="、".join(f"`{v}`" for v in (s.get("links_to") or [])) or "—",
+                    source=prose(s.get("state_source")) or "—",
+                )
+            )
+        sec.append("")
+        sections.append(("页面与消费者视图", sec))
+
     # ---- 职责边界 ----
     resp = [r for r in (data.get("responsibilities") or []) if isinstance(r, dict)]
     if resp:
@@ -458,6 +505,30 @@ def render_human(data: dict, source: str, gate_mode: str = "hard", lang: str = "
             zh = _lang(dc, lang)
             sec.append(f"### {dc.get('id')}" + (f" · {zh}" if zh else ""))
             sec.append("")
+            if any(dc.get(k) for k in ("purpose", "ownership", "identity", "kind", "history_current_boundary")):
+                sec.append(t("**对象类型：** `{kind}`  ").format(kind=dc.get("kind") or "—"))
+                sec.append(
+                    t("**职责与归属：** {purpose}；{ownership}  ").format(
+                        purpose=prose(dc.get("purpose")) or "—",
+                        ownership=prose(dc.get("ownership")) or "—",
+                    )
+                )
+                sec.append(t("**唯一性：** {identity}  ").format(identity=prose(dc.get("identity")) or "—"))
+                sec.append(
+                    t("**历史与当前：** {boundary}").format(
+                        boundary=prose(dc.get("history_current_boundary")) or "—"
+                    )
+                )
+                sec.append("")
+            relationships = [r for r in (dc.get("relationships") or []) if isinstance(r, dict)]
+            if relationships:
+                sec.append(t("**关系：**"))
+                sec.append("")
+                for relation in relationships:
+                    sec.append(
+                        f"- `{relation.get('target')}` · `{relation.get('cardinality')}`：{relation.get('zh') or '—'}"
+                    )
+                sec.append("")
             fields = [f for f in (dc.get("fields") or []) if isinstance(f, dict)]
             if fields:
                 sec += [t("| 字段 | 中文 | 类型 | 说明 |"), "|------|------|------|------|"]
@@ -492,6 +563,34 @@ def render_human(data: dict, source: str, gate_mode: str = "hard", lang: str = "
         sec.append(f"| {_lang(a, lang) or '—'} | `{aid}` | {cans or '—'} |")
     sec.append("")
     sections.append(("角色与权限", sec))
+
+    permission_rows = [
+        (p.get("actor"), rule)
+        for p in (data.get("permissions") or [])
+        if isinstance(p, dict)
+        for rule in (p.get("rules") or [])
+        if isinstance(rule, dict)
+    ]
+    if permission_rows:
+        sec = [
+            t("| 规则 | 角色 | 动作 | 对象 | 状态 | 结果 | 生效面 | 执行位置 |"),
+            "|------|------|------|------|------|------|--------|----------|",
+        ]
+        for actor, rule in permission_rows:
+            sec.append(
+                "| `{rid}` | `{actor}` | `{action}` | `{obj}` | {states} | `{effect}` | {surfaces} | {enforcement} |".format(
+                    rid=rule.get("id") or "—",
+                    actor=actor or "—",
+                    action=rule.get("action") or "—",
+                    obj=rule.get("object") or "—",
+                    states="、".join(f"`{v}`" for v in (rule.get("states") or [])) or "—",
+                    effect=rule.get("effect") or "—",
+                    surfaces="、".join(f"`{v}`" for v in (rule.get("surfaces") or [])) or "—",
+                    enforcement="、".join(str(v) for v in (rule.get("enforcement") or [])) or "—",
+                )
+            )
+        sec.append("")
+        sections.append(("权限规则矩阵", sec))
 
     # ---- 状态与允许动作 ----
     matrix = action_matrix_rows(states)
@@ -597,6 +696,41 @@ def render_human(data: dict, source: str, gate_mode: str = "hard", lang: str = "
             sec.append(t("- **连带结果：**"))
             for s in b.get("side_effects") or []:
                 sec.append(f"  - {prose(s)}")
+        if b.get("goal"):
+            sec.append(t("**目标：** {v}").format(v=prose(b.get("goal"))))
+        if b.get("entry_ref"):
+            sec.append(t("**入口：** `{v}`").format(v=b.get("entry_ref")))
+        if b.get("actor_refs"):
+            sec.append(t("**参与角色：** {v}").format(v="、".join(f"`{v}`" for v in b.get("actor_refs") or [])))
+        if b.get("reads") or b.get("writes"):
+            sec.append(
+                t("**读取 / 修改：** {reads} / {writes}").format(
+                    reads="、".join(f"`{v}`" for v in b.get("reads") or []) or "—",
+                    writes="、".join(f"`{v}`" for v in b.get("writes") or []) or "—",
+                )
+            )
+        if b.get("permission_refs"):
+            sec.append(t("**权限规则：** {v}").format(v="、".join(f"`{v}`" for v in b.get("permission_refs") or [])))
+        if b.get("idempotency"):
+            sec.append(t("**幂等口径：** {v}").format(v=prose(b.get("idempotency"))))
+        if b.get("recovery"):
+            sec.append(t("**恢复方式：** {v}").format(v=prose(b.get("recovery"))))
+        exceptions = [e for e in (b.get("exceptions") or []) if isinstance(e, dict)]
+        if exceptions:
+            sec += ["", t("**异常与恢复：**"), "", t("| 异常 | 触发条件 | 用户看到 | 已保存事实 | 重试 / 恢复 |"), "|------|----------|----------|------------|-------------|"]
+            for exc in exceptions:
+                retry = prose(exc.get("retry"))
+                recovery = prose(exc.get("recovery"))
+                retry_recovery = "；".join(v for v in (retry, recovery) if v) or "—"
+                sec.append(
+                    "| `{id}` | {trigger} | {visible} | {facts} | {rr} |".format(
+                        id=exc.get("id") or "—",
+                        trigger=prose(exc.get("trigger")) or "—",
+                        visible=prose(exc.get("visible_result")) or "—",
+                        facts="、".join(prose(v) for v in (exc.get("preserved_facts") or [])) or "—",
+                        rr=retry_recovery,
+                    )
+                )
         sec.append("")
     sections.append(("主路径（编号）", sec))
 
@@ -654,10 +788,26 @@ def render_human(data: dict, source: str, gate_mode: str = "hard", lang: str = "
     if not pending:
         sec.append(t("无。"))
     else:
-        sec += [t("| ID | 缺失信息 | 影响范围 | 责任人 | 状态 |"), "|----|----------|----------|--------|------|"]
+        sec += [t("| ID | 类型 | 问题 / 缺失事实 | 影响范围 | 选项与建议 | 责任人 | 状态 |"), "|----|------|-----------------|----------|------------|--------|------|"]
         for p in pending:
+            kind = t("产品取舍") if p.get("kind") == "decision" else t("事实缺口")
+            options = []
+            for option in p.get("options") or []:
+                if isinstance(option, dict):
+                    options.append(f"{option.get('zh') or option.get('id') or '—'} (`{option.get('id') or '—'}`)")
+                else:
+                    options.append(str(option))
+            recommendation = prose(p.get("recommendation"))
+            tradeoff = prose(p.get("tradeoff"))
+            choice = "；".join(
+                v for v in (
+                    " / ".join(options),
+                    (f"建议：{recommendation}" if recommendation else ""),
+                    (f"代价：{tradeoff}" if tradeoff else ""),
+                ) if v
+            ) or "—"
             sec.append(
-                f"| {p.get('id')} | {p.get('missing')} | {p.get('impact')} | {p.get('owner')} | {p.get('status')} |"
+                f"| {p.get('id')} | {kind} | {p.get('missing')} | {p.get('impact')} | {choice} | {p.get('owner')} | {p.get('status')} |"
             )
     sec.append("")
     sections.append(("信息待闭合项（Pending）", sec))

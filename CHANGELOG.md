@@ -9,6 +9,8 @@ SpecNotary 遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)；
 - **Draft / Review / Gate 可拆入口**：`/draft-spec` `/review-spec` `/gate-spec` 与对应 Skill；`/write-spec` 仍为默认全流程编排并向后兼容。
 - **公共产品质量模型**：[`docs/product-quality-model.md`](docs/product-quality-model.md)（Draft/Review 唯一标准）；审查契约、反例语料、`product-review.schema.json` 与形状样例。Product Review 结论为 `REVISE|DECISION_NEEDED|REVIEWABLE`（禁止 PASS）。Gate 仍只做确定性结构检查。
 - **Review 绑定 subject `content_hash`**：改稿 / normalize / 拍板后旧报告 `stale`，须重新 Review；`source_materials` 记录本次对照快照；Gate PASS 不能覆盖 stale/`REVISE`。
+- **Draft 产品设计能力融合**：仍以 `behaviors` 为唯一功能实体，渐进支持对象契约、页面/消费者视图、功能读写与状态变化、异常恢复、幂等、对象级权限规则和验收追踪；不生成第二份 PRD。
+- **增强引用闭合门禁**：使用增强字段时，Gate 校验页面、对象、角色、状态、动作、权限与验收引用；旧规格未采用新字段时保持兼容。
 
 ### Changed
 
@@ -17,7 +19,7 @@ SpecNotary 遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)；
 - 输出自检报告新增评审待拍板事项与终稿差距，展示可定位的完整路径和不截断的验收原文。
 - 产品/信息架构、产品模块边界、业务数据契约和产品错误定义恢复为 `ready` 标准必填，不得降级为技术实现内容或按需省略。
 - 建案后首轮必须拍板 `D-PROTOTYPE`（不制作 / 静态 HTML / 本地服务 / 其他）；选择制作才要求 manifest，明确不制作不再产生缺失告警。
-- 人读评审稿调整为产品经理语言并展示原型载体选项中文，渲染器升级到 v13。
+- 人读评审稿调整为产品经理语言并展示原型载体选项中文；新增页面消费者视图、对象契约、权限规则矩阵和复杂功能契约，渲染器升级到 v14。
 - 证明边界与 Skill 边界写明三层结论不得合并；Structure Gate 通过不等于产品方案合理；「独立审查」不等于默认多 Agent。
 - README 与流程图改为 Agent 入口 + CLI Gate 引擎；假详细口径拆成 Gate（结构/词表）与 Product Review（语义）。
 

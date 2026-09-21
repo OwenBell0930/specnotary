@@ -1337,6 +1337,99 @@ def test_human_view_expands_status_enums_and_copy_keys():
     assert "created_at" in md and "已创建_at" not in md
 
 
+def test_fused_product_contracts_validate_render_and_close_refs():
+    """Enhanced Draft fields stay optional, but become closed contracts when used."""
+    data = load_spec(RAW)
+    data["status"] = "draft"
+    data.pop("sources", None)
+    data.pop("source_claims", None)
+    data["architecture"]["surfaces"] = [
+        {
+            "id": "order_detail",
+            "zh": "订单详情",
+            "kind": "detail",
+            "question": {"zh": "这张订单现在能否取消，取消后会发生什么"},
+            "reads": ["CancelRequest", "CancelResult"],
+            "writes": ["CancelRequest"],
+            "links_to": [],
+            "state_source": {"zh": "读取订单与取消结果，不在页面维护第二套状态"},
+        }
+    ]
+    data["permissions"][0]["rules"] = [
+        {
+            "id": "PERM-BUYER-CANCEL",
+            "action": "buyer_self_cancel",
+            "object": "CancelRequest",
+            "states": ["unpaid", "paid_unshipped"],
+            "effect": "allow",
+            "surfaces": ["order_detail"],
+            "enforcement": ["ui", "api"],
+        }
+    ]
+    data["data_contracts"][0].update(
+        {
+            "purpose": {"zh": "记录一次取消意图及其业务约束"},
+            "ownership": {"zh": "归属订单取消流程"},
+            "identity": {"zh": "同一订单的有效取消请求唯一"},
+            "kind": "fact",
+            "relationships": [
+                {"target": "CancelResult", "cardinality": "1:0..1", "zh": "成功处理后产生结果"}
+            ],
+            "lifecycle_refs": ["unpaid", "paid_unshipped", "cancelled"],
+            "producer_refs": ["B1"],
+            "consumer_refs": ["order_detail"],
+            "history_current_boundary": {"zh": "请求保留历史，订单当前状态读取订单事实"},
+        }
+    )
+    data["behaviors"][0].update(
+        {
+            "goal": {"zh": "让买家取消待支付订单且不重复释放权益"},
+            "entry_ref": "order_detail",
+            "actor_refs": ["buyer"],
+            "reads": ["CancelRequest"],
+            "writes": ["CancelRequest"],
+            "action_refs": ["buyer_self_cancel"],
+            "state_transitions": [
+                {"object_ref": "CancelRequest", "from": "unpaid", "action": "buyer_self_cancel", "to": "cancelled"}
+            ],
+            "exceptions": [
+                {
+                    "id": "EX-DUPLICATE",
+                    "trigger": {"zh": "重复提交同一取消请求"},
+                    "visible_result": {"zh": "返回首次处理结果"},
+                    "preserved_facts": [{"zh": "原取消结果"}],
+                    "retry": {"zh": "允许安全重试"},
+                    "recovery": {"zh": "按订单读取既有结果"},
+                }
+            ],
+            "idempotency": {"zh": "同一订单重复提交不得重复释券"},
+            "recovery": {"zh": "依赖失败时保留请求并展示可重试状态"},
+            "permission_refs": ["PERM-BUYER-CANCEL"],
+            "acceptance_refs": ["AC-01"],
+        }
+    )
+    data["acceptance"][0].update(
+        {
+            "actor_refs": ["buyer"],
+            "object_refs": ["CancelRequest"],
+            "state_refs": ["unpaid", "cancelled"],
+            "permission_refs": ["PERM-BUYER-CANCEL"],
+            "surface_refs": ["order_detail"],
+            "path": {"zh": "订单详情 → 确认取消 → 取消结果"},
+        }
+    )
+
+    result = validate(data, {}, check_human=False)
+    assert not result["fail"], result
+    md = render_human(data, source="machine/spec.yaml")
+    for expected in ("页面与消费者视图", "权限规则矩阵", "对象类型", "幂等口径", "异常与恢复"):
+        assert expected in md, expected
+
+    data["behaviors"][0]["entry_ref"] = "missing_surface"
+    broken = validate(data, {}, check_human=False)
+    assert any("entry_ref references missing surface" in e for e in broken["fail"]), broken
+
+
 def test_human_header_gate_mode_cannot_be_forged():
     import re as _re
 
@@ -1645,6 +1738,7 @@ if __name__ == "__main__":
         test_prototype_source_id_cannot_witness_ui,
         test_marker_in_script_string_is_not_a_landing,
         test_human_view_expands_status_enums_and_copy_keys,
+        test_fused_product_contracts_validate_render_and_close_refs,
         test_human_header_gate_mode_cannot_be_forged,
         test_known_empty_talk_ac_fails,
         test_empty_talk_corpus,

@@ -10,7 +10,7 @@ baseline:
 in_scope: []
 out_of_scope: []
 actors: []
-permissions: []
+permissions: []        # actor + can；复杂授权在 rules[] 定义 action/object/state/surface/enforcement
 defaults: {}
 states:
   lifecycle: []
@@ -42,11 +42,26 @@ behaviors:
       zh: 「占位」用户动作
     then:
       zh: 「占位」可观察结果（数据/状态/文案）
+    # 以下按风险采用：涉及写入、权限、跨对象副作用或异步处理时不要省略
+    entry_ref: surface_example
+    actor_refs: []
+    reads: []           # data_contracts[].id
+    writes: []          # data_contracts[].id
+    action_refs: []     # states.action_matrix[].action
+    state_transitions: []
+    exceptions: []      # {id, trigger, visible_result, preserved_facts, retry, recovery}
+    idempotency:
+      zh: 「占位」重复提交如何识别，以及不得重复产生哪些事实
+    recovery:
+      zh: 「占位」部分成功或依赖失败后如何恢复
+    permission_refs: [] # permissions[].rules[].id
+    acceptance_refs: [AC-01]
 acceptance:
   - id: AC-01
     behavior: B1
     zh: 「占位」Given…When…Then… 可验收表述
-pending: []   # {id, missing, impact, owner, status}
+    # 可选追踪：actor_refs/object_refs/state_refs/permission_refs/surface_refs/path
+pending: []   # 事实缺口用 kind=fact；产品取舍用 kind=decision + options/recommendation/tradeoff
 overview:
   summary:
     zh: 「占位」一段话说清：谁在什么场景做什么，本规格覆盖到哪条边界
@@ -60,6 +75,17 @@ architecture:                   # 产品/信息架构：对象、页面/模块�
     flowchart LR
       User["用户"] --> Entry["占位：产品入口"]
       Entry --> Object["占位：核心业务对象"]
+  surfaces:                    # 页面/入口/输出物回答什么问题，读取或修改哪些对象
+    - id: surface_example
+      zh: 「占位」页面名
+      kind: detail
+      question:
+        zh: 「占位」用户来到这里要回答什么
+      reads: [ProductObject]
+      writes: []
+      links_to: []
+      state_source:
+        zh: 「占位」不得维护第二套状态；写明权威结论来源
 responsibilities:               # 产品模块负责/不负责；不是研发团队或技术服务职责
   - role: product_module
     zh: 「占位」产品模块
@@ -70,6 +96,19 @@ responsibilities:               # 产品模块负责/不负责；不是研发团
 data_contracts:                 # 产品定义的业务实体、输入输出、字段含义与规则
   - id: ProductObject
     zh: 「占位」核心业务对象
+    purpose:
+      zh: 「占位」对象负责表达什么业务事实
+    ownership:
+      zh: 「占位」归属哪个业务边界
+    identity:
+      zh: 「占位」唯一性或业务标识
+    kind: fact                  # fact | event | aggregate | view
+    relationships: []          # {target, cardinality, zh}
+    lifecycle_refs: []
+    producer_refs: []          # behavior id
+    consumer_refs: [surface_example]
+    history_current_boundary:
+      zh: 「占位」历史事实与当前结论如何区分
     fields:
       - name: example_field
         zh: 「占位」字段中文名
@@ -101,6 +140,8 @@ decisions:
         zh: 其他载体（在 note 写明）
     chosen:
     status: pending
+    owner: 产品经理
+    recommendation: no_prototype
     note:
       zh: 待产品经理在接收原料后的第一轮确认
 # 其他 decisions: [{id: D-01, question, options, chosen, status: decided|pending, date, note}]

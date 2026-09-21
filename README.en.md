@@ -112,7 +112,7 @@ The fastest path: send Cursor or Codex the [GitHub URL](https://github.com/OwenB
 | Skill drafting / independent review / degraded check | **Available** | `/write-spec` full flow; `/draft-spec` `/review-spec` `/gate-spec` separable; degraded must be labelled `degraded` |
 | Product quality model (shared by Draft/Review) | **Available** | [`docs/product-quality-model.md`](docs/product-quality-model.md); review contract + anti-corpus; **not** in the Python hard gate |
 | Source coverage (SourceClaim) | **Available** | On ready every source needs a real path + content_hash; deleting path cannot bypass; required entities must be cited; `specnotary report` writes the PM self-check report |
-| Global human view (TOC / overview / features / product & information architecture / duties / data contracts / error codes / decisions) | **Available** | renderer v13; machine IDs expanded to Chinese; mermaid diagrams generated deterministically |
+| Global human view (TOC / overview / features / product & information architecture / duties / data contracts / error codes / decisions) | **Available** | renderer v14; machine IDs expanded to Chinese; mermaid diagrams generated deterministically |
 | Decision-log gate | **Available** | Undecided `decisions` FAIL on `ready` |
 | Human hash / stale detection | **Available** | `spec_hash` + byte-identical body + `renderer_version`; editing only the body still FAILs |
 | Prototype decision + manifest consistency | **Available** | `D-PROTOTYPE` must decide none/static HTML/local service/other; a selected prototype requires a manifest, while an explicit no-prototype choice creates no missing-manifest warning |
